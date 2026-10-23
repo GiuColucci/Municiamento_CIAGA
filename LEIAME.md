@@ -103,3 +103,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ## Sem ranchef? Assumir o cargo pelo painel
 - Se o banco ficar **sem ranchef** (por exemplo, a lista foi carregada só com `;admin`), qualquer **administrador** (em sessão de administrador) vê no painel o cartão **"Não há administrador ranchef"** e pode **Assumir o cargo de ranchef**, confirmando com o seu código de aluno. Ele vira ranchef e deixa de ser administrador comum. O cartão só existe enquanto não há ranchef; depois só vale a transferência feita pelo ranchef.
 - Os textos do painel não citam mais a Vercel: o cartão dos códigos mostra "Ainda não foi trocado pelo painel" ou "Trocado por X em ...".
+
+## Montar tudo do zero (repositório completo)
+- `fonte-app/` é o código-fonte do app (a página que roda no navegador). `api/`, `public/` e `scripts/` são o site (login, painel, servidor).
+- Gerar o app: `npm run app:build` (cria `fonte-app/conferencia_digital.html`, que não é versionado).
+- Cifrar o app para o site: `APP_KEY=<64 hex> node scripts/cifrar.mjs fonte-app/conferencia_digital.html` (grava `dados/app.enc`, que também não é versionado). A chave `APP_KEY` é a mesma `DATA_KEY` usada na Vercel.
+- Testar tudo: `npm run teste:tudo` (site + app, só dados fictícios). Um fluxo no GitHub roda isso a cada pull request.
+- Publicar: `npx vercel --prod`. O que vai para a Vercel é o site; `fonte-app/` fica de fora (`.vercelignore`).
+- Nunca versionar: planilhas reais, listas de autorizados, backups da lista, `.env`, `dados/app.enc`.

@@ -2,11 +2,16 @@
   "name": "conferencia-ciaga",
   "private": true,
   "version": "1.0.0",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "cifrar": "node scripts/cifrar.mjs",
     "senha": "node scripts/hash-senha.mjs",
     "lista": "node scripts/carregar-lista.mjs",
-    "teste": "node --test scripts/teste.mjs"
+    "teste": "node --test scripts/teste.mjs",
+    "app:build": "node fonte-app/web/build.mjs rela",
+    "app:teste": "node --test fonte-app/web/testes/municiamento.test.cjs",
+    "teste:tudo": "npm run teste && npm run app:teste"
   }
 }

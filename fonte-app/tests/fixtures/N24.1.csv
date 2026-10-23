@@ -1,0 +1,17 @@
+﻿N24.1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Nome;Número;Sexta;;;;Sábado;;;;Domingo;;;;Segunda-feira;;;;Terça-feira;;;;Quarta-feira;;;;Quinta-feira;;;
+;;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia;Café;Almoço;Janta;Ceia
+Sofia Prado;N2814;x;x;X;x;x;;;;X;;X;x;;X;;;;x;;x;;;x;;;;;X
+TAVARES;N2851;x;x;x;x;x;;X;;;;X;x;X;X;x;;x;X;;;x;X;X;x;x;X;;x
+ÚRSULA;N2888;;;;;x;;;;X;x;;;X;;X;;X;X;X;;X;x;X;;;X;x;
+VIEIRA;N2925;X;;;;X;;X;;;x;x;;;X;X;;;X;;X;;x;;x;X;X;X;
+WAGNER;N2962;;X;x;;x;x;;;;X;;X;;;;X;x;x;x;x;x;x;X;;X;x;;
+XAVIER;N2999;x;X;;X;x;x;X;;X;;;;x;x;x;;x;;X;x;X;x;;x;;x;x;
+YARA;N2036;x;x;;x;;x;;;;;X;x;;;;x;x;x;;;x;x;X;x;X;X;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Sexta;;Sábado;;Domingo;;Segunda;;Terça;;Quarta;;Quinta;;;;;;;;;;;;;;;
+;Café;5;;6;;3;;3;;5;;5;;4;;;;;;;;;;;;;;;
+;Almoço;5;;3;;3;;4;;6;;6;;6;;;;;;;;;;;;;;;
+;Janta;3;;3;;4;;4;;3;;5;;3;;;;;;;;;;;;;;;
+;Ceia;4;;0;;4;;2;;4;;4;;2;;;;;;;;;;;;;;;

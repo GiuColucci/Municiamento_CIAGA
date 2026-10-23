@@ -1,0 +1,15 @@
+Código-fonte da Versão 3 (Conferência Digital e Conferência Impressa)
+
+Comuns às duas versões (web/src): texto.js, entradas.js, pdf.js, parser.js, report.js, documentos.js
+Só da Conferência Digital:  web/src/rela.js e web/pagina_rela.html
+Só da Conferência Impressa: web/src/app.js e web/pagina.html
+Visual e abertura: web/estilo.css, web/abertura.html
+Bibliotecas de terceiros: web/vendor (ver LICENCAS.md)
+Imagens (brasão e marca d'água): assets/
+
+Gerar os arquivos (precisa do Node.js):
+  node web/build.mjs rela       -> conferencia_digital.html
+  node web/build.mjs completa   -> conferencia_impressa.html
+Testes (só dados fictícios, em tests/fixtures):
+  node --test web/testes/municiamento.test.cjs
+Geradores dos PDFs de guia e documentação (Python + reportlab): docs/

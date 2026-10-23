@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- Nada sai deste computador: a página não pode se conectar a lugar nenhum. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>Conferência CIAGA - Digital </title>
+<script>
+/* Tema claro/escuro antes de pintar a tela, para não "piscar". */
+(function () {
+  var salvo = null;
+  try { salvo = localStorage.getItem("municiamento-tema"); } catch (e) { /* sem armazenamento */ }
+  var escuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-tema", salvo === "claro" || salvo === "escuro" ? salvo : (escuro ? "escuro" : "claro"));
+})();
+</script>
+<style>
+/*ESTILO*/
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<header class="faixa">
+  <div class="faixa-interna">
+    <div class="marca">
+      <span class="selo" aria-hidden="true"></span>
+      <span class="marca-texto">
+        <span class="marca-nome">Conferência CIAGA - Digital</span>
+        <span class="marca-sub">Centro de Instrução Almirante Graça Aranha</span>
+      </span>
+    </div>
+    <nav class="menu" aria-label="Ações">
+      <button type="button" class="link-faixa oculto" id="botao-nova">Nova planilha</button>
+      <button type="button" class="botao-tema" id="botao-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema claro/escuro">
+        <svg class="icone-sol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icone-lua" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="conteudo" class="pagina" tabindex="-1">
+  <p class="alerta erro oculto" id="erro" role="alert"></p>
+
+  <!-- ===================== versão hospedada: a planilha da semana carrega sozinha ===================== -->
+  <section id="tela-carregando" class="cartao carregando oculto" role="status" aria-live="polite">
+    <p>Carregando a planilha da semana…</p>
+  </section>
+  <section id="sem-semana" class="cartao sem-semana oculto" aria-labelledby="t-sem-semana">
+    <h2 id="t-sem-semana">Ainda não há planilha da semana</h2>
+    <p class="dica">Quando um administrador publicar a planilha, ela aparece aqui sozinha.</p>
+    <button type="button" class="botao secundario" id="botao-tentar">Verificar de novo</button>
+  </section>
+
+  <!-- ===================== tela 1: escolher a planilha ===================== -->
+  <section id="tela-envio">
+    <div class="titulo-pagina">
+      <h1>Rela do municiamento</h1>
+      <p>Escolha a planilha da semana, monte as listas e marque quem veio.</p>
+    </div>
+    <div class="layout-envio">
+      <form class="cartao formulario" id="form-envio" novalidate>
+        <div class="envio" id="area-envio">
+          <input id="planilha" type="file" multiple aria-label="Planilha do municiamento"
+                 accept=".xlsx,.csv,.pdf,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><path d="M12 16V4m0 0l-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="envio-titulo">Arraste a planilha aqui ou clique para escolher</span>
+          <span class="envio-legenda">XLSX (recomendado), CSV ou PDF · até 10 MB</span>
+          <span class="envio-arquivos" id="arquivos-escolhidos" aria-live="polite"></span>
+        </div>
+
+        <div class="campo">
+          <div class="rotulo-com-dica">
+            <label for="sexta">Sexta-feira da planilha <span class="opcional">(opcional)</span></label>
+            <span class="dica-info">
+              <button type="button" class="botao-info" aria-label="Por que a data?" aria-describedby="dica-data">i</button>
+              <span class="balao" role="tooltip" id="dica-data">A planilha só traz o nome do dia (Sexta, Segunda…). Com a data da sexta da primeira coluna, a rela sai com a data do dia escolhido. No XLSX ela é lida sozinha; sem data, a rela sai só com o nome do dia.</span>
+            </span>
+          </div>
+          <input id="sexta" type="date">
+        </div>
+
+        <button class="botao principal grande largo" type="submit" id="botao-ler">Ler planilha</button>
+      </form>
+
+      <aside class="cartao lateral" aria-labelledby="t-como">
+        <h2 id="t-como">Como funciona</h2>
+        <ol class="passos">
+          <li><strong>Escolha a planilha</strong> da semana.
+            <span class="obs">Obs.: no CSV, escolha vários arquivos de uma vez (um por turma).</span></li>
+          <li><strong>Monte a lista:</strong> dia, refeição e ano.</li>
+          <li><strong>Marque quem veio.</strong> Pesquise pelo nome de guerra ou pelo código, ou baixe a lista para marcar no papel.</li>
+          <li><strong>Finalize a marcação:</strong> a rela traz só quem você marcou, separado pela planilha em municiados e não municiados. Escolha a ordem (alfabética ou antiguidade), se agrupa por turma e se separa em duas listas. Copie ou baixe em PDF ou DOCX.</li>
+        </ol>
+        <h3 class="subtitulo">Bom saber</h3>
+        <ul class="regras">
+          <li>Cada lista traz <strong>todos os alunos do ano</strong>, em ordem alfabética, com a turma ao lado.</li>
+          <li>As listas <strong>começam desmarcadas</strong>. Na rela entra só quem você marcou: se a planilha tem a marcação daquele dia e refeição, vai para <strong>municiados</strong>; se não tem, para <strong>não municiados</strong>.</li>
+          <li>Dá para abrir <strong>várias listas</strong>, cada uma numa aba.</li>
+        </ul>
+        <p class="dica privacidade">Tudo acontece neste computador, mesmo sem internet: a planilha não é enviada para lugar nenhum e nada fica guardado. Ao fechar a página, as marcações se perdem.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===================== tela 2: listas e rela ===================== -->
+  <section id="tela-listas" class="oculto">
+    <div class="titulo-pagina">
+      <h1>Listas</h1>
+      <p class="resumo"><span class="selo-formato" id="formato"></span> <span id="resumo"></span></p>
+      <p class="dica oculto" id="info-semana"></p>
+    </div>
+
+    <div class="layout-resultado">
+      <aside class="coluna-lateral">
+        <section class="cartao" aria-labelledby="t-nova">
+          <h2 id="t-nova">Nova lista</h2>
+          <form class="formulario" id="form-lista" novalidate>
+            <label class="campo">Dia <select id="cfg-dia"></select></label>
+            <label class="campo">Refeição <select id="cfg-refeicao"></select></label>
+            <label class="campo">Ano <select id="cfg-ano"></select></label>
+            <button class="botao principal largo" type="submit">Criar lista</button>
+          </form>
+        </section>
+
+        <section class="cartao" aria-labelledby="t-data">
+          <h2 id="t-data">Data</h2>
+          <p class="dica oculto" id="data-lida">Data lida da planilha. Confira.</p>
+          <p class="dica oculto" id="sem-data">Sem a data, a rela sai só com o nome do dia.</p>
+          <form class="formulario" id="form-data" novalidate>
+            <div class="campo">
+              <label for="sexta-ajuste">Sexta-feira (primeira coluna)</label>
+              <input id="sexta-ajuste" type="date">
+            </div>
+            <button class="botao secundario largo" type="submit">Atualizar data</button>
+          </form>
+        </section>
+
+        <section class="cartao oculto" id="cartao-publicar" aria-labelledby="t-publicar">
+          <h2 id="t-publicar">Publicar</h2>
+          <p class="dica">Esta planilha está só neste aparelho. Publique para os alunos verem ao abrir o app. Ela fica guardada cifrada.</p>
+          <button type="button" class="botao principal largo" id="botao-publicar">Publicar para os alunos</button>
+          <p class="dica" id="publicar-status" aria-live="polite"></p>
+        </section>
+
+        <section class="cartao oculto" id="cartao-todas" aria-labelledby="t-todas">
+          <h2 id="t-todas">Todas as listas</h2>
+          <button type="button" class="botao secundario largo" id="rela-todas">Rela de todas as listas</button>
+        </section>
+      </aside>
+
+      <div class="coluna-principal">
+        <p class="alerta aviso oculto" id="aviso-pdf">Planilha lida do PDF. Confira a contagem de alunos por turma; sempre que puder, use o XLSX, que é a fonte mais confiável.</p>
+        <details class="cartao conferencia" id="conferencia">
+          <summary><span class="conf-titulo">Conferência da planilha</span> <span class="conf-resumo" id="conf-resumo"></span></summary>
+          <div class="conf-corpo">
+            <section aria-labelledby="t-turmas">
+              <h3 id="t-turmas">Alunos lidos por turma</h3>
+              <ul class="grade-turmas" id="lista-turmas"></ul>
+            </section>
+            <section id="avisos-secao" aria-labelledby="avisos-titulo">
+              <h3 id="avisos-titulo"></h3>
+              <ul class="lista-avisos" id="avisos-lista"></ul>
+            </section>
+          </div>
+        </details>
+
+        <p class="cartao vazio-listas" id="sem-listas">Escolha o dia, a refeição e o ano em <strong>Nova lista</strong> e clique em <strong>Criar lista</strong>.</p>
+        <div class="barra-rascunho oculto" id="barra-rascunho">
+          <span class="dica" id="rascunho-status" aria-live="polite"></span>
+          <button type="button" class="botao link" id="botao-limpar">Limpar marcações e dados</button>
+        </div>
+        <div class="abas oculto" id="abas" role="tablist" aria-label="Listas abertas"></div>
+        <section class="cartao painel oculto" id="painel" role="tabpanel"></section>
+
+        <section class="cartao rela oculto" id="rela" aria-labelledby="t-rela">
+          <div class="rela-topo">
+            <h2 id="t-rela">Rela de todas as listas</h2>
+            <div class="rela-acoes">
+              <button type="button" class="botao principal" id="rela-copiar">Copiar</button>
+              <details class="menu-baixar" id="rela-baixar">
+                <summary class="botao secundario">Baixar</summary>
+                <div class="menu-baixar-lista">
+                  <button type="button" class="menu-baixar-item" data-baixar="pdf">PDF</button>
+                  <button type="button" class="menu-baixar-item" data-baixar="docx">DOCX</button>
+                </div>
+              </details>
+              <button type="button" class="botao secundario" id="rela-fechar">Fechar</button>
+            </div>
+          </div>
+          <p class="dica" id="rela-status" aria-live="polite"></p>
+          <div class="folhas" id="rela-folhas"></div>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!--BIBLIOTECAS-->
+<!--CODIGO-->
+</body>
+</html>

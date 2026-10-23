@@ -1,0 +1,192 @@
+<!-- Abertura: navio mercante navegando. Segue o tema do site (data-tema no <html>, definido antes
+     desta parte): noite no escuro, dia no claro. ~3 s; clique ou tecla pula; some sozinha.
+     Quem pediu ao sistema para reduzir animações não vê a abertura. -->
+<style>
+#abertura {
+  --ceu-1: #050C18; --ceu-2: #10294B; --mar-1: #12305A; --mar-2: #06101E;
+  --onda-1: #17406F; --onda-2: #0F2C52; --onda-3: #0A2140; --espuma: rgba(214, 226, 242, .55);
+  --astro: #E6ECF5; --brilho: rgba(230, 236, 245, .18); --reflexo: #D9B45A;
+  --fumaca: #8C9BB3; --texto: #FFFFFF; --sub: #C9D4E6; --pular: #C9D4E6;
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; cursor: pointer; overflow: hidden;
+  background: linear-gradient(180deg, var(--ceu-1) 0%, var(--ceu-2) 100%);
+  animation: abertura-sai .6s ease-in 2.7s forwards;
+}
+:root[data-tema="claro"] #abertura {
+  --ceu-1: #7FB6E3; --ceu-2: #DDEEFA; --mar-1: #2F72AE; --mar-2: #0B3A66;
+  --onda-1: #4A8BC4; --onda-2: #2C68A3; --onda-3: #1C5287; --espuma: rgba(255, 255, 255, .9);
+  --astro: #F6C453; --brilho: rgba(246, 196, 83, .28); --reflexo: #FFFFFF;
+  --fumaca: #A9B4C2; --texto: #FFFFFF; --sub: #E6F0FA; --pular: #FFFFFF;
+}
+#abertura .cena { width: min(820px, 94vw); text-align: center; }
+#abertura svg { width: 100%; height: auto; display: block; overflow: visible; }
+#abertura .titulo, #abertura .sub, #abertura .filete { position: relative; }
+#abertura .titulo {
+  font: 700 clamp(1.8rem, 1.2rem + 2.6vw, 3rem)/1.1 "Times New Roman", "Liberation Serif", serif;
+  color: var(--texto); margin-top: .6rem; opacity: 0; text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+  animation: abertura-surge .7s ease-out 1.1s forwards;
+}
+#abertura .sub {
+  font: 500 clamp(.85rem, .8rem + .3vw, 1rem)/1.4 "Times New Roman", "Liberation Serif", Times, serif;
+  color: var(--sub); margin-top: .35rem; opacity: 0; text-shadow: 0 1px 8px rgba(0, 0, 0, .3);
+  animation: abertura-surge .7s ease-out 1.35s forwards;
+}
+#abertura .filete {
+  height: 3px; width: 0; margin: .9rem auto 0; background: #C8A24A; border-radius: 2px;
+  animation: abertura-filete .8s ease-out 1.5s forwards;
+}
+#abertura .abertura-pular {
+  position: absolute; right: 1.2rem; bottom: 1.2rem; font: 500 .9rem "Times New Roman", "Liberation Serif", Times, serif; color: var(--pular);
+  background: rgba(0, 0, 0, .15); border: 1px solid rgba(255, 255, 255, .45); border-radius: 999px; padding: .45rem 1rem; cursor: pointer;
+}
+#abertura .abertura-pular:hover, #abertura .abertura-pular:focus-visible { border-color: #C8A24A; color: #C8A24A; outline: none; }
+
+/* céu */
+#abertura .noite { display: inline; } #abertura .dia { display: none; }
+:root[data-tema="claro"] #abertura .noite { display: none; }
+:root[data-tema="claro"] #abertura .dia { display: inline; }
+#abertura .astro { fill: var(--astro); }
+#abertura .halo { fill: var(--brilho); animation: abertura-halo 3s ease-in-out infinite; transform-origin: 470px 52px; }
+#abertura .estrela { fill: #E6ECF5; animation: abertura-pisca 2.4s ease-in-out infinite; }
+#abertura .estrela:nth-child(2n) { animation-delay: .8s; }
+#abertura .estrela:nth-child(3n) { animation-delay: 1.5s; }
+#abertura .nuvem { fill: #FFFFFF; opacity: .85; animation: abertura-nuvem 9s linear infinite; }
+#abertura .nuvem.b { opacity: .6; animation-duration: 13s; }
+
+/* mar */
+#abertura .mar-fundo { fill: url(#abertura-mar); }
+#abertura .onda { animation: abertura-onda 3.2s linear infinite; }
+#abertura .onda.um { fill: var(--onda-1); animation-duration: 5s; }
+#abertura .onda.dois { fill: var(--onda-2); animation-duration: 3.4s; animation-direction: reverse; }
+#abertura .onda.tres { fill: var(--onda-3); animation-duration: 2.6s; }
+#abertura .crista { fill: none; stroke: var(--espuma); stroke-width: 1.6; stroke-linecap: round; }
+#abertura .reflexo rect { fill: var(--reflexo); opacity: 0; animation: abertura-cintila 1.6s ease-in-out infinite; }
+#abertura .reflexo rect:nth-child(2) { animation-delay: .4s; } #abertura .reflexo rect:nth-child(3) { animation-delay: .8s; }
+#abertura .reflexo rect:nth-child(4) { animation-delay: 1.2s; } #abertura .reflexo rect:nth-child(5) { animation-delay: .2s; }
+#abertura .esteira ellipse { fill: var(--espuma); animation: abertura-esteira 1.4s ease-out infinite; }
+#abertura .esteira ellipse:nth-child(2) { animation-delay: .45s; } #abertura .esteira ellipse:nth-child(3) { animation-delay: .9s; }
+#abertura .proa { fill: none; stroke: var(--espuma); stroke-width: 2; stroke-linecap: round; }
+
+/* navio */
+#abertura .navio { animation: abertura-navega 2.2s cubic-bezier(.22, .8, .3, 1) both; }
+#abertura .balanco { transform-origin: 320px 186px; animation: abertura-balanca 2.6s ease-in-out infinite; }
+#abertura .fumaca circle { fill: var(--fumaca); opacity: 0; animation: abertura-fumaca 1.8s ease-out infinite; }
+#abertura .fumaca circle:nth-child(2) { animation-delay: .6s; } #abertura .fumaca circle:nth-child(3) { animation-delay: 1.2s; }
+
+@keyframes abertura-navega { from { transform: translateX(-700px); } to { transform: translateX(0); } }
+@keyframes abertura-balanca { 0%, 100% { transform: rotate(-1deg) translateY(0); } 50% { transform: rotate(1deg) translateY(2.5px); } }
+@keyframes abertura-onda { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+@keyframes abertura-fumaca { 0% { opacity: .6; transform: translate(0, 0) scale(.6); } 100% { opacity: 0; transform: translate(-36px, -40px) scale(1.7); } }
+@keyframes abertura-esteira { 0% { opacity: .7; transform: translateX(0) scaleX(.6); } 100% { opacity: 0; transform: translateX(-60px) scaleX(1.4); } }
+@keyframes abertura-cintila { 0%, 100% { opacity: 0; } 50% { opacity: .75; } }
+@keyframes abertura-pisca { 0%, 100% { opacity: .25; } 50% { opacity: .95; } }
+@keyframes abertura-halo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes abertura-nuvem { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+@keyframes abertura-surge { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes abertura-filete { to { width: min(260px, 50vw); } }
+@keyframes abertura-sai { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { #abertura { display: none !important; } }
+@media print { #abertura { display: none !important; } }
+</style>
+<div id="abertura" role="presentation" aria-hidden="true">
+  <div class="cena">
+    <svg viewBox="0 0 640 270" aria-hidden="true">
+      <defs>
+        <linearGradient id="abertura-mar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color: var(--mar-1)"/><stop offset=".35" style="stop-color: var(--mar-2)"/>
+        </linearGradient>
+      </defs>
+      <!-- céu: noite -->
+      <g class="noite">
+        <circle class="estrela" cx="40" cy="30" r="1.3"/><circle class="estrela" cx="110" cy="14" r="1"/>
+        <circle class="estrela" cx="190" cy="42" r="1.2"/><circle class="estrela" cx="260" cy="20" r="1.4"/>
+        <circle class="estrela" cx="330" cy="48" r="1"/><circle class="estrela" cx="400" cy="12" r="1.2"/>
+        <circle class="estrela" cx="560" cy="36" r="1.3"/><circle class="estrela" cx="610" cy="16" r="1"/>
+        <circle class="halo" cx="470" cy="52" r="34"/>
+        <circle class="astro" cx="470" cy="52" r="17"/>
+        <circle cx="478" cy="47" r="15" style="fill: var(--ceu-1)" opacity=".55"/>
+      </g>
+      <!-- céu: dia -->
+      <g class="dia">
+        <circle class="halo" cx="470" cy="52" r="38"/>
+        <circle class="astro" cx="470" cy="52" r="20"/>
+        <g class="nuvem"><ellipse cx="150" cy="44" rx="34" ry="11"/><ellipse cx="172" cy="36" rx="22" ry="12"/><ellipse cx="128" cy="40" rx="16" ry="9"/>
+          <ellipse cx="390" cy="28" rx="26" ry="8"/><ellipse cx="406" cy="22" rx="16" ry="9"/></g>
+        <g class="nuvem b"><ellipse cx="280" cy="64" rx="30" ry="9"/><ellipse cx="298" cy="57" rx="18" ry="10"/>
+          <ellipse cx="620" cy="70" rx="28" ry="8"/><ellipse cx="636" cy="63" rx="16" ry="9"/></g>
+      </g>
+
+      <!-- mar ao fundo, com o reflexo do astro -->
+      <rect class="mar-fundo" x="-200" y="168" width="1040" height="900"/>
+      <g class="reflexo">
+        <rect x="452" y="174" width="36" height="2" rx="1"/><rect x="444" y="182" width="52" height="2" rx="1"/>
+        <rect x="456" y="190" width="28" height="2" rx="1"/><rect x="438" y="198" width="64" height="2" rx="1"/>
+        <rect x="450" y="207" width="40" height="2" rx="1"/>
+      </g>
+      <g transform="translate(0 166)">
+        <path class="onda um" d="M-120 8 Q-90 0 -60 8 T0 8 T60 8 T120 8 T180 8 T240 8 T300 8 T360 8 T420 8 T480 8 T540 8 T600 8 T660 8 T720 8 T780 8 V40 H-120 Z"/>
+      </g>
+
+      <g class="navio"><g class="balanco">
+        <g class="fumaca"><circle cx="122" cy="74" r="6"/><circle cx="122" cy="74" r="6"/><circle cx="122" cy="74" r="6"/></g>
+        <!-- chaminé e ponte de comando -->
+        <rect x="113" y="78" width="18" height="22" fill="#C9D4E6"/><rect x="113" y="84" width="18" height="5" fill="#C8A24A"/>
+        <rect x="90" y="100" width="58" height="68" rx="2" fill="#E6ECF5"/>
+        <rect x="86" y="100" width="66" height="6" fill="#B9C6D8"/>
+        <g fill="#17345F"><rect x="96" y="112" width="9" height="7"/><rect x="109" y="112" width="9" height="7"/><rect x="122" y="112" width="9" height="7"/><rect x="135" y="112" width="9" height="7"/>
+          <rect x="96" y="128" width="9" height="7"/><rect x="109" y="128" width="9" height="7"/><rect x="122" y="128" width="9" height="7"/><rect x="135" y="128" width="9" height="7"/></g>
+        <!-- contêineres -->
+        <g stroke="#0B1F3A" stroke-width="1">
+          <rect x="158" y="146" width="38" height="22" fill="#C8A24A"/><rect x="196" y="146" width="38" height="22" fill="#B3261E"/>
+          <rect x="234" y="146" width="38" height="22" fill="#4B7BA6"/><rect x="272" y="146" width="38" height="22" fill="#E6ECF5"/>
+          <rect x="310" y="146" width="38" height="22" fill="#C8A24A"/><rect x="348" y="146" width="38" height="22" fill="#17345F"/>
+          <rect x="386" y="146" width="38" height="22" fill="#B3261E"/><rect x="424" y="146" width="38" height="22" fill="#4B7BA6"/>
+          <rect x="177" y="124" width="38" height="22" fill="#4B7BA6"/><rect x="215" y="124" width="38" height="22" fill="#E6ECF5"/>
+          <rect x="253" y="124" width="38" height="22" fill="#C8A24A"/><rect x="291" y="124" width="38" height="22" fill="#B3261E"/>
+          <rect x="329" y="124" width="38" height="22" fill="#4B7BA6"/><rect x="367" y="124" width="38" height="22" fill="#C8A24A"/>
+          <rect x="405" y="124" width="38" height="22" fill="#E6ECF5"/>
+          <rect x="234" y="102" width="38" height="22" fill="#B3261E"/><rect x="272" y="102" width="38" height="22" fill="#4B7BA6"/>
+          <rect x="310" y="102" width="38" height="22" fill="#E6ECF5"/><rect x="348" y="102" width="38" height="22" fill="#C8A24A"/>
+        </g>
+        <!-- casco: azul-marinho, faixa dourada, obras vivas em vermelho (parte fica sob a água) -->
+        <path d="M62 168 H522 L560 168 L532 210 H94 Z" fill="#0B1F3A" stroke="#C9D4E6" stroke-width="1"/>
+        <path d="M66 176 H552" stroke="#C8A24A" stroke-width="3"/>
+        <path d="M80 196 H544 L532 210 H94 Z" fill="#9B2C2C"/>
+        <text x="472" y="191" font-family="Times New Roman, serif" font-size="11" font-weight="700" fill="#E6ECF5" letter-spacing="1">CIAGA</text>
+        <path d="M522 168 V136" stroke="#C9D4E6" stroke-width="2"/><circle cx="522" cy="134" r="2.4" fill="#C8A24A"/>
+        <!-- esteira de espuma na popa e onda de proa -->
+        <g class="esteira"><ellipse cx="86" cy="202" rx="20" ry="3"/><ellipse cx="86" cy="202" rx="20" ry="3"/><ellipse cx="86" cy="202" rx="20" ry="3"/></g>
+        <path class="proa" d="M540 201 Q556 195 568 202"/>
+      </g></g>
+
+      <!-- ondas da frente: cobrem o pé do casco -->
+      <g transform="translate(0 196)">
+        <path class="onda dois" d="M-120 8 Q-90 -2 -60 8 T0 8 T60 8 T120 8 T180 8 T240 8 T300 8 T360 8 T420 8 T480 8 T540 8 T600 8 T660 8 T720 8 T780 8 V900 H-120 Z"/>
+        <path class="onda dois crista" d="M-120 8 Q-90 -2 -60 8 T0 8 T60 8 T120 8 T180 8 T240 8 T300 8 T360 8 T420 8 T480 8 T540 8 T600 8 T660 8 T720 8 T780 8"/>
+      </g>
+      <g transform="translate(0 216)">
+        <path class="onda tres" d="M-120 10 Q-90 0 -60 10 T0 10 T60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T420 10 T480 10 T540 10 T600 10 T660 10 T720 10 T780 10 V900 H-120 Z"/>
+        <path class="onda tres crista" d="M-120 10 Q-90 0 -60 10 T0 10 T60 10 T120 10 T180 10 T240 10 T300 10 T360 10 T420 10 T480 10 T540 10 T600 10 T660 10 T720 10 T780 10" opacity=".7"/>
+      </g>
+    </svg>
+    <div class="titulo">{{TITULO_ABERTURA}}</div>
+    <div class="sub">Centro de Instrução Almirante Graça Aranha</div>
+    <div class="filete"></div>
+  </div>
+  <button type="button" class="abertura-pular" id="pular-abertura" tabindex="-1">Pular</button>
+</div>
+<script>
+(function () {
+  var a = document.getElementById("abertura");
+  if (!a) return;
+  // só uma vez por sessão (aba aberta): nas próximas telas ela nem aparece
+  try {
+    if (sessionStorage.getItem("abertura-vista")) { a.parentNode.removeChild(a); return; }
+    sessionStorage.setItem("abertura-vista", "1");
+  } catch (e) {}
+  function fechar() { if (a.parentNode) a.parentNode.removeChild(a); document.removeEventListener("keydown", fechar); }
+  a.addEventListener("click", fechar);
+  document.addEventListener("keydown", fechar);
+  a.addEventListener("animationend", function (e) { if (e.animationName === "abertura-sai") fechar(); });
+  setTimeout(fechar, 4000); // garantia: nunca prende a tela
+})();
+</script>

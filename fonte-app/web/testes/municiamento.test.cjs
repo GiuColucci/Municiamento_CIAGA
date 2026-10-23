@@ -1,0 +1,473 @@
+/* Testes da versão HTML (node --test web/testes). Só dados fictícios.
+   O resultado esperado vem da versão Python já testada (tests/gerar_fixtures.py). */
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const path = require("path");
+const { M, RAIZ, fixture } = require("./ambiente.cjs");
+
+const ESPERADO = JSON.parse(fs.readFileSync(path.join(RAIZ, "tests", "fixtures", "esperado.json"), "utf-8"));
+const TURMAS = ["B12.1", "B12.2", "M24.1", "N24.1", "M36.1", "N36.1"];
+const SEXTA = "2026-10-23";
+
+async function ler(arquivos) {
+  const leitura = await M.carregarGrades(arquivos.map(([nome, bytes]) => ({ nome, bytes })));
+  return { leitura, res: M.parseGrade(leitura.grades) };
+}
+
+function resumo(res) {
+  return {
+    alunos: res.alunos.map((a) => [a.turma, a.codigo, a.nome, Object.keys(a.marcas).filter((k) => a.marcas[k]).sort()]),
+    turmas: res.turmas.map((t) => [t.codigo, t.alunos]),
+    avisos: res.avisos.map((a) => [a.texto, a.grave]),
+    listas: M.montarListas(res.alunos, SEXTA).map((l) => [l.dia, l.refeicao, l.grupo, l.alunos.map((a) => a[2])]),
+  };
+}
+
+// Python ordena as marcações por ponto de código; aqui também
+function ordenarMarcas(r) {
+  r.alunos.forEach((a) => a[3].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0)));
+  return r;
+}
+
+test("XLSX fictício: igual à versão Python (alunos, avisos, listas e data)", async () => {
+  const { leitura, res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const { sexta, ...esperado } = ESPERADO.xlsx;
+  assert.equal(leitura.formato, "XLSX");
+  assert.equal(leitura.sextaSugerida, sexta);
+  assert.deepEqual(ordenarMarcas(resumo(res)), ordenarMarcas(esperado));
+});
+
+test("vários CSVs formam o mesmo resultado que o XLSX", async () => {
+  const csvs = TURMAS.map((t) => [t + ".csv", fixture(t + ".csv")]);
+  const a = resumo((await ler(csvs)).res);
+  const b = resumo((await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]])).res);
+  assert.deepEqual(a, b);
+});
+
+test("CSV com os problemas reais: mesmos avisos, turmas e listas que o Python", async () => {
+  const { res } = await ler([["problematico.csv", fixture("problematico.csv")]]);
+  assert.deepEqual(ordenarMarcas(resumo(res)), ordenarMarcas(ESPERADO.problematico));
+});
+
+test("regra padrão: 105 listas, dias úteis como antes e sábado/domingo com os municiados", async () => {
+  M.REGRA = "padrao";
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const listas = M.montarListas(res.alunos, SEXTA);
+  assert.equal(listas.length, 105);
+  const ordem = [];
+  for (const d of ["Sexta", "Sábado", "Domingo", "Segunda", "Terça", "Quarta", "Quinta"])
+    for (const r of ["Café", "Almoço", "Janta"])
+      for (const g of ["B1", "M2", "N2", "M3", "N3"]) ordem.push([d, r, g].join());
+  assert.deepEqual(listas.map((l) => [l.dia, l.refeicao, l.grupo].join()), ordem);
+  const porChave = new Map(res.alunos.map((a) => [a.turma + a.codigo, a]));
+  for (const l of listas) {
+    assert.equal(l.municiados, l.refeicao === "Café" || l.dia === "Sábado" || l.dia === "Domingo");
+    for (const [, turma, cod] of l.alunos) assert.equal(porChave.get(turma + cod).marcas[l.dia + "|" + l.refeicao], l.municiados);
+  }
+  assert.deepEqual(M.datasDaSemana(SEXTA).Quinta, "2026-10-29");
+  assert.equal(listas[0].refeicaoRotulo + " / " + listas[0].grupoRotulo, "Café da manhã / 1° Ano – Básico");
+});
+
+test("regra padrão: filtro de situação separa municiados e NÃO municiados", async () => {
+  M.REGRA = "padrao";
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const listas = M.montarListas(res.alunos, SEXTA);
+  const mun = M.filtrar(listas, { situacao: "municiados" }), nao = M.filtrar(listas, { situacao: "nao" });
+  assert.equal(mun.length, 55); // café dos 5 dias úteis + as 3 refeições de sábado e domingo
+  assert.equal(nao.length, 50); // almoço e janta dos 5 dias úteis
+  assert.ok(mun.every((l) => l.municiados) && nao.every((l) => !l.municiados));
+  assert.equal(M.filtrar(listas, { situacao: "nao", dia: "Sábado" }).length, 0);
+});
+
+test("ordem alfabética sem acento, empate pelo código", () => {
+  const marcas = { "Sexta|Café": true };
+  const alunos = [["ARAUJO", "B1003"], ["ÂNGELO", "B1002"], ["alves", "B1009"], ["Bruno", "B1020"], ["Bruno", "B1010"]]
+    .map(([nome, codigo]) => ({ nome, codigo, turma: "B12.1", marcas }));
+  const l = M.filtrar(M.montarListas(alunos, SEXTA), { dia: "Sexta", refeicao: "Café" })[0];
+  assert.deepEqual(l.alunos.map((a) => a[2]), ["B1009", "B1002", "B1003", "B1010", "B1020"]);
+});
+
+test("arquivos recusados com mensagem clara", async () => {
+  const zipCom = async (nomes) => {
+    const z = new JSZip();
+    nomes.forEach((n) => z.file(n, "<x/>"));
+    return z.generateAsync({ type: "uint8array" });
+  };
+  const casos = [
+    ["planilha.xlsm", await zipCom(["xl/workbook.xml"]), /macros/],
+    ["planilha.xlsx", await zipCom(["xl/workbook.xml", "xl/vbaProject.bin"]), /macros/],
+    ["doc.docx", await zipCom(["word/document.xml"]), /não é uma planilha/],
+    ["velha.xls", new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3]), /\.xls/],
+    ["lista.pdf", new TextEncoder().encode("%PDF-1.4 qualquer"), /Não consegui abrir esse PDF/],
+    ["texto.xlsx", new TextEncoder().encode("oi"), /extensão \.xlsx/],
+    ["vazio.csv", new Uint8Array(), /vazio/],
+    ["foto.png", new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 0]), /Formato não aceito/],
+    ["grande.csv", new Uint8Array(10 * 1024 * 1024 + 1), /10 MB/],
+  ];
+  for (const [nome, bytes, erro] of casos) {
+    await assert.rejects(M.carregarGrades([{ nome, bytes }]), (e) => e instanceof M.ArquivoInvalido && erro.test(e.message), nome);
+  }
+  await assert.rejects(M.carregarGrades([{ nome: "a.xlsx", bytes: fixture("ficticio.xlsx") }, { nome: "B12.1.csv", bytes: fixture("B12.1.csv") }]), /use CSV/);
+});
+
+test("CSV em ; , e tab, em UTF-8 e em Windows-1252", async () => {
+  const original = new TextDecoder().decode(fixture("B12.1.csv"));
+  const base = resumo((await ler([["B12.1.csv", fixture("B12.1.csv")]])).res);
+  for (const sep of [",", "\t"]) {
+    const txt = original.replace(/;/g, sep);
+    assert.deepEqual(resumo((await ler([["B12.1.csv", new TextEncoder().encode(txt)]])).res), base, sep);
+  }
+  const latin = Uint8Array.from(original.replace(/^﻿/, ""), (c) => c.charCodeAt(0) & 0xff);
+  assert.deepEqual(resumo((await ler([["B12.1.csv", latin]])).res), base);
+});
+
+test("paginação em colunas, com continuação", () => {
+  const alunos = Array.from({ length: 150 }, (_, i) => ["ALUNO " + i, "B12.1", "B1" + String(i).padStart(3, "0")]);
+  const l = new M.Lista(SEXTA, "Sexta", "Almoço", "B1", false, alunos, 150);
+  const p = M.paginar([l]);
+  assert.equal(p.length, 2); // 92 na primeira página + 58 na continuação
+  assert.deepEqual(p[0].colunas[0].map((i) => i[0]), Array.from({ length: 46 }, (_, i) => i + 1));
+  assert.equal(p[0].colunas[1][0][0], 47);
+  assert.equal(p[1].linhas, 29);
+  assert.deepEqual(p.flatMap((x) => x.colunas.flat().map((i) => i[0])), Array.from({ length: 150 }, (_, i) => i + 1));
+  const pequena = M.paginar([new M.Lista(SEXTA, "Sexta", "Café", "B1", true, alunos.slice(0, 33), 33)])[0];
+  assert.equal(pequena.linhas, 17);
+});
+
+test("nome longo cabe na célula", () => {
+  assert.deepEqual(M.ajustarRotulo("1. ALVES - B12.1"), ["1. ALVES - B12.1", 11]);
+  assert.ok(M.ajustarRotulo("120. FULANA DE TAL FONSECA DE ALBUQUERQUE CAVALCANTI - B12.1")[1] < 11);
+  const [t, tam] = M.ajustarRotulo("120. " + "NOME MUITO GRANDE ".repeat(6) + "- B12.1");
+  assert.equal(tam, 8.5);
+  assert.ok(t.endsWith("…"));
+});
+
+test("DOCX: estrutura, marca d'água atrás do texto, sem rodapé nem assinaturas", async () => {
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const listas = M.montarListas(res.alunos, SEXTA);
+  const z = await JSZip.loadAsync(await M.gerarDocx(listas));
+  const doc = await z.file("word/document.xml").async("string");
+  const cab = await z.file("word/header1.xml").async("string");
+  assert.match(cab, /behindDoc="1"/);
+  assert.ok(!z.file("word/footer1.xml"));
+  assert.ok(!z.file("word/media/brasao.png") && !/<wp:inline/.test(doc)); // sem brasão no topo
+  const quebras = (doc.match(/<w:pageBreakBefore\/>/g) || []).length;
+  assert.equal(quebras + 1, M.paginar(listas).length);
+  assert.equal((doc.match(/>Municiamento</g) || []).length, 105); // o título de cada lista
+  assert.ok(!/Marinha do Brasil|Escola de Formação|Centro de Instrução/.test(doc));
+  assert.ok((doc.match(/<w:tbl>/g) || []).length > 0);
+  assert.ok(!/assinatura|comandante|gerado em/i.test(doc));
+  assert.match(doc, /<w:b\/><w:sz w:val="24"\/><w:u w:val="single"\/><\/w:rPr><w:t xml:space="preserve">NÃO</);
+  assert.match(doc, /A6A6A6/);
+});
+
+test("PDF: mesmas páginas do DOCX, marca d'água em todas", async () => {
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const listas = M.montarListas(res.alunos, SEXTA);
+  const pdf = Buffer.from(M.gerarPdf(listas)).toString("latin1");
+  const paginas = (pdf.match(/\/Type \/Page[^s]/g) || []).length;
+  assert.equal(paginas, M.paginar(listas).length);
+  // só a marca d'água (sem brasão no topo): entra uma vez e é reaproveitada em todas as páginas
+  assert.equal((pdf.match(/\/Subtype \/Image/g) || []).length, 1);
+});
+
+test("nome do arquivo", () => {
+  assert.equal(M.nomeArquivo(SEXTA, "docx"), "municiamento_2026-10-23.docx");
+  assert.equal(M.nomeArquivo(SEXTA, "pdf", { dia: "Terça", refeicao: "Almoço", grupo: "N2" }), "municiamento_2026-10-23_terca_almoco_n2.pdf");
+  assert.equal(M.nomeArquivo(SEXTA, "pdf", { dia: "Sábado", situacao: "nao" }), "municiamento_2026-10-23_sabado_nao-municiados.pdf");
+});
+
+test("data da sexta pelo texto do resumo", () => {
+  assert.equal(M.sextaDoTexto("QUINTA (22/10) SEXTA (23/10)", 2026), "2026-10-23");
+  assert.equal(M.sextaDoTexto("SEXTA (24/10)", 2026), null);
+  assert.equal(M.diaDaSemana("2026-10-23"), 4);
+});
+
+test("PDF fictício: mesmos alunos, marcações e turmas que o XLSX", async () => {
+  const { leitura, res } = await ler([["ficticio.pdf", fixture("ficticio.pdf")]]);
+  assert.equal(leitura.formato, "PDF");
+  const { sexta, avisos, ...esperado } = ESPERADO.xlsx;
+  const r = ordenarMarcas(resumo(res));
+  delete r.avisos;
+  assert.deepEqual(r, ordenarMarcas(esperado));
+  assert.deepEqual(res.avisos, []);
+});
+
+test("PDF: só a tabela da turma vira grade; uma página sem tabela não", async () => {
+  const doc = new jspdf.jsPDF({ unit: "pt" });
+  doc.text("SEXTA SÁBADO DOMINGO SEGUNDA", 40, 60);
+  doc.text("CAFÉ 10 20 30", 40, 80);
+  const { leitura, res } = await ler([["resumo.pdf", new Uint8Array(doc.output("arraybuffer"))]]);
+  assert.equal(leitura.grades.length, 0);
+  assert.equal(res.turmas.length, 0);
+});
+
+test("regra completa: municiados e NÃO municiados em todo dia e refeição, com a ceia", async () => {
+  M.REGRA = "completa";
+  try {
+    const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+    const listas = M.montarListas(res.alunos, SEXTA);
+    assert.equal(listas.length, 280); // 7 dias x 4 refeições x 5 grupos x 2 situações
+    assert.deepEqual([...new Set(listas.map((l) => l.refeicao))], ["Café", "Almoço", "Janta", "Ceia"]);
+    // cada par (municiados, NÃO municiados) cobre o grupo inteiro, sem repetir ninguém
+    const porChave = new Map(res.alunos.map((a) => [a.turma + a.codigo, a]));
+    for (let i = 0; i < listas.length; i += 2) {
+      const [a, b] = [listas[i], listas[i + 1]];
+      assert.equal(a.municiados, true); assert.equal(b.municiados, false);
+      assert.deepEqual([a.dia, a.refeicao, a.grupo], [b.dia, b.refeicao, b.grupo]);
+      assert.equal(a.alunos.length + b.alunos.length, a.totalGrupo);
+      const codigos = new Set(a.alunos.concat(b.alunos).map((x) => x[1] + x[2]));
+      assert.equal(codigos.size, a.totalGrupo);
+      for (const [, t, c] of a.alunos) assert.equal(porChave.get(t + c).marcas[a.dia + "|" + a.refeicao], true);
+    }
+    const ceia = M.filtrar(listas, { dia: "Terça", refeicao: "Ceia" });
+    assert.equal(ceia.length, 10);
+    assert.equal(ceia[0].refeicaoRotulo, "Ceia");
+    assert.equal(M.filtrar(listas, { situacao: "municiados" }).length, 140);
+    assert.equal(M.filtrar(listas, { situacao: "nao", dia: "Domingo" }).length, 20);
+    // filtro com várias refeições e vários grupos ao mesmo tempo
+    const varios = M.filtrar(listas, { refeicao: ["Almoço", "Janta"], grupo: ["B1", "N3"] });
+    assert.equal(varios.length, 7 * 2 * 2 * 2);
+    assert.ok(varios.every((l) => ["Almoço", "Janta"].includes(l.refeicao) && ["B1", "N3"].includes(l.grupo)));
+    assert.equal(M.filtrar(listas, { refeicao: [] }).length, 0);
+    assert.equal(M.nomeArquivo(SEXTA, "pdf", { refeicao: ["Almoço", "Janta"], grupo: ["B1", "N3"] }),
+      "municiamento_2026-10-23_almoco-janta_b1-n3.pdf");
+    assert.equal(M.montarListas(res.alunos, SEXTA, ["Sábado"]).length, 40);
+    // os totais da ceia na planilha também são conferidos (o XLSX fictício bate com eles)
+    assert.deepEqual(M.parseGrade((await M.carregarGrades([{ nome: "f.xlsx", bytes: fixture("ficticio.xlsx") }])).grades).avisos, []);
+  } finally {
+    M.REGRA = "padrao";
+  }
+  assert.ok(!M.REFEICOES.includes("Ceia")); // a versão padrão continua sem a ceia
+});
+
+test("documentos: cabeçalho só com o brasão e o título Municiamento, também no PDF", async () => {
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const listas = M.filtrar(M.montarListas(res.alunos, SEXTA), { dia: "Sábado", refeicao: "Almoço" });
+  assert.ok(listas.every((l) => l.municiados && l.diaExtenso === "Sábado"));
+  const pdf = M.gerarPdf(listas);
+  const lib = globalThis.pdfjsLib;
+  const doc = await lib.getDocument({ data: pdf, isEvalSupported: false }).promise;
+  const texto = (await (await doc.getPage(1)).getTextContent()).items.map((i) => i.str).join(" ");
+  assert.match(texto, /Municiamento/);
+  assert.match(texto, /Dia 24\/10\/2026 \(Sábado\)/);
+  assert.ok(!/Marinha do Brasil|Escola de Formação/.test(texto));
+  await doc.destroy();
+});
+
+test("rela: lista do ano com todos os cursos e, na rela, só os marcados, separados pela planilha", async () => {
+  M.REGRA = "rela";
+  try {
+    const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+    // a planilha fictícia bate com os totais (a conferência também vale na rela)
+    assert.ok(!res.avisos.some((a) => /contei/.test(a.texto)));
+    assert.deepEqual(M.anosPresentes(res.alunos), ["1", "2", "3"]);
+    const terceiro = M.alunosDoAno(res.alunos, "3");
+    assert.equal(terceiro.length, res.alunos.filter((a) => a.turma.charAt(1) === "3").length);
+    assert.ok(new Set(terceiro.map((a) => a.turma.charAt(0))).size > 1); // Máquinas e Náutica juntos
+    const chaves = terceiro.map((a) => M.chaveAlfabetica(a.nome));
+    assert.deepEqual(chaves, chaves.slice().sort(M.comparar));
+
+    const cfg = { dia: "Sexta", refeicao: "Janta", ano: "3", alunos: terceiro };
+    // marca 6 alunos (em ordem invertida): a rela traz só eles, separados pela marcação da planilha na Sexta/Janta
+    const vieram = terceiro.slice(0, 6);
+    const marcados = new Set(vieram.slice().reverse().map(M.chaveAluno));
+    const sim = vieram.filter((a) => a.marcas["Sexta|Janta"]), nao = vieram.filter((a) => !a.marcas["Sexta|Janta"]);
+    assert.ok(sim.length && nao.length); // a planilha fictícia tem dos dois
+    const [folha] = M.relaEstruturada(cfg, marcados, SEXTA);
+    assert.deepEqual(folha.secoes[0].grupos[0].alunos, sim); // em ordem alfabética, não na ordem em que foi marcado
+    assert.deepEqual(folha.secoes[1].grupos[0].alunos, nao);
+    const texto = M.textoRela(cfg, marcados, SEXTA);
+    assert.match(texto, /^Conferência – Sexta-feira, 23\/10\/2026 · Janta · 3° Ano\n/);
+    assert.ok(texto.includes("MUNICIADOS (" + sim.length + ")\n" + sim.map(M.linhaRela).join("\n")));
+    assert.ok(texto.includes("NÃO MUNICIADOS (" + nao.length + ")"));
+    assert.ok(!texto.includes(M.linhaRela(terceiro[6]))); // quem não foi marcado não aparece
+    assert.equal(M.linhaRela(terceiro[0]), terceiro[0].codigo + " – " + terceiro[0].nome + " – " + terceiro[0].turma);
+    // sem data, só o nome do dia; sem marcações, "(nenhum)"
+    assert.match(M.textoRela({ dia: "Domingo", refeicao: "Café", ano: "1", alunos: [] }, new Set(), null),
+      /^Conferência – Domingo · Café da manhã · 1° Ano\n\nMUNICIADOS \(0\)\n\(nenhum\)/);
+  } finally {
+    M.REGRA = "padrao";
+  }
+});
+
+test("rela: antiguidade pelo código CXNNN, agrupamento por turma e lista separada em duas", () => {
+  // municiado = a planilha tem a marcação de Sexta/Janta
+  const a = (nome, codigo, turma, municiado) => ({ nome, codigo, turma, marcas: { "Sexta|Janta": !!municiado } });
+  const alunos = [a("BRUNO", "N2200", "N24.1"), a("ALVES", "M3221", "M36.1", true), a("CARLA", "N3005", "N36.1"),
+    a("DIEGO", "M3005", "M36.1", true), a("EVA", "", "N36.1"), a("FABIO", "B1001", "B12.1"), a("GIL", "M3001", "M36.1", true)];
+  // X maior primeiro (3 > 2 > 1); com o mesmo X, NNN crescente; o curso (C) não conta; empate pelo nome; sem código no fim
+  assert.deepEqual(M.ordenarAlunos(alunos, "antiguidade").map((x) => x.nome), ["GIL", "CARLA", "DIEGO", "ALVES", "BRUNO", "FABIO", "EVA"]);
+  assert.deepEqual(M.ordenarAlunos(alunos, "alfabetica").map((x) => x.nome), ["ALVES", "BRUNO", "CARLA", "DIEGO", "EVA", "FABIO", "GIL"]);
+
+  const cfg = { dia: "Sexta", refeicao: "Janta", ano: "3", alunos: alunos.filter((x) => x.turma.charAt(1) === "3") };
+  // vieram ALVES, CARLA, DIEGO e EVA; GIL não foi marcado e não entra, mesmo municiado na planilha
+  const marcados = new Set(cfg.alunos.filter((x) => x.nome !== "GIL").map(M.chaveAluno));
+  const juntas = M.relaEstruturada(cfg, marcados, SEXTA, { criterio: "antiguidade", agrupar: "turma" });
+  assert.equal(juntas.length, 1);
+  assert.deepEqual(juntas[0].secoes.map((s) => [s.nome, s.total]), [["MUNICIADOS", 2], ["NÃO MUNICIADOS", 2]]);
+  assert.deepEqual(juntas[0].secoes[0].grupos.map((g) => [g.turma, g.alunos.map((x) => x.nome)]), [["M36.1", ["DIEGO", "ALVES"]]]);
+  assert.deepEqual(juntas[0].secoes[1].grupos.map((g) => [g.turma, g.alunos.map((x) => x.nome)]), [["N36.1", ["CARLA", "EVA"]]]);
+  assert.equal(M.textoFolha(juntas[0]), [
+    "Conferência – Sexta-feira, 23/10/2026 · Janta · 3° Ano", "",
+    "MUNICIADOS (2)", "Turma M36.1 (2)", "M3005 – DIEGO – M36.1", "M3221 – ALVES – M36.1", "",
+    "NÃO MUNICIADOS (2)", "Turma N36.1 (2)", "N3005 – CARLA – N36.1", "s/ código – EVA – N36.1"].join("\n"));
+
+  const separadas = M.relaEstruturada(cfg, marcados, SEXTA, { separar: true });
+  assert.deepEqual(separadas.map((f) => [f.situacao, f.secoes.length, f.secoes[0].total]),
+    [["MUNICIADOS", 1, 2], ["NÃO MUNICIADOS", 1, 2]]);
+  assert.match(M.textoFolha(separadas[1]), /^Conferência – Sexta-feira, 23\/10\/2026 · Janta · 3° Ano – NÃO MUNICIADOS\n\nNÃO MUNICIADOS \(2\)\nN3005 – CARLA/);
+  assert.equal(M.textoRela(cfg, marcados, SEXTA, { separar: true }), separadas.map(M.textoFolha).join("\n\n\n"));
+});
+
+test("rela: escolher as turmas que entram no agrupamento por turma", () => {
+  const a = (nome, codigo, turma, municiado) => ({ nome, codigo, turma, marcas: { "Sexta|Janta": !!municiado } });
+  const alunos = [a("ALVES", "M3221", "M36.1"), a("BRUNO", "N3100", "N36.1", true), a("CARLA", "M3300", "M36.2"), a("DIEGO", "N3005", "N36.1")];
+  const cfg = { dia: "Sexta", refeicao: "Janta", ano: "3", alunos };
+  assert.deepEqual(M.turmasDaLista(cfg), ["M36.1", "M36.2", "N36.1"]);
+  const marcados = new Set(alunos.map(M.chaveAluno)); // todos vieram; só BRUNO estava municiado
+  const folhas = M.relaEstruturada(cfg, marcados, SEXTA, { agrupar: "turma", turmas: ["N36.1", "M36.1"] });
+  assert.equal(folhas[0].titulo, "Sexta-feira, 23/10/2026 · Janta · 3° Ano · Turmas M36.1, N36.1");
+  assert.deepEqual(folhas[0].secoes.map((s) => [s.nome, s.total, s.grupos.map((g) => g.turma)]),
+    [["MUNICIADOS", 1, ["N36.1"]], ["NÃO MUNICIADOS", 2, ["M36.1", "N36.1"]]]); // M36.2 (CARLA) ficou de fora
+  const uma = M.relaEstruturada(cfg, marcados, SEXTA, { agrupar: "turma", turmas: ["M36.2"], separar: true });
+  assert.deepEqual(uma.map((f) => [f.titulo.endsWith("· Turma M36.2"), f.secoes[0].total]), [[true, 0], [true, 1]]);
+  // sem escolha (null), todas as turmas e o título sem a lista de turmas
+  assert.equal(M.relaEstruturada(cfg, marcados, SEXTA, { agrupar: "turma", turmas: null })[0].secoes[1].total, 3);
+});
+
+test("rela: DOCX e PDF com as mesmas páginas, folha nova por situação e turma longa continuando", async () => {
+  // 130 alunos fictícios em 2 turmas: a turma grande não cabe numa página
+  const alunos = [];
+  for (let i = 1; i <= 130; i++) {
+    const turma = i <= 110 ? "M36.1" : "N36.1";
+    alunos.push({ nome: "ALUNO " + String(i).padStart(3, "0"), codigo: turma.charAt(0) + (3000 + i), turma,
+      marcas: { "Sexta|Janta": i <= 4 } });
+  }
+  const cfg = { dia: "Sexta", refeicao: "Janta", ano: "3", alunos };
+  const marcados = new Set(alunos.map(M.chaveAluno)); // todos vieram; 4 municiados na planilha
+  const folhas = M.relaEstruturada(cfg, marcados, SEXTA, { agrupar: "turma", separar: true });
+  const paginas = M.paginarRela(folhas);
+  // MUNICIADOS: 1 página; NÃO MUNICIADOS (126): a turma M36.1 (106) passa da primeira página
+  const textos = paginas.map((p) => p.elementos.filter((e) => e.tipo === "texto").map((e) => e.texto));
+  assert.ok(paginas.length >= 3);
+  assert.equal(textos[0][0], "Conferência");
+  assert.equal(textos[1][2], "NÃO MUNICIADOS"); // a segunda folha começa em página nova
+  assert.ok(textos.slice(2).some((t) => t.includes("Turma M36.1 (continuação)") || t[0] === "Conferência (continuação)"));
+  const nomes = paginas.flatMap((p) => p.elementos.filter((e) => e.tipo === "tabela").flatMap((e) => e.colunas.flat()));
+  assert.equal(nomes.length, 130); // ninguém some nem repete
+  assert.equal(nomes[0], "1. M3001 – ALUNO 001 – M36.1");
+
+  const pdf = M.gerarRelaPdf(folhas, false);
+  const doc = await globalThis.pdfjsLib.getDocument({ data: pdf, isEvalSupported: false }).promise;
+  assert.equal(doc.numPages, paginas.length);
+  const texto1 = (await (await doc.getPage(1)).getTextContent()).items.map((i) => i.str).join(" ");
+  assert.match(texto1, /Sexta-feira, 23\/10\/2026 · Janta · 3° Ano/);
+  await doc.destroy();
+
+  const docx = await M.gerarRelaDocx(folhas, true);
+  const zip = await JSZip.loadAsync(docx);
+  const xml = await zip.file("word/document.xml").async("string");
+  assert.equal((xml.match(/<w:pageBreakBefore\/>/g) || []).length, paginas.length - 1);
+  assert.ok(xml.includes("ALUNO 130") && xml.includes("[   ]"));
+  assert.ok(zip.file("word/media/marca.png")); // brasão de fundo
+  assert.match(xml, /<\/w:tbl><w:p>.*<\/w:p><w:sectPr>/); // termina com parágrafo depois da tabela
+});
+
+test("rela: mostrar todos, só municiados ou só NÃO municiados", () => {
+  const a = (nome, municiado) => ({ nome, codigo: "M30" + nome.length + "1", turma: "M36.1", marcas: { "Sexta|Janta": municiado } });
+  const alunos = [a("ALVES", true), a("BRUNO", false), a("CARLA", true)];
+  const cfg = { dia: "Sexta", refeicao: "Janta", ano: "3", alunos };
+  const marcados = new Set(alunos.map(M.chaveAluno));
+  assert.equal(M.relaEstruturada(cfg, marcados, SEXTA, { mostrar: "todos" })[0].secoes.length, 2);
+  const sim = M.relaEstruturada(cfg, marcados, SEXTA, { mostrar: "municiados", separar: true });
+  assert.deepEqual(sim.map((f) => [f.situacao, f.secoes[0].grupos[0].alunos.map((x) => x.nome)]), [["MUNICIADOS", ["ALVES", "CARLA"]]]);
+  const nao = M.relaEstruturada(cfg, marcados, SEXTA, { mostrar: "nao" });
+  assert.deepEqual(nao.map((f) => [f.situacao, f.secoes[0].total]), [["NÃO MUNICIADOS", 1]]);
+  assert.match(M.textoFolha(nao[0]), /– NÃO MUNICIADOS\n\nNÃO MUNICIADOS \(1\)\nM3051 – BRUNO – M36\.1$/);
+});
+
+// ---------------------------------------------------------------- versão hospedada
+
+test("planilha empacotada para publicar volta igual (alunos, marcas, turmas, avisos, data)", async () => {
+  const { leitura, res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const pacote = M.empacotarPlanilha(res, leitura.sextaSugerida, leitura.formato);
+  const volta = M.desempacotarPlanilha(JSON.parse(JSON.stringify(pacote)));
+  assert.equal(volta.formato, "XLSX");
+  assert.equal(volta.sexta, leitura.sextaSugerida);
+  assert.deepEqual(volta.res.alunos, res.alunos);
+  assert.deepEqual(volta.res.turmas.map((t) => [t.codigo, t.alunos]), res.turmas.map((t) => [t.codigo, t.alunos]));
+  assert.deepEqual(volta.res.avisos, res.avisos);
+  // as listas que saem dela são as mesmas
+  assert.deepEqual(M.montarListas(volta.res.alunos, SEXTA).map((l) => l.alunos.length),
+    M.montarListas(res.alunos, SEXTA).map((l) => l.alunos.length));
+  // pequeno: cabe folgado no servidor mesmo com centenas de alunos
+  assert.ok(JSON.stringify(pacote).length < 20000);
+  assert.throws(() => M.desempacotarPlanilha({ v: 9 }), /inválida/);
+});
+
+test("rascunho: guarda e restaura listas e marcações; só vale para a mesma planilha", async () => {
+  const { leitura, res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const ano = M.anosPresentes(res.alunos)[0];
+  const alunos = M.alunosDoAno(res.alunos, ano);
+  const marcados = new Set([M.chaveAluno(alunos[0]), M.chaveAluno(alunos[2])]);
+  const lista = { id: 3, dia: "Segunda", refeicao: "Janta", ano, alunos, marcados, finalizada: true, criterio: "antiguidade",
+    agrupar: "turma", separar: true, turmas: ["B12.1"], mostrar: "nao", turmasMarcacao: ["B12.2"], marcacaoPorTurma: true,
+    filtroMarcacao: "municiados" };
+  const origem = { res, sexta: SEXTA, planilhaId: "abc123", listas: [lista], ativa: 3 };
+  const rascunho = JSON.parse(JSON.stringify(M.empacotarRascunho(origem, 4)));
+
+  const novo = { res, sexta: null, planilhaId: "abc123", listas: [], ativa: null };
+  assert.equal(M.aplicarRascunho(novo, rascunho), 4);
+  assert.equal(novo.sexta, SEXTA);
+  assert.equal(novo.ativa, 3);
+  const l = novo.listas[0];
+  assert.deepEqual([...l.marcados].sort(), [...marcados].sort());
+  assert.equal(l.alunos.length, alunos.length);
+  assert.deepEqual([l.dia, l.refeicao, l.ano, l.finalizada, l.criterio, l.agrupar, l.separar, l.mostrar, l.marcacaoPorTurma, l.filtroMarcacao],
+    ["Segunda", "Janta", ano, true, "antiguidade", "turma", true, "nao", true, "municiados"]);
+  assert.deepEqual(l.turmas, ["B12.1"]);
+  assert.deepEqual(l.turmasMarcacao, ["B12.2"]);
+
+  // outra planilha publicada: o rascunho antigo é ignorado
+  const outra = { res, sexta: null, planilhaId: "zzz999", listas: [], ativa: null };
+  assert.equal(M.aplicarRascunho(outra, rascunho), null);
+  assert.equal(outra.listas.length, 0);
+
+  // marcação de quem não está mais na planilha e listas inválidas são descartadas, sem quebrar
+  rascunho.listas[0].marcados.push("X|Z0000|Fulano");
+  rascunho.listas.push({ id: 9, dia: "Domingo-inexistente", refeicao: "Café", ano, marcados: [] }, null);
+  const limpo = { res, sexta: null, planilhaId: "abc123", listas: [], ativa: null };
+  M.aplicarRascunho(limpo, rascunho);
+  assert.equal(limpo.listas.length, 1);
+  assert.ok(![...limpo.listas[0].marcados].includes("X|Z0000|Fulano"));
+});
+
+test("lista para marcar: o cabeçalho diz se traz todos, só municiados ou só NÃO municiados (tela, PDF e DOCX)", async () => {
+  const { res } = await ler([["ficticio.xlsx", fixture("ficticio.xlsx")]]);
+  const alunos = M.alunosDoAno(res.alunos, "1");
+  const casos = [["todos", "Lista para marcar · Todos os alunos", ""], ["municiados", "Lista para marcar · Municiados", "municiados"],
+    ["nao", "Lista para marcar · NÃO Municiados", "nao-municiados"], [undefined, "Lista para marcar · Todos os alunos", ""]];
+  for (const [filtro, esperado, sufixo] of casos) {
+    assert.equal(M.rotuloListaParaMarcar(filtro), esperado);
+    assert.equal(M.sufixoListaParaMarcar(filtro), sufixo);
+    const folhas = [{ titulo: "Sexta-feira, 23/10/2026 · Café da manhã · 1° Ano", situacao: M.rotuloListaParaMarcar(filtro),
+      secoes: [{ nome: null, total: alunos.length, grupos: [{ turma: null, alunos }] }] }];
+    // na primeira página, em negrito e centralizado, logo abaixo do título da lista
+    const topo = M.paginarRela(folhas)[0].elementos.filter((e) => e.tipo === "texto").slice(0, 3);
+    assert.deepEqual(topo.map((e) => e.texto), ["Conferência", folhas[0].titulo, esperado]);
+    assert.ok(topo[2].negrito && topo[2].alinh === "centro");
+    // no DOCX gerado (e o PDF usa as mesmas páginas)
+    const zip = await JSZip.loadAsync(await M.gerarRelaDocx(folhas, true));
+    const xml = await zip.file("word/document.xml").async("string");
+    assert.ok(xml.includes(esperado), "DOCX sem a linha: " + esperado);
+    assert.ok(M.gerarRelaPdf(folhas, true).length > 1000);
+  }
+});
+
+test("bibliotecas preguiçosas: sem etiquetas (Node e outros builds) resolvem na hora", async () => {
+  await M.garantirBibliotecas();
+  await M.aberturaTerminou();
+  assert.equal(M.carregarBibliotecasEmSegundoPlano(), undefined);
+});

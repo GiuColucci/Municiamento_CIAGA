@@ -1,0 +1,12 @@
+{
+  "name": "conferencia-ciaga",
+  "private": true,
+  "version": "1.0.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "cifrar": "node scripts/cifrar.mjs",
+    "senha": "node scripts/hash-senha.mjs",
+    "lista": "node scripts/carregar-lista.mjs",
+    "teste": "node --test scripts/teste.mjs"
+  }
+}

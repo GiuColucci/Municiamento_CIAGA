@@ -1,0 +1,18 @@
+.env*
+node_modules
+.vercel
+conferencia_digital.html
+*.xlsx
+*.csv
+*.pdf
+*.docx
+autorizados*.txt
+
+.vercel
+
+# dados reais e segredos: nunca versionar
+AUTORIZADOS*
+lista-acessos*.json
+dados/app.enc
+*.db
+*.log

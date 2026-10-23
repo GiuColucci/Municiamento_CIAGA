@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-title" content="Conferência CIAGA">
+<title>Conferência CIAGA · Entrar</title>
+<link rel="icon" href="/brasao.png">
+<link rel="apple-touch-icon" href="/brasao.png">
+<script src="/tema.js"></script>
+<link rel="stylesheet" href="/tema.css">
+</head>
+<body>
+<header class="faixa">
+  <div class="faixa-interna">
+    <a class="marca" href="/">
+      <span class="selo" aria-hidden="true"></span>
+      <span class="marca-texto">
+        <span class="marca-nome">Conferência CIAGA - Digital</span>
+        <span class="marca-sub">Centro de Instrução Almirante Graça Aranha</span>
+      </span>
+    </a>
+    <nav class="menu" aria-label="Ações">
+      <button type="button" class="botao-tema" id="botao-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema claro/escuro">
+        <svg class="icone-sol" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icone-lua" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="pagina centro" id="conteudo">
+  <section class="cartao estreito">
+    <div class="titulo-pagina">
+      <h1>Entrar</h1>
+      <p>Acesso restrito. Use seu nome de guerra, seu número interno e a senha do seu perfil.</p>
+    </div>
+    <p class="alerta erro oculto" id="erro" role="alert"></p>
+    <form method="post" action="/api/login" autocomplete="on">
+      <div class="campo">
+        <label for="u">Nome de guerra</label>
+        <input id="u" name="usuario" type="text" autocomplete="username" autocapitalize="characters" autocorrect="off" spellcheck="false" required>
+      </div>
+      <div class="campo">
+        <label for="p">Número interno</label>
+        <input id="p" name="senha" type="password" autocomplete="current-password" autocapitalize="characters" required>
+      </div>
+      <div class="campo">
+        <label for="a">Senha</label>
+        <input id="a" name="acesso" type="password" autocomplete="off" autocapitalize="characters">
+      </div>
+      <fieldset class="campo modo">
+        <legend>Entrar como</legend>
+        <div class="opcoes">
+          <label class="opcao-modo"><input type="radio" name="modo" value="aluno" checked><span>Aluno</span></label>
+          <label class="opcao-modo"><input type="radio" name="modo" value="admin"><span>Administrador</span></label>
+        </div>
+        <p class="dica">Administrador só funciona para quem tem essa função.</p>
+      </fieldset>
+      <button type="submit" class="botao cheio">Entrar</button>
+    </form>
+  </section>
+</main>
+<script src="/login.js"></script>
+</body>
+</html>

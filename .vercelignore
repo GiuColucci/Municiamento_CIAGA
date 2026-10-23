@@ -1,0 +1,6 @@
+conferencia_digital.html
+*.xlsx
+*.csv
+*.pdf
+*.docx
+.env*

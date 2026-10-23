@@ -1,0 +1,285 @@
+/* Tema Marinha Mercante, o mesmo do app (conferencia_digital.html): login, reautenticação e painel.
+   Toda cor vem das variáveis; o brasão de fundo troca por tema só com --brasao-opac. */
+
+:root {
+  color-scheme: light;
+  --fundo: #EEF2F7;
+  --superficie: #FFFFFF;
+  --superficie-2: #F5F7FB;
+  --vidro: rgba(255, 255, 255, .78);
+  --texto: #1B2433;
+  --texto-suave: #4B5870;
+  --borda: #CBD5E3;
+  --faixa: #0B1F3A;
+  --faixa-texto: #FFFFFF;
+  --faixa-suave: #C9D4E6;
+  --primaria: #0B1F3A;
+  --primaria-hover: #17345F;
+  --sobre-primaria: #FFFFFF;
+  --secundaria-borda: #17345F;
+  --titulo: #0B1F3A;
+  --link: #17345F;
+  --destaque: #C8A24A;
+  --foco: #9C7A26;
+  --aviso-fundo: #FFF4DB;
+  --aviso-borda: #B7791F;
+  --erro-fundo: #FBE9E9;
+  --erro-borda: #B3261E;
+  --ok-fundo: #E6F4EA;
+  --ok-borda: #1E7B3C;
+  --selo-fundo: #FFFFFF;
+  --sombra: 0 1px 2px rgba(11, 31, 58, .06), 0 6px 20px rgba(11, 31, 58, .06);
+  --brasao-opac: .16;
+  --serifa: "Times New Roman", "Liberation Serif", Times, serif;
+  --raio: 12px;
+  --largura: 1240px;
+  --margem: clamp(1rem, 4vw, 2.5rem);
+  --e1: .6rem;  /* entre rótulo e campo, entre linhas de um mesmo bloco */
+  --e2: 1rem;   /* entre blocos dentro de uma caixa */
+  --e3: 1.5rem; /* entre caixas e seções da página */
+}
+
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --fundo: #0A1424;
+  --superficie: #12233D;
+  --superficie-2: #0F1E35;
+  --vidro: rgba(18, 35, 61, .72);
+  --texto: #E6ECF5;
+  --texto-suave: #9FB0C8;
+  --borda: #27406A;
+  --faixa: #07111F;
+  --faixa-suave: #AFC0D8;
+  --primaria: #C8A24A;
+  --primaria-hover: #D9B45A;
+  --sobre-primaria: #0B1F3A;
+  --secundaria-borda: #D9B45A;
+  --titulo: #E6ECF5;
+  --link: #E2C276;
+  --destaque: #D9B45A;
+  --foco: #D9B45A;
+  --aviso-fundo: #3A2F10;
+  --aviso-borda: #D9B45A;
+  --erro-fundo: #3B1A1A;
+  --erro-borda: #F28B82;
+  --ok-fundo: #12301C;
+  --ok-borda: #6FCF8B;
+  --selo-fundo: #EEF2F7;
+  --sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+  --brasao-opac: .22;
+}
+
+/* sem JavaScript: segue o sistema */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema]) {
+    color-scheme: dark;
+    --fundo: #0A1424; --superficie: #12233D; --superficie-2: #0F1E35; --vidro: rgba(18, 35, 61, .72);
+    --texto: #E6ECF5; --texto-suave: #9FB0C8; --borda: #27406A; --faixa: #07111F; --faixa-suave: #AFC0D8;
+    --primaria: #C8A24A; --primaria-hover: #D9B45A; --sobre-primaria: #0B1F3A; --secundaria-borda: #D9B45A;
+    --titulo: #E6ECF5; --link: #E2C276; --destaque: #D9B45A; --foco: #D9B45A;
+    --aviso-fundo: #3A2F10; --aviso-borda: #D9B45A; --erro-fundo: #3B1A1A; --erro-borda: #F28B82;
+    --ok-fundo: #12301C; --ok-borda: #6FCF8B; --selo-fundo: #EEF2F7; --brasao-opac: .22;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--fundo); }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+  font: 16px/1.5 var(--serifa); color: var(--texto);
+}
+
+/* brasão da Marinha Mercante de fundo, bem clarinho, sem receber cliques */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url("/brasao.png") center / auto min(70vmin, 620px) no-repeat;
+  opacity: var(--brasao-opac);
+}
+
+h1, h2, h3, .marca-nome { font-family: var(--serifa); color: var(--titulo); }
+h1 { font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.2rem); line-height: 1.15; margin: 0; }
+p { line-height: 1.5; }
+h2 { font-size: 1.25rem; margin: 0; }
+a { color: var(--link); }
+p { margin: 0; }
+:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- cabeçalho (igual ao do app) */
+.faixa { background: var(--faixa); color: var(--faixa-texto); border-bottom: 3px solid var(--destaque); }
+.faixa-interna {
+  width: 100%; max-width: var(--largura); margin: 0 auto; padding: .7rem var(--margem);
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem 1rem; flex-wrap: wrap;
+}
+.marca { display: flex; align-items: center; gap: .75rem; color: inherit; text-decoration: none; min-width: 0; flex: 1 1 14rem; }
+.selo {
+  display: block; flex: none; width: 52px; height: 52px; border-radius: 50%;
+  background: var(--selo-fundo) url("/brasao.png") center / auto 42px no-repeat; box-shadow: 0 0 0 2px var(--destaque);
+}
+.marca-texto { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.faixa .marca-nome { color: var(--faixa-texto); font-size: 1.4rem; font-weight: 700; }
+.marca-sub { color: var(--faixa-suave); font-size: .85rem; }
+.menu { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; flex: none; margin-left: auto; }
+.link-faixa {
+  display: inline-flex; align-items: center; font: 500 1rem var(--serifa); color: var(--faixa-texto); background: transparent;
+  cursor: pointer; padding: .5rem .8rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .3); text-decoration: none;
+}
+.link-faixa:hover { border-color: var(--destaque); color: var(--destaque); }
+.botao-tema {
+  display: grid; place-items: center; width: 42px; height: 42px;
+  border: 1px solid rgba(255, 255, 255, .3); border-radius: 50%;
+  background: transparent; color: var(--faixa-texto); cursor: pointer;
+}
+.botao-tema:hover { border-color: var(--destaque); color: var(--destaque); }
+.icone-lua { display: none; }
+:root[data-tema="escuro"] .icone-sol { display: none; }
+:root[data-tema="escuro"] .icone-lua { display: block; }
+
+/* ---------- página */
+.pagina { width: 100%; max-width: var(--largura); margin: 0 auto; padding: 1.6rem var(--margem) 3rem; flex: 1; }
+.pagina.centro { display: grid; place-items: center; align-content: center; }
+.titulo-pagina { display: grid; gap: var(--e1); }
+.titulo-pagina > p, .dica { color: var(--texto-suave); }
+.dica { font-size: .92rem; }
+
+.cartao {
+  background: var(--vidro); border: 1px solid var(--borda); border-radius: var(--raio);
+  box-shadow: var(--sombra); padding: clamp(1rem, 2.5vw, 1.5rem); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+/* Ritmo vertical: todo bloco empilhado tem espaço; nada fica colado em nada. */
+.pagina > * + * { margin-top: var(--e3); }
+.cartao > * { margin-top: 0; margin-bottom: 0; }
+.cartao > * + * { margin-top: var(--e2); }
+.cartao > p + p { margin-top: var(--e1); }
+.cartao > h2 + *, .cartao > h1 + * { margin-top: var(--e2); }
+form:not(.linha-form) > * + * { margin-top: var(--e2); }
+.cartao.estreito { width: 100%; max-width: 26rem; }
+
+.alerta { padding: .8rem 1rem; border-radius: 8px; border-left: 5px solid; }
+.alerta.erro { background: var(--erro-fundo); border-color: var(--erro-borda); }
+.alerta.aviso { background: var(--aviso-fundo); border-color: var(--aviso-borda); }
+.alerta.ok { background: var(--ok-fundo); border-color: var(--ok-borda); }
+.oculto { display: none !important; }
+
+/* ---------- formulários */
+.campo { display: grid; gap: var(--e1); }
+label { font-weight: 700; }
+input[type="text"], input[type="password"], input:not([type]), select {
+  width: 100%; font: inherit; font-size: 1rem; padding: .75rem .85rem; border-radius: 8px;
+  border: 1px solid var(--borda); background: var(--superficie); color: var(--texto);
+}
+input:focus { border-color: var(--destaque); }
+input[readonly] { opacity: .8; }
+
+fieldset.campo { border: 0; padding: 0; min-width: 0; }
+legend { font-weight: 700; padding: 0; margin: 0 0 var(--e1); }
+.opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e1); }
+fieldset.campo > .dica { margin-top: var(--e1); }
+.opcao-modo { position: relative; display: block; font-weight: 400; cursor: pointer; }
+.opcao-modo input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.opcao-modo span {
+  display: flex; align-items: center; justify-content: center; min-height: 46px; padding: .5rem .8rem; text-align: center;
+  border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); font-weight: 700;
+}
+.opcao-modo input:checked + span { border-color: var(--destaque); box-shadow: 0 0 0 2px var(--destaque); background: var(--aviso-fundo); }
+.opcao-modo input:focus-visible + span { outline: 3px solid var(--foco); outline-offset: 2px; }
+
+.botao, button.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 46px;
+  font: 700 1.05rem var(--serifa); padding: .7rem 1.3rem; border-radius: 10px; cursor: pointer; text-decoration: none;
+  background: var(--primaria); color: var(--sobre-primaria); border: 1px solid var(--primaria);
+}
+.botao:hover { background: var(--primaria-hover); border-color: var(--primaria-hover); }
+.botao.sec { background: transparent; color: var(--link); border-color: var(--secundaria-borda); }
+.botao.sec:hover { background: var(--superficie-2); }
+.botao.perigo { background: transparent; color: var(--erro-borda); border-color: var(--erro-borda); }
+.botao.perigo:hover { background: var(--erro-fundo); }
+.botao.pequeno { min-height: 38px; padding: .4rem .8rem; font-size: .95rem; }
+.botao[disabled] { opacity: .45; cursor: not-allowed; }
+.botao.cheio { width: 100%; }
+.linha-form { display: flex; flex-wrap: wrap; gap: var(--e2); align-items: end; }
+.linha-form .campo { flex: 1 1 11rem; min-width: 0; }
+.acoes { display: flex; flex-wrap: wrap; gap: var(--e1); }
+.acoes form { margin: 0; }
+
+/* ---------- tabelas */
+.rolar { overflow-x: auto; }
+.rodape-sair { display: flex; justify-content: flex-end; max-width: var(--largura); width: 100%; margin: 0 auto; padding: 0 var(--margem) 2.5rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid var(--borda); padding: .55rem .6rem; text-align: left; vertical-align: middle; }
+th { background: var(--superficie-2); font-size: .9rem; color: var(--texto-suave); }
+tr.falha td { color: var(--erro-borda); font-weight: 700; }
+.selo-papel {
+  display: inline-block; padding: .1rem .6rem; border-radius: 999px; font-size: .85rem; font-weight: 700;
+  border: 1px solid var(--borda); background: var(--superficie-2);
+}
+.selo-papel.ranchef { border-color: var(--destaque); background: var(--aviso-fundo); }
+.selo-papel.admin { border-color: var(--secundaria-borda); }
+
+.grade-painel { display: grid; gap: var(--e3); grid-template-columns: minmax(0, 1fr); }
+.grade-painel > .cartao { margin-top: 0; }
+@media (min-width: 900px) { .grade-painel.duas { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+
+/* celular: a tabela vira uma lista de cartões */
+@media (max-width: 640px) {
+  .faixa .marca-nome { font-size: 1.1rem; }
+  .selo { width: 44px; height: 44px; background-size: auto 35px; }
+  body::before { background-size: auto min(60vmin, 360px); }
+  table.resp thead { display: none; }
+  table.resp, table.resp tbody, table.resp tr, table.resp td { display: block; width: 100%; }
+  table.resp tr { border: 1px solid var(--borda); border-radius: 10px; margin-bottom: .6rem; padding: .3rem .2rem; background: var(--superficie-2); }
+  table.resp td { border: 0; display: flex; justify-content: space-between; gap: 1rem; padding: .3rem .6rem; text-align: right; }
+  table.resp td::before { content: attr(data-rotulo); color: var(--texto-suave); font-weight: 700; text-align: left; }
+  table.resp td.sem-rotulo::before { content: none; }
+}
+
+@media print { .faixa, .botao, form, .rodape-sair { display: none !important; } body::before { display: none; } }
+
+.acoes-cartao { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e1) var(--e2); }
+.acoes-cartao .dica { margin: 0; }
+
+/* códigos de acesso: dois formulários lado a lado quando há espaço */
+.grade-codigos { display: grid; gap: var(--e3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .grade-codigos { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } }
+.form-codigo { display: grid; gap: var(--e2); }
+.form-codigo > * { margin: 0; }
+.cartao > .dica + .grade-codigos { margin-top: var(--e2); }
+
+/* guia "Como usar" */
+.indice-links { display: flex; flex-wrap: wrap; gap: var(--e1); }
+.indice-links a { display: inline-block; padding: .4rem .8rem; border: 1px solid var(--borda); border-radius: 999px; background: var(--superficie-2); color: var(--link); text-decoration: none; font-weight: 600; font-size: .95rem; }
+.indice-links a:hover { border-color: var(--destaque); }
+section.cartao[id] { scroll-margin-top: 1rem; }
+.cartao ol.passos, .cartao ul.lista { padding-left: 1.5rem; display: grid; gap: var(--e1); }
+.cartao ol.passos li::marker { color: var(--destaque); font-weight: 700; }
+.cartao h3 { font-size: 1.05rem; }
+.guia-admin { border-left: 4px solid var(--destaque); }
+/* dentro destes formulários o espaço vem só do grid (a regra geral dos formulários somava outro) */
+form.form-codigo > * + * { margin-top: 0; }
+.codigo-aluno { margin-left: .5rem; color: var(--texto-suave); font-family: ui-monospace, Consolas, monospace; font-size: .85em; white-space: nowrap; }
+
+/* visualizador da planilha publicada */
+.chips-turma { display: flex; flex-wrap: wrap; gap: var(--e1); margin: var(--e2) 0; }
+.chip-turma { padding: .35rem .8rem; border: 1px solid var(--borda); border-radius: 999px; color: var(--texto); text-decoration: none; font-weight: 700; }
+.chip-turma.ativa { border-color: var(--destaque); background: var(--aviso-fundo); }
+.chip-turma:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+table.planilha-ver { border-collapse: collapse; font-size: .85rem; min-width: 100%; }
+table.planilha-ver th, table.planilha-ver td { border: 1px solid var(--borda); padding: .25rem .4rem; text-align: center; white-space: nowrap; }
+table.planilha-ver td.nome, table.planilha-ver th.nome { text-align: left; }
+table.planilha-ver td.cod { color: var(--texto-suave); }
+table.planilha-ver td.x { background: var(--aviso-fundo); font-weight: 700; }
+table.planilha-ver .fim { border-right: 2px solid var(--secundaria-borda, var(--borda)); }
+table.planilha-ver tfoot td { font-weight: 700; background: var(--superficie-2); }
+.lista-avisos { margin: var(--e1) 0 0; padding-left: 1.2rem; }
+.acoes-cartao form { margin: 0; }
+.acoes-cartao form > * + *, .acoes form > * + * { margin-top: 0; } /* o botão dentro do formulário herdava a margem de cima (do campo oculto) e ficava desnivelado */
+
+/* filtro "só tentativas recusadas": pílula com marcador próprio, da altura dos botões */
+.filtro-falhas { position: relative; display: inline-flex; align-items: center; gap: .6rem; min-height: 46px; padding: .4rem 1rem .4rem .8rem;
+  border: 1px solid var(--borda); border-radius: 999px; background: var(--superficie-2); color: var(--texto); font-weight: 700; cursor: pointer; }
+.filtro-falhas:hover { border-color: var(--secundaria-borda); }
+.filtro-falhas input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.filtro-falhas .marca { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border: 2px solid var(--texto-suave); border-radius: 50%; }
+.filtro-falhas input:checked + .marca { background: var(--destaque); border-color: var(--destaque); }
+.filtro-falhas input:checked + .marca::after { content: ""; width: 6px; height: 11px; margin-top: -2px; border: solid var(--faixa); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+.filtro-falhas:has(input:checked) { border-color: var(--destaque); background: var(--aviso-fundo); }
+.filtro-falhas:has(input:focus-visible) { outline: 2px solid var(--destaque); outline-offset: 2px; }

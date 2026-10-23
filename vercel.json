@@ -1,0 +1,25 @@
+{
+  "functions": {
+    "api/app.js": { "includeFiles": "dados/app.enc", "maxDuration": 10 }
+  },
+  "rewrites": [
+    { "source": "/app", "destination": "/api/app" },
+    { "source": "/sair", "destination": "/api/sair" },
+    { "source": "/admin", "destination": "/api/admin" },
+    { "source": "/admin/planilha", "destination": "/api/planilha-ver" },
+    { "source": "/ajuda", "destination": "/api/ajuda" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "same-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}

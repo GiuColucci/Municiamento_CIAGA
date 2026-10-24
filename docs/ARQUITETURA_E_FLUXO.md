@@ -549,6 +549,7 @@ flowchart TD
 |---|---|
 | Cruzamento | **União**: um aluno consta se **qualquer** conferente o marcou; marcado por vários aparece **uma vez** |
 | Listas em andamento | Entram todas as listas com pelo menos uma marcação; a tela mostra quantas estão finalizadas |
+| Validade | A listagem de um dia só aparece **naquele dia** (Brasília): a data de cada dia sai da sexta da planilha; no dia seguinte some e o endereço responde 404 |
 | Planilha | Só rascunhos feitos **na planilha publicada agora** (o rascunho guarda o id da planilha) |
 | Separação | Pela planilha, como na rela individual: marcado e municiado → Municiados; marcado e não municiado → NÃO municiados |
 | Quem aparece como conferente | Nome, quantas listas, quantos marcados e **quando salvou** (`salvoEm`, gravado pelo servidor a cada salvamento) |

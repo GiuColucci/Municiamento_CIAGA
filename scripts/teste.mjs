@@ -1222,6 +1222,9 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   zerar();
   await p.carregarLista(LISTA);
   const api = require("../api/conferencia-geral.js");
+  const relogio = Date.now;
+  const comoSe = (iso) => { Date.now = () => new Date(iso).getTime(); };
+  comoSe("2026-10-23T12:00:00-03:00"); // o dia da sexta da planilha
   const rasc = require("../api/rascunho.js");
   const cofre = require("../api/_lib/cofre.js");
   await cofre.gravarPlanilha({ id: "p1", por: "Romeo", em: Date.now(), dados: { v: 1, formato: "XLSX", sexta: "2026-10-23", turmas: [], avisos: [], alunos: [] } });
@@ -1244,7 +1247,7 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 200);
   // combinações disponíveis (só as com marcações, com o número de conferentes)
   let r = (await chamar("romeo", 1, "/api/conferencia-geral")).json;
-  assert.deepEqual(r.opcoes, [{ dia: "Sexta", refeicao: "Janta", conferentes: 2 }, { dia: "Segunda", refeicao: "Café", conferentes: 1 }]);
+  assert.deepEqual(r.opcoes, [{ dia: "Sexta", refeicao: "Janta", conferentes: 2 }]); // a de Segunda só valeria na segunda
   // união: ALVES (marcado pelas duas) aparece uma vez
   r = (await chamar("romeo", 1, "/api/conferencia-geral?dia=Sexta&refeicao=Janta")).json;
   assert.deepEqual([...r.marcados].sort(), ["B12.1|B1037|ALVES", "B12.1|B1038|BRAGA", "N24.1|N2005|CORREA"]);
@@ -1252,6 +1255,21 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   assert.ok(r.conferentes.every((c) => c.em > 0) && !JSON.stringify(r).includes("FANTASMA"));
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral?dia=Xis&refeicao=Janta")).status, 400);
   assert.ok(db.l.join("|").includes("viu_conferencia_geral"));
+  // no dia seguinte a listagem de sexta some (e o endereço dela deixa de responder)
+  comoSe("2026-10-24T09:00:00-03:00");
+  assert.deepEqual((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes, []);
+  const velha = await chamar("romeo", 1, "/api/conferencia-geral?dia=Sexta&refeicao=Janta");
+  assert.equal(velha.status, 404);
+  assert.equal(velha.json.expirada, true);
+  // na segunda (26/10) vale a de segunda
+  comoSe("2026-10-26T20:00:00-03:00");
+  assert.deepEqual((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes, [{ dia: "Segunda", refeicao: "Café", conferentes: 1 }]);
+  // virada do dia no horário de Brasília (23h59 ainda é sexta; 00h01 de sábado já não)
+  comoSe("2026-10-23T23:59:00-03:00");
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes.length, 1);
+  comoSe("2026-10-24T00:01:00-03:00");
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes.length, 0);
+  Date.now = relogio;
   // sem planilha publicada
   db.s.delete("planilha");
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 404);
@@ -1271,6 +1289,7 @@ test("menu.css é a única fonte do menu suspenso: páginas do servidor e app o 
   await p.carregarLista(LISTA);
   const css = fs.readFileSync(new URL("../public/menu.css", import.meta.url), "utf8");
   assert.ok(css.includes(".menu-suspenso-lista") && css.includes("#cg-rodape") && css.includes(".faixa-interna"));
+  assert.ok(/@media \(max-width: 640px\)[^}]*\.menu \{ width: 100%/.test(css) && css.includes("left: clamp(1rem, 4vw, 2.5rem)")); // no celular a lista abre na largura da tela
   // sem cópias nos outros arquivos de estilo
   for (const f of ["../public/tema.css", "../fonte-app/web/estilo.css"]) {
     assert.ok(!fs.readFileSync(new URL(f, import.meta.url), "utf8").includes(".menu-suspenso"), f);

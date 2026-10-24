@@ -494,3 +494,18 @@ tbody tr:last-child td { border-bottom: 0; }
 .tabela-geral th, .tabela-geral td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--borda); }
 .tabela-geral th { color: var(--texto-suave); font-size: .9rem; }
 
+
+/* conferência geral: cartões e blocos nunca colados */
+#tela-geral > .cartao + .cartao { margin-top: 1.2rem; }
+#geral-conferentes { display: grid; gap: var(--e1); }
+#geral-conferentes > h2, #geral-conferentes > p { margin: 0; }
+.rolar { overflow-x: auto; }
+@media (max-width: 640px) {
+  .tabela-geral thead { display: none; }
+  .tabela-geral, .tabela-geral tbody, .tabela-geral tr, .tabela-geral td { display: block; width: 100%; }
+  .tabela-geral tr { border: 1px solid var(--borda); border-radius: 10px; padding: .35rem .2rem; background: var(--superficie-2); }
+  .tabela-geral tr + tr { margin-top: var(--e1); }
+  .tabela-geral td { display: flex; justify-content: space-between; gap: 1rem; padding: .3rem .7rem; border: 0; text-align: right; }
+  .tabela-geral td::before { content: attr(data-rotulo); color: var(--texto-suave); font-weight: 700; text-align: left; }
+  .geral-opcoes .chip-geral { width: 100%; justify-content: space-between; }
+}

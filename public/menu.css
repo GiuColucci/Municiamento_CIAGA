@@ -7,6 +7,9 @@
 .faixa-interna { max-width: none; padding-inline: clamp(1rem, 2.5vw, 2rem); }
 .menu a.link-faixa, .menu summary.link-faixa { display: inline-flex; align-items: center; text-decoration: none; }
 
+/* a lista do menu se ancora no cabeçalho inteiro (no celular ela ocupa a largura da tela) */
+.faixa { position: relative; }
+
 /* menu suspenso (um só botão no lugar de vários links) */
 .menu-suspenso { position: relative; }
 .menu-suspenso > summary { list-style: none; cursor: pointer; user-select: none; }
@@ -23,6 +26,15 @@
   font: 600 1rem var(--sistema, var(--serifa, "Times New Roman", serif)); color: var(--texto, #1B2433); background: transparent;
 }
 .menu-suspenso-item:hover, .menu-suspenso-item:focus-visible { background: var(--superficie-2, #F5F7FB); color: var(--link, #17345F); }
+
+/* celular: a fileira do menu usa a largura toda (tema à direita) e a lista abre embaixo do cabeçalho, de ponta a ponta,
+   com a mesma margem lateral da página */
+@media (max-width: 640px) {
+  .menu { width: 100%; }
+  .menu .botao-tema { margin-left: auto; }
+  .menu-suspenso { position: static; }
+  .menu-suspenso-lista { left: clamp(1rem, 4vw, 2.5rem); right: clamp(1rem, 4vw, 2.5rem); top: calc(100% + .5rem); min-width: 0; }
+}
 
 /* botão Sair no fim do app (não fica fixo na tela) */
 #cg-rodape { width: 100%; max-width: var(--largura, 1240px); margin: 0 auto; padding: 0 var(--margem, 1rem) 2.5rem; display: flex; justify-content: flex-end; }

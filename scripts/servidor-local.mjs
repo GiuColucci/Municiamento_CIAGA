@@ -78,20 +78,26 @@ const lerCorpo = (req) => new Promise((ok) => { let b = ""; req.on("data", (d) =
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
-  // atalho só do servidor local: com a planilha já publicada, cria dois rascunhos de conferentes fictícios (Sexta, Janta)
+  // atalho só do servidor local: com a planilha já publicada, cria dois rascunhos de conferentes fictícios (hoje, Janta)
   if (url.pathname === "/_demo") {
     const cofre = require(path.join(raiz, "api/_lib/cofre.js"));
     const pub = await cofre.lerPlanilha();
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     if (!pub) return res.end("Publique uma planilha primeiro (entre como Alfa em Administrador, carregue o XLSX e clique em Publicar).");
+    // a Conferência Geral só mostra o dia de hoje: descobre qual dia da semana da planilha é hoje
+    const DIAS = ["Sexta", "Sábado", "Domingo", "Segunda", "Terça", "Quarta", "Quinta"];
+    const hoje = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const dif = pub.dados.sexta ? Math.round((Date.parse(hoje) - Date.parse(pub.dados.sexta)) / 86400000) : 0;
+    if (dif < 0 || dif > 6) return res.end(`A planilha de exemplo é da semana que começa em ${pub.dados.sexta}; hoje (${hoje}) está fora dela, então a Conferência Geral não mostraria nada. Use uma planilha da semana atual.`);
+    const dia = DIAS[dif];
     const chaves = pub.dados.alunos.map((a) => a[2] + "|" + a[1] + "|" + a[0]);
     const rasc = (marcados, fin) => ({ v: 1, planilha: pub.id, sexta: pub.dados.sexta, ativa: 1, proximoId: 2, salvoEm: Date.now(),
-      listas: [{ id: 1, dia: "Sexta", refeicao: "Janta", ano: "1", finalizada: fin, criterio: "alfabetica", agrupar: "ano", separar: false, turmas: null,
+      listas: [{ id: 1, dia, refeicao: "Janta", ano: "1", finalizada: fin, criterio: "alfabetica", agrupar: "ano", separar: false, turmas: null,
         mostrar: "todos", turmasMarcacao: null, marcacaoPorTurma: false, filtroMarcacao: "todos", marcados }] });
     const ano1 = chaves.filter((k) => k.charAt(1) === "1");
     await cofre.gravarRascunho("charlie", rasc(ano1.slice(0, 8), true));
     await cofre.gravarRascunho("delta", rasc(ano1.slice(5, 12), false));
-    return res.end("Pronto: Charlie e Delta 'conferiram' Sexta · Janta (com alguns alunos em comum). Abra Menu → Conferência geral.");
+    return res.end(`Pronto: Charlie e Delta 'conferiram' ${dia} · Janta (hoje), com alguns alunos em comum. Abra Menu → Conferência geral.`);
   }
   // planilha de exemplo (fictícia) para carregar no app: http://localhost:4174/_exemplo.xlsx
   if (url.pathname === "/_exemplo.xlsx") {

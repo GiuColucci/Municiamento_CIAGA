@@ -853,8 +853,8 @@
     }
     geral.opcoes = r.json.opcoes;
     ops.textContent = "";
-    if (!geral.opcoes.length) { st.textContent = "Ninguém marcou presença ainda nesta planilha."; return; }
-    st.textContent = "Escolha o dia e a refeição para juntar o que cada conferente marcou.";
+    if (!geral.opcoes.length) { st.textContent = "Ninguém marcou presença hoje ainda. As listagens só valem no próprio dia e somem no dia seguinte."; return; }
+    st.textContent = "Escolha a refeição para juntar o que todos os conferentes marcaram. As listagens só valem no próprio dia.";
     geral.opcoes.forEach(function (o) {
       var b = el("button", "chip-geral" + (geral.dia === o.dia && geral.refeicao === o.refeicao ? " ativa" : ""));
       b.type = "button";
@@ -870,6 +870,7 @@
     var st = $("geral-status");
     st.textContent = "Juntando as marcações…";
     var r = await M.api("GET", "/api/conferencia-geral?dia=" + encodeURIComponent(dia) + "&refeicao=" + encodeURIComponent(refeicao));
+    if (r.status === 404 && r.json && r.json.expirada) { st.textContent = "Essa listagem é de outro dia e não está mais disponível."; return carregarOpcoesGeral(); }
     if (r.status !== 200 || !r.json) { st.textContent = "Não consegui juntar agora. Tente de novo."; return; }
     var anterior = geral.lista;
     geral.dia = dia; geral.refeicao = refeicao; geral.dados = r.json;
@@ -895,7 +896,7 @@
     // quem conferiu
     var c = $("geral-conferentes");
     c.textContent = "";
-    var h = el("h2", null, "Quem conferiu");
+    var h = el("h2", null, "Todos os conferentes");
     h.id = "t-geral-conf";
     c.appendChild(h);
     var t = el("table", "tabela-geral");
@@ -905,10 +906,13 @@
     var corpo = el("tbody");
     d.conferentes.forEach(function (x) {
       var linha = el("tr");
-      linha.appendChild(el("td", null, x.nome));
-      linha.appendChild(el("td", null, x.listas + (x.finalizadas ? " (" + x.finalizadas + " finalizada" + (x.finalizadas === 1 ? "" : "s") + ")" : "")));
-      linha.appendChild(el("td", null, String(x.marcados)));
-      linha.appendChild(el("td", null, horaDe(x.em)));
+      // data-rotulo: no celular cada linha vira um cartão com o nome da coluna ao lado do valor
+      [["Conferente", x.nome], ["Listas", x.listas + (x.finalizadas ? " (" + x.finalizadas + " finalizada" + (x.finalizadas === 1 ? "" : "s") + ")" : "")],
+        ["Marcados", String(x.marcados)], ["Salvo em", horaDe(x.em)]].forEach(function (c) {
+        var td = el("td", null, c[1]);
+        td.setAttribute("data-rotulo", c[0]);
+        linha.appendChild(td);
+      });
       corpo.appendChild(linha);
     });
     t.appendChild(corpo);

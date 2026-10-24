@@ -31,6 +31,14 @@ document.addEventListener("change",function(e){if(e.target&&e.target.type==="fil
 // (decidido no servidor). "Sair" fica no fim da página, como um botão comum, não fixo na tela.
 const ESTILO_EXTRA = `<style>
 .menu a.link-faixa,.menu summary.link-faixa{display:inline-flex;align-items:center;text-decoration:none}
+.faixa-interna{max-width:none;padding-inline:clamp(1rem,2.5vw,2rem)}
+.menu-suspenso{position:relative}.menu-suspenso>summary{list-style:none;cursor:pointer;user-select:none}
+.menu-suspenso>summary::-webkit-details-marker{display:none}.menu-suspenso>summary::after{content:"▾";margin-left:.45rem;font-size:.85em}
+.menu-suspenso[open]>summary::after{content:"▴"}
+.menu-suspenso-lista{position:absolute;z-index:30;top:calc(100% + .5rem);right:0;min-width:14rem;display:grid;gap:.3rem;padding:.5rem;background:var(--superficie,#fff);border:1px solid var(--borda,#CBD5E3);border-radius:10px;box-shadow:var(--sombra,0 6px 20px rgba(11,31,58,.15))}
+.menu-suspenso-item{display:flex;align-items:center;min-height:44px;padding:.5rem .9rem;border-radius:8px;text-decoration:none;font:600 1rem var(--sistema,"Times New Roman",serif);color:var(--texto,#1B2433);background:transparent}
+.menu-suspenso-item:hover,.menu-suspenso-item:focus-visible{background:var(--superficie-2,#F5F7FB);color:var(--link,#17345F)}
+@media print{.menu-suspenso{display:none}}
 #cg-rodape{width:100%;max-width:var(--largura,1240px);margin:0 auto;padding:0 var(--margem,1rem) 2.5rem;display:flex;justify-content:flex-end}
 #cg-rodape a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:.6rem 1.6rem;border-radius:10px;font:700 1rem var(--sistema,"Times New Roman",serif);text-decoration:none;color:var(--link,#17345F);background:var(--vidro,rgba(255,255,255,.7));border:1px solid var(--secundaria-borda,#17345F)}
 #cg-rodape a:hover{border-color:var(--destaque,#C8A24A)}

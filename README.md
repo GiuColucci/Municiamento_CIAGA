@@ -251,6 +251,14 @@ Rotina sugerida, em [docs/OPERACAO.md](docs/OPERACAO.md#rotina-recomendada).
 
 ## 9. Desenvolvimento e testes
 
+### Testar o site no seu computador, sem deploy
+
+```bash
+npm run local        # abre http://localhost:4174
+```
+
+Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis falso em memória**, chaves aleatórias e **pessoas fictícias** (Alfa/ranchef `B1901`, Bravo/administrador `B1902`, Charlie `B1903` e Delta `B1904`). As senhas de teste aparecem no terminal. Nada é gravado em disco e tudo some ao fechar. Para ver a Conferência Geral: entre como **Alfa** em modo Administrador, carregue `fonte-app/tests/fixtures/ficticio.xlsx`, publique e abra `http://localhost:4174/_demo`. Para regerar o app depois de mudar o código-fonte: `npm run local -- --build`.
+
 ```bash
 npm run teste        # 38 testes do site (api/): autenticação, cargos, cofre, painel, limites...
 npm run app:teste    # 28 testes do app (parser, regras de lista, relatório, hospedado)

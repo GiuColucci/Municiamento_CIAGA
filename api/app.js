@@ -41,6 +41,7 @@ function inserirMenu(html, admin) {
   if (fim < 0) return null;
   // Menu suspenso: "Conferência geral" e "Como usar" para todos (mudam de tela/página, como o painel); "Administrador" só para administradores
   const links = menuSuspenso([
+    { href: "/app", texto: "Voltar ao app", attrs: "data-voltar-app hidden" }, // o app o mostra só na Conferência Geral
     { href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" },
     ...(admin ? [{ href: "/admin", texto: "Administrador" }] : []),
     { href: "/ajuda", texto: "Como usar" },

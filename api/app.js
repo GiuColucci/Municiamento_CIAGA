@@ -43,6 +43,7 @@ function inserirMenu(html, admin) {
   const links = menuSuspenso([
     { href: "/app", texto: "Voltar ao app", attrs: "data-voltar-app hidden" }, // o app o mostra só na Conferência Geral
     { href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" },
+    { href: "#rancho-corrido", texto: "Rancho corrido", attrs: "data-abrir-rancho" },
     ...(admin ? [{ href: "/admin", texto: "Administrador" }] : []),
     { href: "/ajuda", texto: "Como usar" },
   ]);

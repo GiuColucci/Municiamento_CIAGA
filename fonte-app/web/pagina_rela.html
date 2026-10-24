@@ -210,6 +210,31 @@
     <section class="cartao oculto" id="geral-conferentes" aria-labelledby="t-geral-conf"></section>
     <section class="cartao painel oculto" id="geral-painel" aria-live="polite"></section>
   </section>
+
+  <!-- ===================== rancho corrido (versão hospedada; qualquer pessoa publica) ===================== -->
+  <section id="tela-rancho" class="oculto" aria-labelledby="t-rancho">
+    <div class="titulo-pagina">
+      <h1 id="t-rancho">Rancho corrido</h1>
+      <p>Leia a autorização de rancho corrido ou o detalhe de serviço do dia. Quem estiver no arquivo aparece com aviso na marcação, com o motivo.</p>
+    </div>
+    <section class="cartao" aria-labelledby="t-rancho-enviar">
+      <h2 id="t-rancho-enviar">Arquivos do dia</h2>
+      <p class="dica">PDF, XLSX ou CSV. Pode escolher os dois modelos de uma vez: a autorização e o detalhe de serviço. Nada é enviado até você conferir e publicar.</p>
+      <div class="campo">
+        <label for="rancho-arquivos">Arquivos</label>
+        <input id="rancho-arquivos" type="file" multiple accept=".pdf,.xlsx,.csv,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+      </div>
+      <div class="campo">
+        <label for="rancho-data">Dia <span class="opcional">(usado se o arquivo não trouxer a data)</span></label>
+        <input id="rancho-data" type="date">
+      </div>
+      <button type="button" class="botao principal" id="rancho-ler">Ler arquivos</button>
+      <p class="dica" id="rancho-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="cartao oculto" id="rancho-previa" aria-labelledby="t-rancho-previa"></section>
+    <section class="cartao oculto" id="rancho-publicados" aria-labelledby="t-rancho-publicados"></section>
+    <div class="geral-acoes"><button type="button" class="botao link" id="rancho-voltar">Voltar às listas</button></div>
+  </section>
 </main>
 
 <!--BIBLIOTECAS-->

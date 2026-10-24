@@ -95,6 +95,7 @@ Três fronteiras importam: (1) **internet → borda** (TLS, limites, validação
 | T13 | Exfiltração pelo próprio app | Divulgação | CSP `connect-src 'self'` (o app não fala com outros domínios) | Usuário autorizado pode copiar o que vê |
 | T14 | Negar autoria de uma ação | Repúdio | Registro com quem, ação, hora, aparelho e IP parcial | Sem login individual forte (nome + número interno) |
 | T15 | Vazamento de segredos pelo repositório | Divulgação | `.gitignore` e `.vercelignore` bloqueiam arquivos sensíveis; dados reais fora dos testes; segredos só no ambiente | Depende de disciplina (ver §13) |
+| T17 | Pessoa publicar rancho corrido falso (qualquer pessoa pode publicar) | Adulteração | Cada publicação mostra quem enviou e quando; só acrescenta (não apaga a dos outros); validação e limites por pessoa; registro do evento; administradores removem o dia; o dia expira sozinho | Um aviso falso pode aparecer até alguém remover (decisão da operação) |
 | T16 | Pessoa não autorizada lendo o que as conferentes marcaram | Divulgação | `/api/conferencia-geral` exige sessão válida e pessoa ainda na lista; devolve só o agregado (nunca o rascunho bruto); rascunhos continuam cifrados e individuais; consulta registrada | Todo usuário autenticado vê as marcações agregadas e quem conferiu (decisão da operação) |
 
 ### 3.3 Caminhos de ataque considerados
@@ -173,7 +174,7 @@ O **modo administrador** (`m = 1`) só é gravado quando a pessoa escolheu "Admi
 | Rota | Anônimo | Aluno | Administrador | Ranchef |
 |---|:--:|:--:|:--:|:--:|
 | `/`, `/api/login` | ✅ | ✅ | ✅ | ✅ |
-| `/app`, `/ajuda`, `GET /api/planilha`, `/api/rascunho`, `/api/evento`, `/api/conferencia-geral` | ❌ | ✅ | ✅ | ✅ |
+| `/app`, `/ajuda`, `GET /api/planilha`, `/api/rascunho`, `/api/evento`, `/api/conferencia-geral`, `/api/planilha?rancho=` (ler e publicar) | ❌ | ✅ | ✅ | ✅ |
 | `/admin`, `/admin/planilha`, `/api/admin-lista` | ❌ | ❌ | ✅ (modo admin) | ✅ (modo admin) |
 | `POST/DELETE /api/planilha` | ❌ | ❌ | ✅ | ✅ |
 | `/api/admin-acao` (cadastrar, remover, planilha, senha dos alunos) | ❌ | ❌ | ✅ | ✅ |

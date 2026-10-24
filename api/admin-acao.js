@@ -4,7 +4,7 @@ const pessoas = require("./_lib/pessoas");
 const cofre = require("./_lib/cofre");
 const acessos = require("./_lib/acessos");
 
-const EVENTO = { cadastrar: "admin_cadastrou", promover: "admin_promoveu", rebaixar: "admin_rebaixou", remover: "admin_removeu", limpar_planilha: "admin_removeu_planilha",
+const EVENTO = { cadastrar: "admin_cadastrou", promover: "admin_promoveu", rebaixar: "admin_rebaixou", remover: "admin_removeu", limpar_planilha: "admin_removeu_planilha", limpar_rancho: "admin_removeu_rancho",
   codigo_aluno: "admin_mudou_codigo_aluno", codigo_admin: "admin_mudou_codigo_admin",
   transferir_ranchef: "admin_transferiu_ranchef", assumir_ranchef: "admin_assumiu_ranchef" };
 // Só o ranchef mexe nos administradores; isso inclui a senha de administrador (um administrador não tranca os outros).
@@ -76,6 +76,7 @@ module.exports = async (req, res) => {
       : acao === "promover" ? await pessoas.promover(nome)
       : acao === "rebaixar" ? await pessoas.rebaixar(nome, sess.u)
       : acao === "limpar_planilha" ? (await cofre.apagarPlanilha(), { ok: true, nome: "" })
+      : acao === "limpar_rancho" ? (/^\d{4}-\d{2}-\d{2}$/.test(String(c.data || "")) ? (await cofre.apagarRancho(c.data), { ok: true, nome: c.data }) : { erro: "dados_invalidos" })
       : acao === "transferir_ranchef" ? await transferir(c, sess)
       : acao === "assumir_ranchef" ? await assumir(c, sess)
       : acao === "codigo_aluno" ? await trocarCodigo(false, c, sess)

@@ -43,7 +43,7 @@ Municiamento.IMAGENS = {
 };`;
 const codigoDe = (regra, app, documento) => [imagens, `Municiamento.REGRA = "${regra}";`,
   `Municiamento.TITULO_DOC = ${JSON.stringify(documento)};`]
-  .concat(["texto.js", "entradas.js", "pdf.js", "parser.js", "report.js", "documentos.js", "hospedado.js", "bibliotecas.js", app]
+  .concat(["texto.js", "entradas.js", "pdf.js", "parser.js", "report.js", "documentos.js", "rancho.js", "hospedado.js", "bibliotecas.js", app]
     .map((f) => `/* ${f} */\n` + seguroParaScript(ler(WEB, "src", f), f)))
   .concat(["Municiamento.iniciar();"])
   .join("\n");

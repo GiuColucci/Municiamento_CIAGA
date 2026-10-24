@@ -23,6 +23,8 @@ const ROTULO = {
   admin_publicou_planilha: "Publicou a planilha da semana",
   admin_removeu_planilha: "Removeu a planilha publicada",
   admin_viu_planilha: "Abriu a planilha publicada",
+  publicou_rancho: "Publicou o rancho corrido",
+  admin_removeu_rancho: "Removeu o rancho corrido de um dia",
   viu_conferencia_geral: "Abriu a conferência geral",
   admin_mudou_codigo_aluno: "Trocou a senha dos alunos",
   admin_transferiu_ranchef: "Transferiu o cargo de ranchef",
@@ -38,6 +40,7 @@ const MSG = {
     rebaixar: "Deixou de ser administrador.",
     remover: "Acesso excluído.",
     limpar_planilha: "Planilha publicada removida.",
+    limpar_rancho: "Rancho corrido do dia removido.",
     assumir_ranchef: "Você agora é o administrador ranchef.",
     transferir_ranchef: "Cargo de ranchef transferido. Você agora é administrador; o poder sobre os administradores passou para a outra pessoa.",
     codigo_aluno: "Senha dos alunos trocada. Passe a nova senha aos alunos; vale a partir do próximo login.",
@@ -96,6 +99,18 @@ function quemTrocou(sit) {
   }
   return sit.configurado ? "Ainda não foi trocada pelo painel. <strong>Troque agora e depois a cada 30 dias.</strong>"
     : "ATENÇÃO: não há senha definida, então ninguém consegue entrar neste perfil. Defina um abaixo.";
+}
+
+const dataBr = (iso) => iso.split("-").reverse().join("/");
+// Rancho corrido publicado (qualquer pessoa pode publicar; aqui a administração confere e remove um dia errado)
+function cartaoRancho(dias) {
+  if (!dias.length) return `<section class="cartao">\n<h2>Rancho corrido</h2>\n<p class="dica">Nenhum rancho corrido publicado para os dias desta semana. Qualquer pessoa pode publicar pelo Menu do app.</p>\n</section>`;
+  const linhas = dias.map(({ dia, pubs }) => {
+    const total = new Set(pubs.flatMap((p) => p.itens.map((i) => i.c))).size;
+    const quem = pubs.map((p) => `${esc(p.por)} às ${esc(new Date(p.em).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }))} (${p.itens.length})`).join("; ");
+    return `<tr><td data-rotulo="Dia">${esc(dataBr(dia))}</td><td data-rotulo="Alunos">${total}</td><td data-rotulo="Publicado por">${quem}</td><td data-rotulo="Ações" class="sem-rotulo"><form method="post" action="/api/admin-acao"><input type="hidden" name="acao" value="limpar_rancho"><input type="hidden" name="data" value="${esc(dia)}"><button class="botao perigo pequeno" type="submit">Remover o dia</button></form></td></tr>`;
+  }).join("");
+  return `<section class="cartao">\n<h2>Rancho corrido</h2>\n<p class="dica">Publicado por quem usa o app. Se algum dia estiver errado, remova: cada dia some sozinho depois de passar.</p>\n<div class="rolar"><table class="resp"><thead><tr><th>Dia</th><th>Alunos</th><th>Publicado por</th><th>Ações</th></tr></thead><tbody>${linhas}</tbody></table></div>\n</section>`;
 }
 
 function cartaoAssumir() {
@@ -200,7 +215,16 @@ module.exports = async (req, res) => {
   const situacaoCodigo = {};
   try { situacaoCodigo.aluno = await acessos.situacao(false); situacaoCodigo.admin = await acessos.situacao(true); } catch { /* o cartão mostra só o formulário */ }
   let publicada = null;
-  try { const pl = await cofre.lerPlanilha(); publicada = pl ? { por: pl.por, em: pl.em } : null; } catch { publicada = undefined; }
+  try { const pl = await cofre.lerPlanilha(); publicada = pl ? { por: pl.por, em: pl.em, sexta: (pl.dados && pl.dados.sexta) || null } : null; } catch { publicada = undefined; }
+  // rancho corrido publicado nos dias da semana da planilha (só para o painel conferir e poder remover um dia)
+  const diasRancho = [];
+  if (publicada && publicada.sexta) {
+    const [a, m, d] = publicada.sexta.split('-').map(Number);
+    for (let i = 0; i < 7; i++) {
+      const dia = new Date(Date.UTC(a, m - 1, d + i)).toISOString().slice(0, 10);
+      try { const pubs = await cofre.lerRancho(dia); if (pubs.length) diasRancho.push({ dia, pubs }); } catch { /* o cartão só some */ }
+    }
+  }
   let st = null;
   try { st = await pessoas.estado(); } catch { /* painel de pessoas some se não der para ler */ }
   let eventos = null;
@@ -285,6 +309,7 @@ ${
   : '<p class="dica">Nenhuma planilha publicada. No app, leia a planilha e use Publicar para os alunos.</p>'
 }
 </section>
+${cartaoRancho(diasRancho)}
 <section class="cartao">
 <h2>Pessoas com acesso (${st.pessoas.size})</h2>
 <div class="acoes-cartao">

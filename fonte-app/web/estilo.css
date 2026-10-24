@@ -509,3 +509,22 @@ tbody tr:last-child td { border-bottom: 0; }
   .tabela-geral td::before { content: attr(data-rotulo); color: var(--texto-suave); font-weight: 700; text-align: left; }
   .geral-opcoes .chip-geral { width: 100%; justify-content: space-between; }
 }
+
+/* rancho corrido */
+.selo-rancho { display: none; }
+.aluno.rancho-corrido label { background: var(--aviso-fundo); outline: 1px solid var(--aviso-borda); }
+.aluno.rancho-corrido .selo-rancho { display: inline; flex: none; font-size: .75rem; font-weight: 700; color: var(--aviso-borda); white-space: nowrap; }
+.rancho-motivo { margin: 0; padding: .1rem .7rem .4rem 2.2rem; color: var(--texto-suave); font-size: .88rem; }
+.aviso-rancho { margin: 0; padding: .7rem 1rem; border-radius: 8px; border-left: 5px solid var(--aviso-borda); background: var(--aviso-fundo); color: var(--texto); }
+#tela-rancho > .cartao + .cartao { margin-top: 1.2rem; }
+#tela-rancho .cartao { display: grid; gap: var(--e1); }
+#tela-rancho .cartao > h2, #tela-rancho .cartao > p { margin: 0; }
+.rancho-arquivo { display: grid; gap: .4rem; padding: .8rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
+.rancho-arquivo > * { margin: 0; }
+.rancho-arquivo h3 { font-size: 1.05rem; }
+.rancho-alunos { margin: 0; padding-left: 1.4rem; display: grid; gap: .2rem; }
+.rancho-alunos .fora { color: var(--erro-borda); }
+.rancho-dia { display: grid; gap: .2rem; padding: .6rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
+.rancho-dia > * { margin: 0; }
+#tela-rancho .botao { justify-self: start; }
+@media (max-width: 640px) { #tela-rancho .botao { justify-self: stretch; } }

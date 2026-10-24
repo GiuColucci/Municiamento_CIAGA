@@ -20,6 +20,7 @@ Este documento descreve **como o sistema é composto e como cada fluxo funciona*
 14. [Tratamento de falhas](#14-tratamento-de-falhas)
 15. [Conferência Geral](#15-conferência-geral)
 16. [Menu suspenso do cabeçalho](#16-menu-suspenso-do-cabeçalho)
+17. [Rancho corrido](#17-rancho-corrido)
 
 ---
 
@@ -571,3 +572,54 @@ O cabeçalho agrupa os links num único menu (`<details class="menu-suspenso">`)
 | Painel e demais páginas do servidor | Voltar ao app (ou ao painel), Como usar |
 
 **Uma só fonte de estilo:** `public/menu.css` (menu suspenso, cabeçalho em toda a largura e botão Sair). As páginas do servidor o carregam por `<link>` e o servidor o injeta no `<head>` do app, liberando `style-src 'self'` na regra do app; assim o menu fica certo mesmo com um `app.enc` mais antigo. O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.
+
+---
+
+## 17. Rancho corrido
+
+Qualquer pessoa autenticada lê os arquivos do dia, confere e publica; o aviso aparece na marcação de todos.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor P as Qualquer pessoa
+  participant APP as App (navegador)
+  participant API as /api/planilha?rancho=
+  participant COF as cofre.js
+  participant R as Redis
+
+  P->>APP: Menu, Rancho corrido, escolhe PDF/XLSX/CSV
+  APP->>APP: detecta o tipo pelos bytes e lê (pdf.js por posição dos textos)
+  APP->>APP: interpreta (autorização ou detalhe de serviço) e casa com a planilha
+  APP-->>P: prévia: tipo, dia, refeição, motivo e cada aluno
+  P->>APP: Publicar rancho corrido
+  APP->>API: POST ?rancho=AAAA-MM-DD {origem, itens}
+  API->>API: sessão, mesma origem, data na semana, limites, validação dos itens
+  API->>COF: gravarRancho(dia, publicação)
+  COF->>R: RPUSH rancho:dia (cifrado), LTRIM 40, EXPIRE 4 dias
+  API->>R: LPUSH log publicou_rancho (só a data, nenhum nome)
+  Note over APP,R: na abertura do app e ao criar uma lista
+  APP->>API: GET ?rancho=d1,...,d7 (os dias da semana da planilha)
+  API->>COF: lerRancho(dia) para cada dia
+  API-->>APP: publicações de cada dia
+  APP->>APP: índice por número interno e refeição, selo e alerta na marcação
+```
+
+```mermaid
+flowchart LR
+  A["Autorização<br/>(lista): refeição + motivo escrito"] --> I
+  S["Detalhe de serviço<br/>(tabela): função + turno"] --> I
+  I["Itens: número interno, nome, motivo,<br/>refeições (ou todas), pelotão"] --> D{"Dia do arquivo<br/>(ou escolhido na tela)"}
+  D --> P1["rancho:2026-10-24 (lista cifrada)"]
+  P1 --> M["Marcação da lista: o aluno aparece com o selo<br/>se o dia da lista e a refeição combinam"]
+  P1 --> X["Painel: quem publicou e quantos alunos,<br/>com Remover o dia"]
+```
+
+| Ponto | Comportamento |
+|---|---|
+| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha |
+| Armazenamento | Uma lista Redis por dia (`rancho:AAAA-MM-DD`); cada publicação é um item cifrado no contexto do dia; validade de 4 dias |
+| Concorrência | Publicar usa `RPUSH` (só acrescenta): publicações simultâneas não se perdem |
+| Quem publica | Qualquer sessão válida; limites: 300 alunos, 120 KB, 20 publicações por pessoa por hora, 40 por dia |
+| Quem remove | Administradores, pelo painel (`limpar_rancho`) |
+| Funções do servidor | Nenhuma nova: pega carona em `/api/planilha` e `/api/admin-acao` |

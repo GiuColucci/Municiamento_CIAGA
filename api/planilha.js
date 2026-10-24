@@ -27,11 +27,55 @@ function planilhaValida(d) {
   return d.alunos.every(aluno) && d.turmas.every((t) => Array.isArray(t) && texto(t[0], 12) && Number.isInteger(t[1]) && texto(t[2] || "", 200)) && d.avisos.every((a) => Array.isArray(a) && texto(a[0], 600));
 }
 
+// ---------------------------------------------------------------- rancho corrido (mesma rota: o plano gratuito limita as funções)
+// GET  ?rancho=AAAA-MM-DD,AAAA-MM-DD   quem está de rancho corrido nesses dias (qualquer pessoa logada)
+// POST ?rancho=AAAA-MM-DD              publica o que foi lido dos arquivos (qualquer pessoa logada; só acrescenta)
+const DATA = /^\d{4}-\d{2}-\d{2}$/;
+const REFEICOES = ["Café", "Almoço", "Janta", "Ceia"];
+const hojeBrasilia = () => new Date(Date.now()).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+const diasEntre = (a, b) => Math.round((Date.parse(a) - Date.parse(b)) / 86400000);
+const MAX_ITENS_RANCHO = 300;
+const MAX_BYTES_RANCHO = 120000;
+
+function itemRanchoValido(i) {
+  return !!i && typeof i === "object" && typeof i.c === "string" && /^[BMN]?\d{4}$/.test(i.c) && texto(i.n, 80) && i.n.trim().length > 0 &&
+    texto(i.m || "", 160) && (i.p == null || texto(i.p, 40)) &&
+    (i.r == null || (Array.isArray(i.r) && i.r.length <= 4 && i.r.every((x) => REFEICOES.includes(x))));
+}
+
+async function rancho(req, res, sess, q) {
+  if (req.method === "GET") {
+    const datas = [...new Set(String(q.get("rancho") || "").split(",").filter((d) => DATA.test(d)))].slice(0, 8);
+    const dias = {};
+    for (const d of datas) dias[d] = await cofre.lerRancho(d);
+    return json(res, 200, { dias });
+  }
+  if (req.method !== "POST") return json(res, 405, { erro: "Método não permitido." });
+  if (!s.mesmaOrigem(req)) return json(res, 403, { erro: "Origem não permitida." });
+  const data = q.get("rancho");
+  if (!DATA.test(data || "") || isNaN(Date.parse(data))) return json(res, 400, { erro: "Data inválida." });
+  const dif = diasEntre(data, hojeBrasilia());
+  if (dif < -1 || dif > 8) return json(res, 400, { erro: "Essa data está fora da semana: confira o dia." });
+  if (s.limitar("rancho:" + sess.u, 20, 60 * 60 * 1000)) return json(res, 429, { erro: "Muitas publicações seguidas. Aguarde alguns minutos." });
+  const corpo = req.body || {};
+  const itens = corpo.itens;
+  if (JSON.stringify(corpo).length > MAX_BYTES_RANCHO) return json(res, 413, { erro: "Arquivo grande demais para o rancho corrido." });
+  if (!Array.isArray(itens) || !itens.length || itens.length > MAX_ITENS_RANCHO || !itens.every(itemRanchoValido) || !["a", "s", "x"].includes(corpo.origem)) {
+    return json(res, 400, { erro: "Rancho corrido inválido. Leia o arquivo de novo." });
+  }
+  const limpos = itens.map((i) => ({ c: i.c, n: i.n.trim(), m: (i.m || "").trim(), r: i.r || null, p: i.p ? String(i.p).trim() : "" }));
+  await cofre.gravarRancho(data, { por: await pessoas.nomeExibido(sess.u), em: Date.now(), origem: corpo.origem, itens: limpos });
+  await reg.registrar(req, sess.u, "publicou_rancho", { alvo: data }); // só o evento: nenhum nome vai para o registro
+  return json(res, 200, { ok: true, data, qtd: limpos.length });
+}
+
 module.exports = async (req, res) => {
   const sess = s.lerSessao(req);
   if (!sess || (await pessoas.removido(sess.u))) return json(res, 401, { erro: "Entre de novo." });
   if (!reg.config()) return json(res, 503, { erro: "Banco não configurado." });
   try {
+    const q = new URL(req.url || "/", "http://x").searchParams;
+    if (q.has("rancho")) return await rancho(req, res, sess, q);
     if (req.method === "GET") {
       const p = await cofre.lerPlanilha();
       return p ? json(res, 200, p) : json(res, 404, { vazio: true });

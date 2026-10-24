@@ -4,7 +4,7 @@ const path = require("path");
 
 const RAIZ = path.resolve(__dirname, "..", "..");
 const WEB = path.join(RAIZ, "web");
-const ARQUIVOS = ["texto.js", "entradas.js", "pdf.js", "parser.js", "report.js", "documentos.js", "hospedado.js", "bibliotecas.js"];
+const ARQUIVOS = ["texto.js", "entradas.js", "pdf.js", "parser.js", "report.js", "documentos.js", "rancho.js", "hospedado.js", "bibliotecas.js"];
 
 globalThis.XLSX = require(path.join(WEB, "vendor", "xlsx.full.min.js"));
 globalThis.JSZip = require(path.join(WEB, "vendor", "jszip.min.js"));

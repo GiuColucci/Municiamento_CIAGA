@@ -87,6 +87,7 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 | Funções do servidor | **Nenhuma nova** (12 de 12): o rancho corrido usa a rota `/api/planilha` (parâmetro `?rancho=`) e a `/api/admin-acao` |
 | Leitura do PDF | Pela **posição dos textos** (pdf.js), agrupados em linhas e células; XLSX e CSV pela planilha |
 | Leitura de **foto** | **OCR no navegador** (Tesseract.js, português), com os arquivos hospedados no próprio site (`public/ocr/`, ~9,5 MB, baixados só quando alguém lê uma foto). A foto é reduzida (lado maior 2.200 px), lida palavra por palavra com a posição, e vira linhas e células como no PDF; nada da foto sai do aparelho |
+| Tabela de serviço em foto | A foto é **ampliada** (texto pequeno só é lido bem com letras grandes), as **linhas da tabela são apagadas** e a leitura é por linhas. Em cada linha o sistema procura **4 dígitos + letra do curso (N, B ou M) + nome de guerra**, tolerando ruído de borda, letra do curso mal lida (vale o número) e número com letra no lugar de algarismo. A **data** ("SERVIÇO: 24 OUT 2026") também é lida da foto, em várias formas |
 | Número lido errado | Se o número interno não existe na planilha e o nome de guerra existe **uma única vez**, o sistema usa o aluno pelo nome e publica o número da planilha |
 | Arquivo não reconhecido ou sem alunos | Aviso claro, sem publicar; nunca bloqueia o resto |
 | Sem a data da sexta na planilha da semana | Não há como saber o dia de cada lista: os avisos não aparecem |

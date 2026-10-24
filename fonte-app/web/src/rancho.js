@@ -15,7 +15,6 @@
 
   var REFEICOES = ["Café", "Almoço", "Janta", "Ceia"];
   var MESES = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
-  var JANELA = /^\d{4}\s*-\s*\d{4}\s*P?(\s*\/\s*\d{4}\s*-\s*\d{4}\s*P?)*$/i; // 0800-1200P / 2000-0000P / 0800-1200
   var LIMITE_PAGINAS = 10;
   var LIMITE_ITENS = 300;
 
@@ -66,32 +65,67 @@
         i += seguintes.length;
       }
     });
+    if (!data) data = dataDoTexto(linhas.map(function (c) { return c.join(" "); }).join(" ")); // sem "Data:" legível: a primeira data do arquivo
     if (!motivo) avisos.push("A autorização não traz o motivo escrito: o aviso vai dizer só “Rancho corrido autorizado”.");
     itens.forEach(function (i) { if (!i.m) i.m = "Rancho corrido autorizado"; });
     return { data: data, refeicoes: refeicoes, motivo: motivo, itens: itens };
   }
 
+  /** Corrige letras que a leitura de foto troca por número dentro de um número interno (3O25 -> 3025). */
+  function corrigirDigitos(s) {
+    s = String(s).replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
+    if (/^1\d{4}$/.test(s) && /^[123]/.test(s.slice(1))) return s.slice(1); // a borda da tabela colada antes do número ("13048" = "|" + 3048)
+    if (!/^[0-9OoIl|SsBZ]{4}$/.test(s) || (s.match(/\d/g) || []).length < 2) return s;
+    return s.replace(/[Oo]/g, "0").replace(/[Il|]/g, "1").replace(/[Ss]/g, "5").replace(/B/g, "8").replace(/Z/g, "2");
+  }
+  /** A letra do curso, mesmo com a leitura de foto errando (NU, NO, ND -> N; rn, MM -> M): "" se não der para saber. */
+  function letraDoCurso(tok) {
+    var u = String(tok || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (/^(N|NU|NO|ND|NI|NN|N0|NL|NJ|MN)$/.test(u)) return u === "MN" ? "M" : "N";
+    if (/^(M|MM|RN|MI|M0|ML|IM)$/.test(u)) return "M";
+    if (/^(B|BI|B1|BB|8|BL)$/.test(u)) return "B";
+    return "";
+  }
+  function mesDe(tok) { var k = M.normalizar(tok).replace(/0/g, "o").replace(/[1|]/g, "l").slice(0, 3); return MESES[k] || null; }
+  /** "SERVIÇO: 24 OUT 2026" (ou só "24 OUT 2026", ou 24/10/2026), mesmo com a leitura de foto trocando letras. */
+  function dataDoTexto(tudo) {
+    var m = /servi\S{1,3}\s*[:;.,]?\s*(\d{1,2})\s*([a-zç0]{3})[a-zç]*\.?\s*(?:de\s*)?(\d{4})/i.exec(tudo) || /\b(\d{1,2})\s*(?:de\s*)?([a-zç0]{3})[a-zç]*\.?\s*(?:de\s*)?(20\d{2})\b/i.exec(tudo);
+    if (m && mesDe(m[2])) return iso(+m[3], mesDe(m[2]), +m[1]);
+    m = /\b(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(20\d{2})\b/.exec(tudo);
+    return m ? iso(+m[3], +m[2], +m[1]) : null;
+  }
+  var JANELAS = /\d{4}\s*-\s*\d{4}\s*P?(?:\s*\/\s*\d{4}\s*-\s*\d{4}\s*P?)*/gi;
+
+  /** Tabela de serviço. Em cada linha: [função] e, para cada aluno, 4 dígitos + letra do curso (N, B ou M) + nome de guerra.
+      Lê a linha inteira por palavras (não depende de onde a leitura separou as células) e ignora o ruído de bordas da foto. */
   function interpretarServico(linhas, avisos) {
-    var data = null, itens = [], janelas = [], m;
+    var data = null, itens = [], janelas = [], m, todo = [];
     linhas.forEach(function (cel) {
-      var c = cel.map(limpar).filter(Boolean), txt = c.join(" ");
-      if (!data && (m = /servi[cç]o\s*:\s*(\d{1,2})\s+([a-zç]{3})[a-zç]*\.?\s+(\d{4})/i.exec(txt)) && MESES[M.normalizar(m[2])]) data = iso(+m[3], MESES[M.normalizar(m[2])], +m[1]);
-      if (c.some(function (x) { return /^servi[cç]o\s+(di[aá]rio|de quarto)$/i.test(x); })) { janelas = []; return; }
-      var js = c.filter(function (x) { return JANELA.test(x); });
-      if (js.length) { janelas = js; return; }
+      var txt = cel.map(limpar).filter(Boolean).join(" ");
+      if (!data) data = dataDoTexto(txt);
+      todo.push(txt);
+      if (/servi[cç]o\s+(di[aá]rio|de\s+quarto)/i.test(txt)) { janelas = []; return; }
+      var js = txt.match(JANELAS);
+      if (js && !/\b\d{4}\s+[A-Za-z]?\s*[A-Za-zÀ-ÿ]{3,}/.test(txt.replace(JANELAS, " "))) { janelas = js.map(function (x) { return x.replace(/\s+/g, " ").replace(/\s*-\s*/g, "-").replace(/\s*\/\s*/g, " / ").trim(); }); return; }
+      var t = txt.replace(/[|¦\[\]{}_~—–"“”]+/g, " ").split(/\s+/).filter(function (x) { return x && !/^[^A-Za-zÀ-ÿ0-9]$/.test(x); });
       var funcao = [], k = 0;
-      for (var i = 0; i < c.length; i++) {
-        var junto = /^(\d{4})\s+([BMN])\s+(.+)$/i.exec(c[i]), nome = null, cod = null;
-        if (junto) { cod = junto[2].toUpperCase() + junto[1]; nome = junto[3]; }
-        else if (/^\d{4}$/.test(c[i]) && c[i + 1] && /^[BMN]$/i.test(c[i + 1])) { cod = c[i + 1].toUpperCase() + c[i]; nome = c[i + 2]; i += 2; }
-        else { if (!k) funcao.push(c[i]); continue; }
-        while (c[i + 1] && /^(TR|SE)$/i.test(c[i + 1])) i++; // marcas do quadro (não são nome)
-        if (!nome || /^\d{4}$/.test(nome) || !/[A-Za-zÀ-ÿ]/.test(nome)) continue;
+      for (var i = 0; i < t.length; i++) {
+        var dig = corrigirDigitos(t[i]);
+        if (!/^\d{4}$/.test(dig)) { if (!k) funcao.push(t[i]); continue; }
+        var j = i + 1, letra = "";
+        if (t[j] && /^[A-Za-z0-9]{1,2}$/.test(t[j]) && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j]))) { letra = letraDoCurso(t[j]); j++; } // a letra do curso (se a leitura errar a letra, vale o número)
+        var nome = [];
+        while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
+        if (!nome.length) continue; // número solto (horário, total...)
         var quando = janelas.length ? janelas[Math.min(k, janelas.length - 1)] : "";
-        itens.push({ c: cod, n: nome, m: "Serviço: " + (funcao.join(" ") || "de serviço") + (quando ? " (" + quando + ")" : ""), r: null, p: "" });
+        // função: só palavras em MAIÚSCULAS (a leitura de foto deixa letras soltas minúsculas no lugar de um rótulo apagado)
+        var funcaoTxt = funcao.filter(function (w) { return /^[A-ZÀ-Ý0-9][A-ZÀ-Ý0-9'’.-]*$/.test(w) && (w.length >= 2 || /\d/.test(w)); }).join(" ");
+        itens.push({ c: letra + dig, n: nome.join(" "), m: "Serviço" + (funcaoTxt ? ": " + funcaoTxt : "") + (quando ? " (" + quando + ")" : ""), r: null, p: "" });
         k++;
+        i = j - 1;
       }
     });
+    if (!data) data = dataDoTexto(todo.join(" ")); // a data pode ter sido lida em pedaços (foto)
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
 
@@ -178,7 +212,7 @@
   // ---------------------------------------------------------------- foto (JPEG/PNG) -> OCR no navegador
 
   var LIMITE_BYTES_FOTO = 10 * 1024 * 1024;
-  var LADO_MAXIMO_FOTO = 2200; // fotos de celular são grandes; reduzir deixa a leitura bem mais rápida sem perder o texto
+  var LADO_ALVO_FOTO = 3200; // texto pequeno de tabela só é lido bem com letras grandes: fotos pequenas são AUMENTADAS (até 3x) e as enormes reduzidas
   var CAMINHO_OCR = "/ocr/"; // Tesseract.js, o motor e o idioma português ficam no próprio site (a regra de segurança não deixa sair)
 
   /** 'png', 'jpeg' ou null, pelos primeiros bytes (nunca pela extensão). */
@@ -204,16 +238,49 @@
     var blob = new Blob([bytes], { type: tipo === "png" ? "image/png" : "image/jpeg" }), bmp;
     try { bmp = await createImageBitmap(blob, { imageOrientation: "from-image" }); }
     catch (e) { throw new M.ArquivoInvalido("Não consegui abrir essa foto. Tire de novo ou escolha outro arquivo."); }
-    var escala = Math.min(1, LADO_MAXIMO_FOTO / Math.max(bmp.width, bmp.height));
+    var escala = Math.min(3, LADO_ALVO_FOTO / Math.max(bmp.width, bmp.height));
     var c = document.createElement("canvas");
     c.width = Math.max(1, Math.round(bmp.width * escala));
     c.height = Math.max(1, Math.round(bmp.height * escala));
     var g = c.getContext("2d");
     g.fillStyle = "#fff";
     g.fillRect(0, 0, c.width, c.height); // PNG com fundo transparente vira fundo branco
+    g.imageSmoothingQuality = "high";
     g.drawImage(bmp, 0, 0, c.width, c.height);
     if (bmp.close) bmp.close();
+    try { apagarLinhasDaTabela(c, g); } catch (e) { /* sem a limpeza, a leitura segue com a foto como está */ }
     return c;
+  }
+
+  /** As linhas da tabela (finas, escuras, compridas, com branco dos dois lados) atrapalham a leitura: viram "|", "]" e números colados.
+      Apaga só o que é linha comprida e fina; letras (curtas) e as caixas cinza dos títulos (largas) ficam. */
+  function apagarLinhasDaTabela(c, g) {
+    var w = c.width, h = c.height, img = g.getImageData(0, 0, w, h), d = img.data, n = w * h, Y = new Uint8Array(n), i, x, y;
+    for (i = 0; i < n; i++) Y[i] = (d[4 * i] * 299 + d[4 * i + 1] * 587 + d[4 * i + 2] * 114) / 1000;
+    var ESCURO = 150, CLARO = 175, LADO = Math.max(4, Math.round(w / 640)), MIN = Math.max(40, Math.round(w / 55)); // espessura e comprimento em proporção ao tamanho
+    var marca = new Uint8Array(n);
+    function varrer(horizontal) {
+      var fora = horizontal ? h : w, dentro = horizontal ? w : h;
+      for (var a = LADO; a < fora - LADO; a++) {
+        var corrida = 0;
+        for (var b = 0; b <= dentro; b++) {
+          var ok = false;
+          if (b < dentro) {
+            var p = horizontal ? a * w + b : b * w + a, s1 = horizontal ? p - LADO * w : p - LADO, s2 = horizontal ? p + LADO * w : p + LADO;
+            ok = Y[p] < ESCURO && Y[s1] > CLARO && Y[s2] > CLARO;
+          }
+          if (ok) corrida++;
+          else { if (corrida >= MIN) for (var k = b - corrida; k < b; k++) marca[horizontal ? a * w + k : k * w + a] = 1; corrida = 0; }
+        }
+      }
+    }
+    varrer(true);
+    varrer(false);
+    for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++) {
+      i = y * w + x;
+      if (marca[i] || marca[i - 1] || marca[i + 1] || marca[i - w] || marca[i + w]) { if (marca[i] || Y[i] < ESCURO + 40) { d[4 * i] = d[4 * i + 1] = d[4 * i + 2] = 255; } }
+    }
+    g.putImageData(img, 0, 0);
   }
 
   /** Palavras reconhecidas, com a caixa de cada uma. A forma da resposta mudou entre versões do Tesseract.js: aceita as duas. */
@@ -249,13 +316,15 @@
       });
     } catch (e) { throw new M.ArquivoInvalido("Não consegui iniciar o leitor de fotos neste aparelho. Tente enviar o PDF."); }
     try {
-      await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" }); // texto espalhado (tabelas e formulários)
+      await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" }); // bloco de texto em linhas: o que melhor lê tabelas e formulários
       var res = await worker.recognize(canvas, {}, { blocks: true, text: true });
       return M.linhasDePalavrasOcr(palavrasDoOcr(res.data).filter(function (w) { return w.confidence == null || w.confidence >= 25; }));
     } finally {
       try { await worker.terminate(); } catch (e) { /* já encerrado */ }
     }
   }
+
+  M.linhasDaFoto = linhasDaFoto; // também para diagnóstico: mostra o que o OCR enxergou, linha a linha
 
   /** arquivo: {nome, bytes}. Devolve a leitura do arquivo (ver interpretarRancho) com o nome.
       aoProgresso(etapa, 0..1): só a foto demora (a leitura por OCR). */

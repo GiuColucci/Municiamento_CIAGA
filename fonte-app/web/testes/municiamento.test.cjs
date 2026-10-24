@@ -646,3 +646,43 @@ test("rancho: número que veio errado da foto é resolvido pelo nome de guerra (
   assert.equal(c[1].aluno, null); // dois SILVA: não adivinha
   assert.equal(c[2].aluno, null);
 });
+
+test("rancho: tabela de serviço lida de foto — 4 dígitos + letra do curso + nome, mesmo com ruído de borda e letras trocadas", () => {
+  // linhas como o OCR devolve (dados FICTÍCIOS): bordas viram | e ], letra do curso lida errado, número com a borda colada
+  const linhas = [
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["ROTINA DE DOMINGO"], ["DETALHE DE SÁBADO"], ["SERVICO 24 0UT 2026"],
+    ["3° ANO"], ["SERVIÇO DE QUARTO"],
+    ["0800-1200P / 2000-0000P / 0800-1200", "1200-1600P / 0000-0400P", "1600-2000? / 0400-0800P"],
+    ["CHEFE DE DIA", "13048", "NU", "TANGO", "TR", "[3145]", "rn", "MIKE", "TR", "3134", "M", "D'ALMEIDA"],
+    ["RETÉM", "3157 |", "M", "ROMEO SOUSA", "|", "3094", "|", "ALFA"],
+    ["ay", "|", "1155 |", "B", "SIERRA LIMA", "1r", "LIMA"],
+    ["PAV 3A", "1O11", "6 |", "CHARLIE", "|", "1010", "8", "DELTA", "SE"],
+    ["junk", "1100-1400P", "1600-1930P"],
+  ];
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.tipo, "servico");
+  assert.equal(r.data, "2026-10-24");
+  const por = Object.fromEntries(r.itens.map((i) => [i.c, i]));
+  assert.ok(por.N3048 && por.N3048.n === "TANGO"); // "13048" = borda + 3048; "NU" = N
+  assert.ok(por.M3145 && por.M3145.n === "MIKE"); // "[3145]" e "rn" = M
+  assert.ok(por.M3134 && por.M3134.n === "D'ALMEIDA");
+  assert.ok(por.M3157 && por.M3157.n === "ROMEO SOUSA");
+  assert.ok(por["3094"] && por["3094"].n === "ALFA"); // sem letra legível: vale o número
+  assert.ok(por.B1155 && por.B1155.n === "SIERRA LIMA"); // rótulo da função apagado ("ay"): o motivo é só "Serviço" (com o turno)
+  assert.ok(/^Serviço( \(|$)/.test(por.B1155.m) && !/ay/.test(por.B1155.m));
+  assert.ok(por["1011"] && por["1011"].n === "CHARLIE"); // "1O11" = 1011
+  assert.ok(por.B1010 && por.B1010.n === "DELTA"); // "8" = B
+  assert.equal(por.N3048.m, "Serviço: CHEFE DE DIA (0800-1200P / 2000-0000P / 0800-1200)");
+  assert.ok(!r.itens.some((i) => /^1100|^1600/.test(i.c))); // horários não viram aluno
+});
+
+test("rancho: data em várias formas (com e sem 'SERVIÇO:', mês lido com zero) e data só na autorização numérica", () => {
+  const dia = (txt) => M.interpretarRancho([["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], [txt], ["RETÉM", "3042", "N", "ROMEO"]]).data;
+  assert.equal(dia("SERVIÇO: 24 OUT 2026"), "2026-10-24");
+  assert.equal(dia("SERVICO; 24 0UT 2026"), "2026-10-24");
+  assert.equal(dia("24 NOV 2026"), "2026-11-24");
+  assert.equal(dia("Serviço: 5 de dezembro de 2026"), "2026-12-05");
+  assert.equal(dia("SERVIÇO 24/10/2026"), "2026-10-24");
+  const aut = M.interpretarRancho([["AUTORIZAÇÃO PARA RANCHO CORRIDO"], ["Data ____"], ["Emitida em 24/10/2026"], ["1037", "ALVES", "A"]]);
+  assert.equal(aut.data, "2026-10-24");
+});

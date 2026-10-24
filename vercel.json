@@ -6,6 +6,8 @@
     { "source": "/app", "destination": "/api/app" },
     { "source": "/sair", "destination": "/api/sair" },
     { "source": "/admin", "destination": "/api/admin" },
+    { "source": "/api/admin-lista", "destination": "/api/admin-baixar?o=lista" },
+    { "source": "/api/admin-exportar", "destination": "/api/admin-baixar?o=backup" },
     { "source": "/admin/planilha", "destination": "/api/planilha-ver" },
     { "source": "/ajuda", "destination": "/api/ajuda" }
   ],

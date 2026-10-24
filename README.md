@@ -118,7 +118,7 @@ Detalhes e diagramas de cada fluxo: [docs/ARQUITETURA_E_FLUXO.md](docs/ARQUITETU
 │   │   ├── registro.js          cliente do Redis e registro de eventos (IP mascarado)
 │   │   └── layout.js            HTML das páginas do servidor e CSP
 │   ├── login.js  sair.js  app.js  ajuda.js
-│   ├── admin.js  admin-acao.js  admin-lista.js  admin-exportar.js
+│   ├── admin.js  admin-acao.js  admin-baixar.js
 │   ├── planilha.js  planilha-ver.js  rascunho.js  evento.js  conferencia-geral.js
 ├── public/                      Páginas estáticas: login, tema claro/escuro, brasão
 ├── scripts/
@@ -251,6 +251,8 @@ Rotina sugerida, em [docs/OPERACAO.md](docs/OPERACAO.md#rotina-recomendada).
 
 ## 9. Desenvolvimento e testes
 
+> **Limite de funções:** o plano gratuito da Vercel aceita no máximo **12 funções** (`api/*.js`, sem contar `_lib/`). Hoje são 12; um teste avisa se passar disso. Para criar uma rota nova, junte duas existentes (como `admin-baixar.js`, que reúne a lista e o backup) ou use um plano pago.
+
 ### Testar o site no seu computador, sem deploy
 
 ```bash
@@ -285,8 +287,8 @@ npm run app:build    # gera fonte-app/conferencia_digital.html
 | `/admin` → `/api/admin` | GET | administrador (modo admin) | Painel |
 | `/admin/planilha` → `/api/planilha-ver` | GET | administrador | Visualizador da planilha publicada (somente leitura) |
 | `/api/admin-acao` | POST | administrador (algumas só ranchef) | Cadastrar, excluir, promover, rebaixar, trocar senhas, transferir/assumir ranchef, remover planilha |
-| `/api/admin-lista` | GET | administrador | Lista de liberados (.txt), sem códigos |
-| `/api/admin-exportar` | GET | ranchef | Backup da lista (JSON: nomes, sais, hashes) |
+| `/api/admin-lista` (→ `api/admin-baixar?o=lista`) | GET | administrador | Lista de liberados (.txt), sem códigos |
+| `/api/admin-exportar` (→ `api/admin-baixar?o=backup`) | GET | ranchef | Backup da lista (JSON: nomes, sais, hashes) |
 | `/api/planilha` | GET / POST / DELETE | GET: sessão · POST/DELETE: administrador | Lê, publica ou remove a planilha cifrada |
 | `/api/rascunho` | GET / PUT / DELETE | sessão (individual) | Rascunho cifrado do próprio usuário |
 | `/api/conferencia-geral` | GET | sessão (qualquer perfil) | Sem parâmetros: dias e refeições com conferentes. Com `dia` e `refeicao`: conferentes e união das marcações |

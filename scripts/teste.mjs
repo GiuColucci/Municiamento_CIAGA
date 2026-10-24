@@ -356,7 +356,8 @@ test("papéis: ranchef manda nos administradores; máx. 2 administradores", asyn
 test("backup: só o ranchef baixa; exportar e restaurar em banco vazio", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const exportar = require("../api/admin-exportar.js");
+  const baixarModulo = require("../api/admin-baixar.js");
+  const exportar = (req, res) => baixarModulo({ ...req, url: "/api/admin-baixar?o=backup" }, res);
   const baixar = async (cookie) => {
     const r = res();
     await exportar({ method: "GET", headers: { cookie } }, r);
@@ -455,7 +456,8 @@ test("registro: filtro por nome de guerra (sem acento) ou por código de aluno",
 test("lista dos liberados: baixar (.txt) e copiar; só administrador; sem códigos", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const lista = require("../api/admin-lista.js");
+  const baixarLista = require("../api/admin-baixar.js");
+  const lista = (req, res) => baixarLista({ ...req, url: "/api/admin-baixar?o=lista" }, res);
   const admin = require("../api/admin.js");
   const baixar = async (cookie, metodo = "GET") => {
     const r = res();
@@ -1252,4 +1254,13 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   // sem planilha publicada
   db.s.delete("planilha");
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 404);
+});
+
+test("o plano gratuito da hospedagem aceita no máximo 12 funções: api/ não pode ter mais de 12 arquivos de rota", () => {
+  const rotas = fs.readdirSync(new URL("../api/", import.meta.url)).filter((n) => n.endsWith(".js"));
+  assert.ok(rotas.length <= 12, "são " + rotas.length + " rotas: junte duas antes de publicar");
+  // os endereços antigos de download continuam valendo por rewrite
+  const conf = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  const origens = conf.rewrites.map((r) => r.source);
+  assert.ok(origens.includes("/api/admin-lista") && origens.includes("/api/admin-exportar"));
 });

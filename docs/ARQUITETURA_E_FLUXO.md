@@ -46,7 +46,7 @@ flowchart TB
       R8["ajuda.js"]
       R9["evento.js"]
       R10["sair.js"]
-      R11["admin-lista.js / admin-exportar.js"]
+      R11["admin-baixar.js (lista e backup)"]
     end
     subgraph Lib["_lib/"]
       S["seguranca.js<br/>hash, sessão, CSRF, limites"]

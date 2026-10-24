@@ -70,7 +70,7 @@ await require(path.join(raiz, "api/_lib/pessoas.js")).carregarLista(PESSOAS);
 
 const tipos = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "application/javascript", ".png": "image/png" };
 const rotas = {
-  "/api/login": "api/login.js", "/api/admin-acao": "api/admin-acao.js", "/api/admin-exportar": "api/admin-exportar.js", "/api/admin-lista": "api/admin-lista.js",
+  "/api/login": "api/login.js", "/api/admin-acao": "api/admin-acao.js", "/api/admin-exportar": "api/admin-baixar.js", "/api/admin-lista": "api/admin-baixar.js",
   "/api/planilha": "api/planilha.js", "/api/rascunho": "api/rascunho.js", "/api/evento": "api/evento.js", "/api/conferencia-geral": "api/conferencia-geral.js",
   "/app": "api/app.js", "/admin": "api/admin.js", "/admin/planilha": "api/planilha-ver.js", "/ajuda": "api/ajuda.js", "/sair": "api/sair.js",
 };
@@ -105,6 +105,9 @@ http.createServer(async (req, res) => {
     const ehJson = String(req.headers["content-type"] || "").includes("json");
     req.body = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method)
       ? (ehJson ? (() => { try { return JSON.parse(bruto); } catch { return {}; } })() : Object.fromEntries(new URLSearchParams(bruto))) : undefined;
+    // os endereços antigos de download viram o parâmetro de api/admin-baixar.js (como o vercel.json faz)
+    if (url.pathname === "/api/admin-lista") req.url = "/api/admin-baixar?o=lista";
+    if (url.pathname === "/api/admin-exportar") req.url = "/api/admin-baixar?o=backup";
     return require(path.join(raiz, rota))(req, res);
   }
   const arq = path.join(raiz, "public", url.pathname === "/" ? "index.html" : url.pathname);

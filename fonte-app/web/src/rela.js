@@ -458,7 +458,7 @@
       }
       li.appendChild(lab);
       if (rancho) {
-        motivo = el("p", "rancho-motivo oculto", "Motivo do rancho corrido: " + rancho.motivo + " (publicado por " + rancho.por + ")");
+        motivo = el("p", "rancho-motivo oculto", "Motivo do rancho corrido: " + rancho.motivo);
         li.appendChild(motivo);
       }
       ol.appendChild(li);

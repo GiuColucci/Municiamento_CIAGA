@@ -546,7 +546,7 @@ tbody tr:last-child td { border-bottom: 0; }
 
 /* ---------- ajustes de layout (auditoria no celular e no computador) */
 /* linha do aluno: selos e código quebram para a linha de baixo em vez de passar da caixa */
-.aluno label { flex-wrap: wrap; row-gap: .15rem; }
+.aluno label { flex-wrap: wrap; row-gap: .15rem; align-items: center; } /* nome, turma, número interno e selos na mesma altura (centro), não na linha de base */
 .rancho-motivo { margin-top: .4rem; }
 /* celular: tudo que se toca tem pelo menos 40 px */
 @media (max-width: 640px) {

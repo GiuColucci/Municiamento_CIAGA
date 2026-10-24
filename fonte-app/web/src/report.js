@@ -140,7 +140,7 @@
   M.tituloRela = function (cfg, sexta) {
     var dia = DIA_EXTENSO[cfg.dia] || cfg.dia;
     if (sexta) dia += ", " + M.formatarData(M.datasDaSemana(sexta)[cfg.dia]);
-    return dia + " · " + ROTULO_REFEICAO[cfg.refeicao] + " · " + M.rotuloAno(cfg.ano);
+    return dia + " · " + ROTULO_REFEICAO[cfg.refeicao] + " · " + (cfg.rotuloAno || M.rotuloAno(cfg.ano));
   };
 
   M.linhaRela = function (a) { return (a.codigo || "s/ código") + " – " + a.nome + " – " + a.turma; };

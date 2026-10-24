@@ -5,6 +5,7 @@ const zlib = require("zlib");
 const s = require("./_lib/seguranca");
 const reg = require("./_lib/registro");
 const pessoas = require("./_lib/pessoas");
+const { menuSuspenso } = require("./_lib/layout");
 
 // Arquivo: [12 bytes IV][16 bytes tag][texto cifrado]; conteúdo = HTML comprimido com brotli
 function abrir() {
@@ -29,7 +30,7 @@ document.addEventListener("change",function(e){if(e.target&&e.target.type==="fil
 // "Administrador" fica no cabeçalho do app (mesmo estilo dos outros botões), só para quem entrou como administrador
 // (decidido no servidor). "Sair" fica no fim da página, como um botão comum, não fixo na tela.
 const ESTILO_EXTRA = `<style>
-.menu a.link-faixa{display:inline-flex;align-items:center;text-decoration:none}
+.menu a.link-faixa,.menu summary.link-faixa{display:inline-flex;align-items:center;text-decoration:none}
 #cg-rodape{width:100%;max-width:var(--largura,1240px);margin:0 auto;padding:0 var(--margem,1rem) 2.5rem;display:flex;justify-content:flex-end}
 #cg-rodape a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:.6rem 1.6rem;border-radius:10px;font:700 1rem var(--sistema,"Times New Roman",serif);text-decoration:none;color:var(--link,#17345F);background:var(--vidro,rgba(255,255,255,.7));border:1px solid var(--secundaria-borda,#17345F)}
 #cg-rodape a:hover{border-color:var(--destaque,#C8A24A)}
@@ -45,8 +46,12 @@ function inserirMenu(html, admin) {
   const nav = cab >= 0 ? html.indexOf('<nav class="menu"', cab) : -1;
   const fim = nav >= 0 ? html.indexOf(">", nav) : -1;
   if (fim < 0) return null;
-  // "Como usar" para todos (muda de página, como o painel); "Administrador" só para administradores
-  const links = '<a class="link-faixa" href="/ajuda">Como usar</a>' + (admin ? '<a class="link-faixa" href="/admin">Administrador</a>' : "");
+  // Menu suspenso: "Como usar" para todos (muda de página, como o painel); "Conferência geral" e "Administrador" só para administradores
+  const links = menuSuspenso([
+    ...(admin ? [{ href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" }] : []),
+    ...(admin ? [{ href: "/admin", texto: "Administrador" }] : []),
+    { href: "/ajuda", texto: "Como usar" },
+  ]);
   return html.slice(0, fim + 1) + links + html.slice(fim + 1);
 }
 

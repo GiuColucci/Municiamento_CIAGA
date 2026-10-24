@@ -23,6 +23,7 @@ const ROTULO = {
   admin_publicou_planilha: "Publicou a planilha da semana",
   admin_removeu_planilha: "Removeu a planilha publicada",
   admin_viu_planilha: "Abriu a planilha publicada",
+  admin_viu_conferencia_geral: "Abriu a conferência geral",
   admin_mudou_codigo_aluno: "Trocou a senha dos alunos",
   admin_transferiu_ranchef: "Transferiu o cargo de ranchef",
   admin_assumiu_ranchef: "Assumiu o cargo de ranchef",

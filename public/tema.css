@@ -283,3 +283,20 @@ table.planilha-ver tfoot td { font-weight: 700; background: var(--superficie-2);
 .filtro-falhas input:checked + .marca::after { content: ""; width: 6px; height: 11px; margin-top: -2px; border: solid var(--faixa); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
 .filtro-falhas:has(input:checked) { border-color: var(--destaque); background: var(--aviso-fundo); }
 .filtro-falhas:has(input:focus-visible) { outline: 2px solid var(--destaque); outline-offset: 2px; }
+
+/* menu suspenso do cabeçalho */
+.menu-suspenso { position: relative; }
+.menu-suspenso > summary { list-style: none; cursor: pointer; user-select: none; }
+.menu-suspenso > summary::-webkit-details-marker { display: none; }
+.menu-suspenso > summary::after { content: "▾"; margin-left: .45rem; font-size: .85em; }
+.menu-suspenso[open] > summary::after { content: "▴"; }
+.menu-suspenso-lista {
+  position: absolute; z-index: 30; top: calc(100% + .5rem); right: 0; min-width: 14rem; display: grid; gap: .3rem; padding: .5rem;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; box-shadow: var(--sombra);
+}
+.menu-suspenso-item {
+  display: flex; align-items: center; min-height: 44px; padding: .5rem .9rem; border-radius: 8px; text-decoration: none;
+  font: 600 1rem var(--sistema, var(--serifa)); color: var(--texto); background: transparent;
+}
+.menu-suspenso-item:hover, .menu-suspenso-item:focus-visible { background: var(--superficie-2); color: var(--link); }
+@media print { .menu-suspenso { display: none; } }

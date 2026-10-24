@@ -7,6 +7,15 @@
   var escuro = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-tema", salvo === "claro" || salvo === "escuro" ? salvo : (escuro ? "escuro" : "claro"));
 
+  // menu suspenso do cabeçalho: clicar fora ou apertar Esc fecha
+  function fecharMenus(ev) {
+    Array.prototype.forEach.call(document.querySelectorAll("details.menu-suspenso[open]"), function (m) {
+      if (!ev || !m.contains(ev.target)) m.open = false;
+    });
+  }
+  document.addEventListener("click", fecharMenus);
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") fecharMenus(null); });
+
   document.addEventListener("DOMContentLoaded", function () {
     var botao = document.getElementById("botao-tema");
     if (!botao) return;

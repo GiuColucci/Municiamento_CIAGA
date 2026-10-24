@@ -197,6 +197,25 @@
       </div>
     </div>
   </section>
+
+  <!-- ===================== conferência geral (só administrador, versão hospedada) ===================== -->
+  <section id="tela-geral" class="oculto" aria-labelledby="t-geral">
+    <div class="titulo-pagina">
+      <h1 id="t-geral">Conferência geral</h1>
+      <p>Junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem só.</p>
+    </div>
+    <section class="cartao" aria-labelledby="t-geral-escolha">
+      <h2 id="t-geral-escolha">Dia e refeição</h2>
+      <div class="geral-opcoes" id="geral-opcoes"></div>
+      <p class="dica" id="geral-status" role="status" aria-live="polite"></p>
+      <div class="geral-acoes">
+        <button type="button" class="botao secundario" id="geral-atualizar">Atualizar</button>
+        <button type="button" class="botao link" id="geral-voltar">Voltar às listas</button>
+      </div>
+    </section>
+    <section class="cartao oculto" id="geral-conferentes" aria-labelledby="t-geral-conf"></section>
+    <section class="cartao painel oculto" id="geral-painel" aria-live="polite"></section>
+  </section>
 </main>
 
 <!--BIBLIOTECAS-->

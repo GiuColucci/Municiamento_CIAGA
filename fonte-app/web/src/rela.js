@@ -820,8 +820,9 @@
     mostrar($("tela-geral"), sim);
     mostrar($("tela-listas"), !sim && !!estado);
     if (geral) geral.aberta = sim;
-    // "Voltar ao app" do menu só aparece dentro da conferência geral
+    // dentro da conferência geral o menu mostra "Voltar ao app" e esconde "Conferência geral" (já está nela); fora, o contrário
     Array.prototype.forEach.call(document.querySelectorAll("[data-voltar-app]"), function (a) { a.hidden = !sim; });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-abrir-geral]"), function (a) { a.hidden = sim; });
   }
 
   /** Abre a tela: busca no servidor quais dias e refeições têm quem conferiu. */

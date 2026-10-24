@@ -16,14 +16,14 @@ function abrir() {
   return zlib.brotliDecompressSync(Buffer.concat([d.update(bruto.subarray(28)), d.final()]));
 }
 
-// Monitor injetado: avisa o servidor quando a pessoa carrega planilha ou baixa PDF/DOCX.
+// Monitor injetado: avisa o servidor quando a pessoa carrega planilha ou baixa o PDF.
 // Envia só o nome da ação, nunca conteúdo da planilha.
 const MONITOR = `<script>(function(){
 function av(a){try{fetch("/api/evento",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({acao:a}),keepalive:true,credentials:"same-origin"})}catch(e){}}
 document.addEventListener("click",function(e){var d=e.target.closest&&e.target.closest("[data-baixar]");
-if(d){av(d.getAttribute("data-baixar")==="docx"?"baixar_docx":"baixar_pdf");return;}
+if(d){av("baixar_pdf");return;}
 var b=e.target.closest&&e.target.closest("button,a");if(!b)return;var t=(b.textContent||"").toLowerCase();
-if(t.indexOf("baixar pdf")>-1)av("baixar_pdf");else if(t.indexOf("baixar docx")>-1)av("baixar_docx");},true);
+if(t.indexOf("baixar pdf")>-1)av("baixar_pdf");},true);
 document.addEventListener("change",function(e){if(e.target&&e.target.type==="file")av("planilha_carregada");},true);
 })();</script>`;
 

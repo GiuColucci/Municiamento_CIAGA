@@ -55,7 +55,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - Aluno comum não vê o painel; as ações dele são negadas e registradas. O papel é conferido ao vivo a cada ação (quem for rebaixado perde o poder na hora).
 - Ninguém altera a si mesmo. Administrador não é excluído direto: o ranchef primeiro o remove da função.
 - No app, o botão **Administrador** aparece no cabeçalho (só em sessão de administrador) e o botão **Sair** fica no **fim da página**, como um botão comum (não fixo na tela). No painel também: Sair ao final.
-- **Registro de acessos**: quem entrou, tentativas recusadas, abriu o app, carregou planilha, baixou PDF/DOCX, ações de admin, com horário de Brasília e IP mascarado (`187.12.x.x`). Guarda até 5.000 eventos e apaga os de mais de 30 dias. Nunca grava número interno, senha nem planilha.
+- **Registro de acessos**: quem entrou, tentativas recusadas, abriu o app, carregou planilha, baixou PDF, ações de admin, com horário de Brasília e IP mascarado (`187.12.x.x`). Guarda até 5.000 eventos e apaga os de mais de 30 dias. Nunca grava número interno, senha nem planilha.
 - **Backup**: "Baixar backup da lista" (em `/admin`) gera um JSON com nomes e hashes. Para restaurar num banco vazio: `node scripts/carregar-lista.mjs lista-acessos-AAAA-MM-DD.json` (com a mesma `PEPPER`). Faça backup de vez em quando.
 
 ## Manutenção rara (exige deploy)
@@ -83,7 +83,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - **Alunos**: ao entrar em `/app`, a planilha da semana abre sozinha; não há tela de envio nem "Nova planilha". Sem planilha publicada, aparece "Ainda não há planilha da semana".
 - **Rascunho automático**: a cada marcação o app salva, um instante depois, as listas e marcações da pessoa (individual, cifrado, só dela, por até **7 dias**). Se fechar ou atualizar a página, abre o `/app` de novo e tudo volta. Botão **Limpar marcações e dados** apaga as listas, as marcações e o rascunho salvo. Publicar uma planilha nova descarta os rascunhos antigos.
 - **Códigos de acesso diferentes**: alunos usam `ACCESS_CODE`; administradores usam `ACCESS_CODE_ADMIN` (o rótulo do campo muda ao escolher o perfil).
-- **Marcação**: filtro **Mostrar** (Todos, Municiados, NÃO municiados), com as contagens; vale também para a lista para marcar baixada. O botão **Baixar** abre a escolha entre PDF e DOCX.
+- **Marcação**: filtro **Mostrar** (Todos, Municiados, NÃO municiados), com as contagens; vale também para a lista para marcar baixada. O botão **Baixar PDF** gera o arquivo.
 - **Privacidade (LGPD)**: a planilha deixa de ficar só no aparelho. Avise os usuários de que ela é publicada pelo administrador, guardada cifrada no servidor por até 14 dias, e que as marcações de cada um ficam salvas cifradas por até 7 dias. O servidor consegue decifrar (a chave está nas variáveis da Vercel), então proteja o acesso à conta da Vercel e às variáveis.
 
 ## Trocar os códigos de acesso pelo painel (novo)
@@ -94,9 +94,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - Se esquecerem o código de administrador e ninguém conseguir entrar: apague a chave `acesso:admin` no Upstash (Data Browser) e o login volta a usar a variável `ACCESS_CODE_ADMIN` da Vercel.
 
 ## Abertura mais leve e página comprimida
-- As bibliotecas pesadas (ler XLSX e PDF, gerar PDF e DOCX, mais de 2 MB de código) **não rodam mais na abertura**: o app as executa depois que a animação termina, uma por vez, ou na hora, se alguém as usar antes (ler uma planilha, baixar). Isso evita a travada no começo, principalmente no celular. O desenho da planilha da semana também espera a abertura acabar.
+- As bibliotecas pesadas (ler XLSX e PDF, gerar PDF, mais de 2 MB de código) **não rodam mais na abertura**: o app as executa depois que a animação termina, uma por vez, ou na hora, se alguém as usar antes (ler uma planilha, baixar). Isso evita a travada no começo, principalmente no celular. O desenho da planilha da semana também espera a abertura acabar.
 - O servidor manda a página **comprimida** (brotli ou gzip), de ~3,4 MB para ~1,1 MB.
-- **Lista para marcar (PDF/DOCX)**: o cabeçalho diz se a lista traz *Todos os alunos*, *Municiados* ou *NÃO Municiados*, e o nome do arquivo também.
+- **Lista para marcar (PDF)**: o cabeçalho diz se a lista traz *Todos os alunos*, *Municiados* ou *NÃO Municiados*, e o nome do arquivo também.
 - **Senha de acesso dos alunos** passou a ser obrigatório, como o dos administradores; o painel avisa em destaque quando algum perfil está sem código.
 
 ## Página "Como usar" e transferência do cargo de ranchef

@@ -300,3 +300,6 @@ table.planilha-ver tfoot td { font-weight: 700; background: var(--superficie-2);
 }
 .menu-suspenso-item:hover, .menu-suspenso-item:focus-visible { background: var(--superficie-2); color: var(--link); }
 @media print { .menu-suspenso { display: none; } }
+
+/* cabeçalho em toda a largura: o botão de tema fica perto do canto superior direito (e a marca, do esquerdo) */
+.faixa-interna { max-width: none; padding-inline: clamp(1rem, 2.5vw, 2rem); }

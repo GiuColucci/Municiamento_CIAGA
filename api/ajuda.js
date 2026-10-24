@@ -49,7 +49,7 @@ const SECOES = [
   },
   {
     id: "imprimir", titulo: "5. Lista para marcar no papel",
-    html: `<p>Para imprimir e marcar à mão, toque em <strong>Baixar lista</strong> e escolha <strong>PDF</strong> ou <strong>DOCX</strong>.</p>
+    html: `<p>Para imprimir e marcar à mão, toque em <strong>Baixar lista (PDF)</strong>.</p>
 <ul class="lista">
 <li>A lista sai com uma caixinha [ &nbsp; ] ao lado de cada nome.</li>
 <li>O <strong>cabeçalho</strong> diz o que a lista traz: <strong>Todos os alunos</strong>, <strong>Municiados</strong> ou <strong>NÃO Municiados</strong>, de acordo com o filtro <strong>Mostrar</strong> que estava escolhido. O nome do arquivo também indica.</li>
@@ -62,7 +62,7 @@ const SECOES = [
 <li>Quando terminar de marcar, toque em <strong>Finalizar marcação</strong>.</li>
 <li>A <strong>rela</strong> traz só quem você marcou, separado pela planilha em <strong>municiados</strong> e <strong>NÃO municiados</strong>.</li>
 <li>Ajuste como quiser: <strong>Ordem</strong>, <strong>Agrupar</strong> (ano inteiro ou por turma), <strong>Mostrar</strong> (todos, municiados ou NÃO municiados) e <strong>Separar em duas listas</strong>.</li>
-<li>Toque em <strong>Copiar</strong> para colar o texto (por exemplo, no WhatsApp) ou em <strong>Baixar</strong> e escolha <strong>PDF</strong> ou <strong>DOCX</strong>.</li>
+<li>Toque em <strong>Copiar</strong> para colar o texto (por exemplo, no WhatsApp) ou em <strong>Baixar PDF</strong>.</li>
 </ol>
 <p>Errou algo? Toque em <strong>Voltar a marcar</strong>. Com várias listas abertas, o cartão <strong>Rela de todas as listas</strong> junta tudo num só lugar.</p>`,
   },
@@ -95,7 +95,7 @@ const SECOES = [
 <li><strong>"Nome, número interno ou senha incorretos":</strong> confira o nome de guerra (acentos e maiúsculas não importam), o número interno e a senha.</li>
 <li><strong>"Muitas tentativas erradas":</strong> espere 15 minutos. O contador de erros também zera todo dia à meia-noite.</li>
 <li><strong>Não aparece a planilha:</strong> ainda não foi publicada; peça a um administrador.</li>
-<li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar</strong> e escolha PDF ou DOCX de novo; o arquivo vai para o app Arquivos.</li>
+<li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar PDF</strong> de novo; o arquivo vai para o app Arquivos.</li>
 <li><strong>A página pediu para entrar de novo:</strong> a sessão acabou. Entre; seu rascunho está salvo.</li>
 </ul>`,
   },

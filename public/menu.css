@@ -25,6 +25,7 @@
   display: flex; align-items: center; min-height: 44px; padding: .5rem .9rem; border-radius: 8px; text-decoration: none;
   font: 600 1rem var(--sistema, var(--serifa, "Times New Roman", serif)); color: var(--texto, #1B2433); background: transparent;
 }
+.menu-suspenso-item[hidden] { display: none; }
 .menu-suspenso-item:hover, .menu-suspenso-item:focus-visible { background: var(--superficie-2, #F5F7FB); color: var(--link, #17345F); }
 
 /* celular: a fileira do menu usa a largura toda (tema à direita) e a lista abre embaixo do cabeçalho, de ponta a ponta,

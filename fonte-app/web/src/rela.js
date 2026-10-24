@@ -820,6 +820,8 @@
     mostrar($("tela-geral"), sim);
     mostrar($("tela-listas"), !sim && !!estado);
     if (geral) geral.aberta = sim;
+    // "Voltar ao app" do menu só aparece dentro da conferência geral
+    Array.prototype.forEach.call(document.querySelectorAll("[data-voltar-app]"), function (a) { a.hidden = !sim; });
   }
 
   /** Abre a tela: busca no servidor quais dias e refeições têm quem conferiu. */
@@ -936,14 +938,14 @@
     if (!voltar || !atualizar) return;
     voltar.addEventListener("click", function () { mostrarTelaGeral(false); window.scrollTo(0, 0); });
     atualizar.addEventListener("click", function () { if (geral && geral.aberta) carregarOpcoesGeral(); else abrirGeral(); });
-    // o item "Conferência geral" do menu suspenso (colocado pelo servidor para todos)
+    // os itens "Conferência geral" e "Voltar ao app" do menu suspenso (colocados pelo servidor)
     document.addEventListener("click", function (ev) {
-      var a = ev.target.closest && ev.target.closest("[data-abrir-geral]");
+      var a = ev.target.closest && ev.target.closest("[data-abrir-geral], [data-voltar-app]");
       if (!a) return;
       ev.preventDefault();
       var m = a.closest("details");
       if (m) m.open = false;
-      abrirGeral();
+      if (a.hasAttribute("data-voltar-app")) { mostrarTelaGeral(false); window.scrollTo(0, 0); } else abrirGeral();
     });
   }
 

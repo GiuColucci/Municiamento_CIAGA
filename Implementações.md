@@ -53,6 +53,7 @@ Com a Conferência Geral, o cabeçalho passou a ter botões demais. Os links fic
 ### Regras
 - **Aluno:** Conferência geral, Como usar.
 - **Administrador:** Conferência geral, Administrador (painel), Como usar.
+- **Voltar ao app:** aparece como primeiro item do menu **só dentro da Conferência Geral** e leva de volta às listas, sem recarregar a página.
 - No painel e nas páginas do servidor: Voltar ao app, Como usar (e os demais links da página).
 - Abre e fecha com clique ou teclado (`Esc` fecha); clicar fora fecha; funciona no celular e sem scripts adicionais.
 

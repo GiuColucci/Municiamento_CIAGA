@@ -205,7 +205,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.includes('</main><div id="cg-rodape"><a href="/sair">Sair</a></div><script>globalThis.Municiamento')); // Sair no fim, depois do conteúdo
     assert.ok(saida.indexOf("Municiamento.HOSPEDADO") < saida.indexOf("<script>lib</script>")); // e antes das bibliotecas
     // no cabeçalho, o aluno tem o menu suspenso com "Conferência geral" e "Como usar"; nada de Administrador
-    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
+    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
     assert.ok(!saida.includes('href="/admin"'));
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
@@ -218,7 +218,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
       saida = (await abrir(sessao(quem, papel))).body.toString();
       // menu suspenso: Conferência geral, Administrador e Como usar numa só entrada
       assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista">' +
-        '<a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/admin">Administrador</a>' +
+        '<a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/admin">Administrador</a>' +
         '<a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
       assert.ok(saida.includes('<div id="cg-rodape"><a href="/sair">Sair</a></div>'));
       assert.equal(saida.split('href="/sair"').length - 1, 1); // um só Sair

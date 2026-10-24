@@ -81,7 +81,7 @@ const SECOES = [
     id: "rancho", titulo: "8. Rancho corrido",
     html: `<p>Quem está de <strong>rancho corrido</strong> no dia aparece na marcação, com o <strong>motivo</strong>. Qualquer pessoa pode publicar o arquivo do dia: <strong>Menu → Rancho corrido</strong>.</p>
 <ol class="passos">
-<li>Escolha o arquivo: a <strong>autorização para rancho corrido</strong> (lista) e/ou o <strong>detalhe de serviço</strong> (tabela), em <strong>PDF, XLSX, CSV ou foto</strong> (JPEG ou PNG). Dá para escolher os dois de uma vez.</li>
+<li>Escolha o arquivo: a <strong>autorização para rancho corrido</strong> (lista) e/ou a <strong>tabela de serviço</strong>, em <strong>PDF, XLSX, CSV ou foto</strong> (JPEG ou PNG), arrastando para a área ou tocando nela. Dá para escolher os dois de uma vez.</li>
 <li>Confira o <strong>dia</strong> (vem do arquivo; se faltar, escolha) e toque em <strong>Ler arquivos</strong>.</li>
 <li>Veja o que foi lido: tipo, dia, refeição, motivo e cada aluno (<strong>nome de guerra e número interno</strong>). Quem não está na planilha da semana aparece em vermelho. Na <strong>foto</strong>, a leitura é por reconhecimento de texto e pode errar letras e números: confira com atenção (se o número vier errado, mas o nome de guerra existir só uma vez na planilha, o sistema usa o número certo).</li>
 <li>Toque em <strong>Publicar rancho corrido</strong>. Quem publicou mais de um arquivo no mesmo dia não apaga o do outro: as publicações se somam.</li>
@@ -89,7 +89,7 @@ const SECOES = [
 <ul class="lista">
 <li>Na lista da refeição, o aluno aparece em <strong>laranja</strong> com o selo <strong>RANCHO CORRIDO</strong>. Toque no selo para ver o <strong>motivo</strong> embaixo do nome.</li>
 <li>Ao marcar o aluno, aparece um <strong>aviso laranja</strong> ("está de RANCHO CORRIDO"). <strong>Toque no aviso</strong> para ver o motivo. O aviso vermelho continua sendo só para quem NÃO está municiado.</li>
-<li>A <strong>autorização</strong> vale só para a refeição escrita nela; o <strong>detalhe de serviço</strong> vale para o dia todo, com a função e o turno como motivo.</li>
+<li>A <strong>autorização</strong> vale só para a refeição escrita nela; a <strong>tabela de serviço</strong> vale para o dia todo, com a função e o turno como motivo.</li>
 <li>O rancho corrido <strong>vale só no dia</strong> do arquivo e some sozinho depois. O cartão <strong>Já publicado nesta semana</strong> mostra quem publicou cada dia.</li>
 <li>Se alguém publicar algo errado, um administrador remove o dia pelo painel.</li>
 </ul>`,
@@ -124,7 +124,7 @@ const SECOES = [
 <li><strong>"Nome, número interno ou senha incorretos":</strong> confira o nome de guerra (acentos e maiúsculas não importam), o número interno e a senha.</li>
 <li><strong>"Muitas tentativas erradas":</strong> espere 15 minutos. O contador de erros também zera todo dia à meia-noite.</li>
 <li><strong>Não aparece a planilha:</strong> ainda não foi publicada; peça a um administrador.</li>
-<li><strong>O arquivo do rancho corrido não foi lido:</strong> veja os avisos da tela de conferência. Confira se é a autorização ou o detalhe de serviço preenchidos (não o formulário em branco) e se o arquivo é PDF, XLSX, CSV ou foto JPEG/PNG. Para foto: reta, de perto, bem iluminada e sem sombra; se não ler direito, envie o PDF.</li>
+<li><strong>O arquivo do rancho corrido não foi lido:</strong> veja os avisos da tela de conferência. Confira se é a autorização ou a tabela de serviço preenchidas (não o formulário em branco) e se o arquivo é PDF, XLSX, CSV ou foto JPEG/PNG. Para foto: reta, de perto, bem iluminada e sem sombra; se não ler direito, envie o PDF.</li>
 <li><strong>A Conferência geral está vazia:</strong> ninguém marcou presença naquele dia ainda, ou a listagem é de ontem (ela só vale no próprio dia).</li>
 <li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar PDF</strong> de novo; o arquivo vai para o app Arquivos.</li>
 <li><strong>A página pediu para entrar de novo:</strong> a sessão acabou. Entre; seu rascunho está salvo.</li>

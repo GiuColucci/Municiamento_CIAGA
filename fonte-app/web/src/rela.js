@@ -1010,7 +1010,7 @@
 
   var rancho = { leituras: [] };
 
-  var NOME_TIPO = { autorizacao: "Autorização para rancho corrido", servico: "Detalhe de serviço" };
+  var NOME_TIPO = { autorizacao: "Autorização para rancho corrido", servico: "Tabela de serviço" };
   var dataBr = function (iso) { return iso.split("-").reverse().join("/"); };
   var hojeIso = function () { return new Date().toLocaleDateString("sv-SE"); };
 
@@ -1042,6 +1042,17 @@
   }
 
   function statusRancho(texto) { $("rancho-status").textContent = texto || ""; }
+
+  /** Igual ao envio da planilha: mostra o que foi escolhido (e some quando não há nada). */
+  function mostrarArquivosRancho() {
+    var f = $("rancho-arquivos").files, nomes = [];
+    for (var i = 0; i < f.length; i++) {
+      var kb = f[i].size / 1024;
+      nomes.push(f[i].name + " (" + (kb < 1024 ? Math.max(1, Math.round(kb)) + " KB" : (kb / 1024).toFixed(1).replace(".", ",") + " MB") + ")");
+    }
+    $("rancho-escolhidos").textContent = nomes.length ? "Escolhido: " + nomes.join(", ") : "";
+    $("area-rancho").classList.toggle("com-arquivo", nomes.length > 0);
+  }
 
   async function lerArquivosRancho() {
     var escolhidos = Array.prototype.slice.call($("rancho-arquivos").files || []);
@@ -1139,6 +1150,7 @@
       rancho.leituras = [];
       mostrar($("rancho-previa"), false);
       $("rancho-arquivos").value = "";
+      mostrarArquivosRancho();
       await carregarRancho();
       if (estado.listas.length) desenharAbas(); // as listas abertas já mostram os avisos
       desenharPublicadosRancho();
@@ -1163,7 +1175,7 @@
         dias[d].forEach(function (p) { p.itens.forEach(function (i) { total[i.c] = true; }); });
         caixa.appendChild(el("p", null, dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
         caixa.appendChild(el("p", "dica", dias[d].map(function (p) {
-          return (p.origem === "s" ? "detalhe de serviço" : p.origem === "x" ? "autorização e serviço" : "autorização") + " por " + p.por + " às " +
+          return (p.origem === "s" ? "tabela de serviço" : p.origem === "x" ? "autorização e tabela de serviço" : "autorização") + " por " + p.por + " às " +
             new Date(p.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
         }).join("; ")));
         c.appendChild(caixa);
@@ -1174,10 +1186,13 @@
   }
 
   function iniciarRancho() {
-    var ler = $("rancho-ler"), voltar = $("rancho-voltar");
-    if (!ler || !voltar) return;
+    var ler = $("rancho-ler");
+    if (!ler) return;
     ler.addEventListener("click", lerArquivosRancho);
-    voltar.addEventListener("click", function () { irParaTela("listas"); window.scrollTo(0, 0); });
+    $("rancho-arquivos").addEventListener("change", mostrarArquivosRancho);
+    var area = $("area-rancho");
+    ["dragenter", "dragover"].forEach(function (t) { area.addEventListener(t, function () { area.classList.add("arrastando"); }); });
+    ["dragleave", "drop"].forEach(function (t) { area.addEventListener(t, function () { area.classList.remove("arrastando"); }); });
     $("rancho-data").addEventListener("change", function () { if (rancho.leituras.length) desenharPreviaRancho(); });
   }
 

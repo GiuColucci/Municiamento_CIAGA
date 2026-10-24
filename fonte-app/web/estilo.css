@@ -541,17 +541,13 @@ tbody tr:last-child td { border-bottom: 0; }
 .rancho-dia { display: grid; gap: .2rem; padding: .6rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
 .rancho-dia > * { margin: 0; }
 #tela-rancho .botao { justify-self: start; }
+#tela-rancho .envio { margin: 0; }
 @media (max-width: 640px) { #tela-rancho .botao { justify-self: stretch; } }
 
 /* ---------- ajustes de layout (auditoria no celular e no computador) */
 /* linha do aluno: selos e código quebram para a linha de baixo em vez de passar da caixa */
 .aluno label { flex-wrap: wrap; row-gap: .15rem; }
 .rancho-motivo { margin-top: .4rem; }
-/* campo de arquivo do rancho corrido: grande e com botão no desenho do app */
-#rancho-arquivos { width: 100%; min-height: 48px; padding: .55rem .7rem; border: 1px dashed var(--secundaria-borda); border-radius: 10px; background: var(--superficie-2); color: var(--texto); font: 400 .95rem var(--sistema); }
-#rancho-arquivos::file-selector-button {
-  margin-right: .8rem; padding: .5rem 1rem; border: 1px solid var(--secundaria-borda); border-radius: 8px; background: transparent; color: var(--link); font: 700 .95rem var(--sistema); cursor: pointer;
-}
 /* celular: tudo que se toca tem pelo menos 40 px */
 @media (max-width: 640px) {
   .link-faixa { min-height: 40px; }

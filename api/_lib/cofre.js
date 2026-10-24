@@ -59,7 +59,7 @@ async function apagar(chave) {
 }
 
 // Lê os rascunhos de várias pessoas de uma vez (uma só chamada MGET). Quem não tem, ou tem um adulterado, vem como null.
-// Só a Conferência Geral usa isto, e só para administradores.
+// Só a Conferência Geral usa isto, e devolve apenas o resultado agregado (nunca o rascunho bruto) a uma pessoa autenticada.
 async function lerRascunhos(nomes) {
   if (!nomes.length) return [];
   const r = await reg.chamar([["MGET", ...nomes.map(chaveRascunho)]]);

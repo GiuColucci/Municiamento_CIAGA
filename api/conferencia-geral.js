@@ -1,4 +1,4 @@
-// Conferência Geral (só administradores): junta o trabalho de todas as pessoas que conferiram o mesmo dia e a mesma refeição.
+// Conferência Geral (qualquer pessoa autenticada, aluno ou administrador): junta o trabalho de todas as pessoas que conferiram o mesmo dia e a mesma refeição.
 // Lê os rascunhos cifrados de cada pessoa (a decifragem acontece só aqui, no servidor, a cada consulta) e devolve a UNIÃO das
 // marcações: o aluno consta se qualquer conferente o marcou. Nada do resultado é guardado.
 const s = require("./_lib/seguranca");
@@ -23,11 +23,6 @@ module.exports = async (req, res) => {
   if (!sess || (await pessoas.removido(sess.u))) return json(res, 401, { erro: "Entre de novo." });
   if (req.method !== "GET") return json(res, 405, { erro: "Método não permitido." });
   if (!reg.config()) return json(res, 503, { erro: "Banco não configurado." });
-  // administrador em modo administrador, conferido ao vivo no banco
-  if ((await pessoas.papelAtual(sess.u, sess)) < 1) {
-    await reg.registrar(req, sess.u, "admin_negado");
-    return json(res, 403, { erro: "Só administradores veem a conferência geral." });
-  }
   try {
     const pub = await cofre.lerPlanilha();
     if (!pub) return json(res, 404, { vazio: true });
@@ -71,7 +66,7 @@ module.exports = async (req, res) => {
       conferentes.push({ nome: r.nome, listas: proprias.length, finalizadas: proprias.filter((l) => l.finalizada).length, marcados: dela.size, em: r.em });
     }
     conferentes.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-    await reg.registrar(req, sess.u, "admin_viu_conferencia_geral");
+    await reg.registrar(req, sess.u, "viu_conferencia_geral");
     return json(res, 200, { planilha: pub.id, sexta: pub.dados.sexta || null, dia, refeicao, conferentes, marcados: [...marcados] });
   } catch (e) {
     console.error("falha na conferência geral:", e.message);

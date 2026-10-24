@@ -204,9 +204,9 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.startsWith('<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script>')); // texto do app intacto
     assert.ok(saida.includes('</main><div id="cg-rodape"><a href="/sair">Sair</a></div><script>globalThis.Municiamento')); // Sair no fim, depois do conteúdo
     assert.ok(saida.indexOf("Municiamento.HOSPEDADO") < saida.indexOf("<script>lib</script>")); // e antes das bibliotecas
-    // no cabeçalho, o aluno tem o menu suspenso só com "Como usar" (mesma página); nada de Administrador nem Conferência geral
-    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
-    assert.ok(!saida.includes('href="/admin"') && !saida.includes("data-abrir-geral"));
+    // no cabeçalho, o aluno tem o menu suspenso com "Conferência geral" e "Como usar"; nada de Administrador
+    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
+    assert.ok(!saida.includes('href="/admin"'));
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
@@ -1215,7 +1215,7 @@ test("número interno exibido: login completa quem não tem e conserta o que nã
   delete process.env.ACCESS_CODE; delete process.env.ACCESS_CODE_ADMIN;
 });
 
-test("conferência geral: só administrador; une as marcações de todas as conferentes do mesmo dia e refeição", async () => {
+test("conferência geral: qualquer pessoa autenticada; une as marcações de todas as conferentes do mesmo dia e refeição", async () => {
   zerar();
   await p.carregarLista(LISTA);
   const api = require("../api/conferencia-geral.js");
@@ -1233,10 +1233,11 @@ test("conferência geral: só administrador; une as marcações de todas as conf
   await cofre.gravarRascunho("ana lima", { v: 1, planilha: "antiga", listas: [lista(1, "Sexta", "Janta", "1", ["B12.1|B9999|FANTASMA"])] }); // outra planilha: ignorada
   const chamar = async (quem, papel, url) => {
     const r = res();
-    await api({ method: "GET", headers: { cookie: sessao(quem, papel) }, url }, r);
+    await api({ method: "GET", headers: { cookie: quem ? sessao(quem, papel) : "" }, url }, r);
     return { status: r.statusCode, json: r.body ? JSON.parse(r.body) : null };
   };
-  assert.equal((await chamar("mike", 0, "/api/conferencia-geral")).status, 403); // aluno
+  assert.equal((await chamar("", 0, "/api/conferencia-geral")).status, 401); // sem sessão
+  assert.equal((await chamar("mike", 0, "/api/conferencia-geral")).status, 200); // aluno (modo aluno) também vê
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 200);
   // combinações disponíveis (só as com marcações, com o número de conferentes)
   let r = (await chamar("romeo", 1, "/api/conferencia-geral")).json;
@@ -1247,7 +1248,7 @@ test("conferência geral: só administrador; une as marcações de todas as conf
   assert.deepEqual(r.conferentes.map((c) => [c.nome, c.marcados, c.finalizadas]), [["Mike", 2, 1], ["Tango", 2, 0]]);
   assert.ok(r.conferentes.every((c) => c.em > 0) && !JSON.stringify(r).includes("FANTASMA"));
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral?dia=Xis&refeicao=Janta")).status, 400);
-  assert.ok(db.l.join("|").includes("admin_viu_conferencia_geral"));
+  assert.ok(db.l.join("|").includes("viu_conferencia_geral"));
   // sem planilha publicada
   db.s.delete("planilha");
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 404);

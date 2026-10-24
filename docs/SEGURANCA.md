@@ -34,7 +34,7 @@ Documento técnico do esquema de segurança: ativos, modelo de ameaças, control
 | Ativo | Impacto se comprometido | Principais controles |
 |---|---|---|
 | Planilha publicada (nomes, turmas, marcações) | Exposição de dados pessoais | Cifragem AES-256-GCM, TTL de 14 dias, só entregue a quem está autenticado, o arquivo original não é guardado |
-| Rascunhos | Exposição do trabalho individual | Cifragem por pessoa, TTL de 7 dias, acessível só ao dono (e, agregado pela Conferência Geral, só a administradores) |
+| Rascunhos | Exposição do trabalho individual | Cifragem por pessoa, TTL de 7 dias, acessível só ao dono (e, agregado pela Conferência Geral, aos usuários autenticados) |
 | Números internos e senhas | Personificação de usuários | Hash scrypt + HMAC com `PEPPER`; nunca em texto; exibição no painel só para ranchef e administradores, cifrada em repouso |
 | Contas de administrador | Alteração da lista, troca de senhas | Senha própria, sessão curta (2 h), cargo conferido ao vivo, confirmação com o número interno, limites |
 | O próprio app | Cópia do código | Cifrado em repouso e entregue só após o login (não é segredo crítico, mas é protegido) |
@@ -95,7 +95,7 @@ Três fronteiras importam: (1) **internet → borda** (TLS, limites, validação
 | T13 | Exfiltração pelo próprio app | Divulgação | CSP `connect-src 'self'` (o app não fala com outros domínios) | Usuário autorizado pode copiar o que vê |
 | T14 | Negar autoria de uma ação | Repúdio | Registro com quem, ação, hora, aparelho e IP parcial | Sem login individual forte (nome + número interno) |
 | T15 | Vazamento de segredos pelo repositório | Divulgação | `.gitignore` e `.vercelignore` bloqueiam arquivos sensíveis; dados reais fora dos testes; segredos só no ambiente | Depende de disciplina (ver §13) |
-| T16 | Aluno ou conferente comum lendo o que as outras pessoas marcaram | Divulgação | `/api/conferencia-geral` exige cargo de administrador conferido ao vivo; rascunhos continuam cifrados e individuais; resultado não é guardado | Administradores veem as marcações de todos (por desenho); consulta registrada |
+| T16 | Pessoa não autorizada lendo o que as conferentes marcaram | Divulgação | `/api/conferencia-geral` exige sessão válida e pessoa ainda na lista; devolve só o agregado (nunca o rascunho bruto); rascunhos continuam cifrados e individuais; consulta registrada | Todo usuário autenticado vê as marcações agregadas e quem conferiu (decisão da operação) |
 
 ### 3.3 Caminhos de ataque considerados
 
@@ -173,8 +173,8 @@ O **modo administrador** (`m = 1`) só é gravado quando a pessoa escolheu "Admi
 | Rota | Anônimo | Aluno | Administrador | Ranchef |
 |---|:--:|:--:|:--:|:--:|
 | `/`, `/api/login` | ✅ | ✅ | ✅ | ✅ |
-| `/app`, `/ajuda`, `GET /api/planilha`, `/api/rascunho`, `/api/evento` | ❌ | ✅ | ✅ | ✅ |
-| `/admin`, `/admin/planilha`, `/api/admin-lista`, `/api/conferencia-geral` | ❌ | ❌ | ✅ (modo admin) | ✅ (modo admin) |
+| `/app`, `/ajuda`, `GET /api/planilha`, `/api/rascunho`, `/api/evento`, `/api/conferencia-geral` | ❌ | ✅ | ✅ | ✅ |
+| `/admin`, `/admin/planilha`, `/api/admin-lista` | ❌ | ❌ | ✅ (modo admin) | ✅ (modo admin) |
 | `POST/DELETE /api/planilha` | ❌ | ❌ | ✅ | ✅ |
 | `/api/admin-acao` (cadastrar, remover, planilha, senha dos alunos) | ❌ | ❌ | ✅ | ✅ |
 | `/api/admin-acao` (promover, rebaixar, senha dos administradores, transferir) | ❌ | ❌ | ❌ | ✅ |

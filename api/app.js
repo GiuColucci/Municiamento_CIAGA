@@ -46,9 +46,9 @@ function inserirMenu(html, admin) {
   const nav = cab >= 0 ? html.indexOf('<nav class="menu"', cab) : -1;
   const fim = nav >= 0 ? html.indexOf(">", nav) : -1;
   if (fim < 0) return null;
-  // Menu suspenso: "Como usar" para todos (muda de página, como o painel); "Conferência geral" e "Administrador" só para administradores
+  // Menu suspenso: "Conferência geral" e "Como usar" para todos (mudam de tela/página, como o painel); "Administrador" só para administradores
   const links = menuSuspenso([
-    ...(admin ? [{ href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" }] : []),
+    { href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" },
     ...(admin ? [{ href: "/admin", texto: "Administrador" }] : []),
     { href: "/ajuda", texto: "Como usar" },
   ]);

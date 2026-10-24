@@ -501,7 +501,7 @@ O que **entra** no deploy: `api/`, `public/`, `dados/app.enc`, `vercel.json`. O 
 
 ## 15. Conferência Geral
 
-Cruza o trabalho de **todas as pessoas que conferiram** o mesmo dia e a mesma refeição, produzindo **uma listagem única**. Só administradores usam.
+Cruza o trabalho de **todas as pessoas que conferiram** o mesmo dia e a mesma refeição, produzindo **uma listagem única**. Qualquer pessoa autenticada usa (aluno ou administrador).
 
 ```mermaid
 sequenceDiagram
@@ -515,7 +515,7 @@ sequenceDiagram
 
   ADM->>APP: Menu, Conferência geral
   APP->>API: GET (sem parâmetros)
-  API->>API: sessão válida e cargo maior ou igual a 1 (ao vivo, modo administrador)
+  API->>API: sessão válida e pessoa ainda existente na lista
   API->>COF: lerPlanilha() para obter o id da planilha publicada
   API->>PES: estado() lista de pessoas
   API->>COF: lerRascunhos(nomes)
@@ -527,7 +527,7 @@ sequenceDiagram
   ADM->>APP: escolhe Sexta, Janta
   APP->>API: GET ?dia=Sexta e refeicao=Janta
   API->>API: união das marcações, lista de conferentes
-  API->>R: LPUSH log admin_viu_conferencia_geral
+  API->>R: LPUSH log viu_conferencia_geral
   API-->>APP: conferentes e marcados
   APP->>APP: monta a lista (relaEstruturada) com a planilha da semana
 ```
@@ -553,9 +553,9 @@ flowchart TD
 | Separação | Pela planilha, como na rela individual: marcado e municiado → Municiados; marcado e não municiado → NÃO municiados |
 | Quem aparece como conferente | Nome, quantas listas, quantos marcados e **quando salvou** (`salvoEm`, gravado pelo servidor a cada salvamento) |
 | Persistência | **Nada é guardado**: a união é calculada a cada consulta e devolvida; os rascunhos continuam cifrados e individuais |
-| Acesso | `papelAtual` maior ou igual a 1, em sessão de modo administrador; consulta registrada como `admin_viu_conferencia_geral` |
+| Acesso | Qualquer sessão válida (aluno ou administrador); consulta registrada como `viu_conferencia_geral` |
 
-**Detalhe de segurança:** os rascunhos são decifrados **no servidor**, que tem a `DATA_KEY`; é a única parte do sistema que lê rascunhos de várias pessoas, e só para um administrador autenticado. As chaves dos rascunhos continuam sendo HMAC dos nomes (o banco não revela quem salvou o quê). Ver [SEGURANCA.md](SEGURANCA.md).
+**Detalhe de segurança:** os rascunhos são decifrados **no servidor**, que tem a `DATA_KEY`; é a única parte do sistema que lê rascunhos de várias pessoas, e devolve só o resultado agregado (nunca o rascunho bruto), a uma pessoa autenticada. As chaves dos rascunhos continuam sendo HMAC dos nomes (o banco não revela quem salvou o quê). Ver [SEGURANCA.md](SEGURANCA.md).
 
 ---
 
@@ -565,7 +565,7 @@ O cabeçalho agrupa os links num único menu (`<details class="menu-suspenso">`)
 
 | Contexto | Itens |
 |---|---|
-| App (aluno) | Como usar |
+| App (aluno) | Conferência geral, Como usar |
 | App (administrador) | Conferência geral, Administrador, Como usar |
 | Painel e demais páginas do servidor | Voltar ao app (ou ao painel), Como usar |
 

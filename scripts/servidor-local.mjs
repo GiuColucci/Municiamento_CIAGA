@@ -93,6 +93,12 @@ http.createServer(async (req, res) => {
     await cofre.gravarRascunho("delta", rasc(ano1.slice(5, 12), false));
     return res.end("Pronto: Charlie e Delta 'conferiram' Sexta · Janta (com alguns alunos em comum). Abra Menu → Conferência geral.");
   }
+  // planilha de exemplo (fictícia) para carregar no app: http://localhost:4174/_exemplo.xlsx
+  if (url.pathname === "/_exemplo.xlsx") {
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="ficticio.xlsx"');
+    return res.end(fs.readFileSync(path.join(raiz, "fonte-app", "tests", "fixtures", "ficticio.xlsx")));
+  }
   const rota = rotas[url.pathname];
   if (rota) {
     const bruto = await lerCorpo(req);
@@ -115,6 +121,7 @@ http.createServer(async (req, res) => {
   PESSOAS.forEach((p) => console.log(`  ${p.nome.padEnd(8)} ${p.codigo}  ${p.papel || "aluno"}`));
   console.log(`\nSenha dos alunos: ${SENHA_ALUNOS}    Senha dos administradores: ${SENHA_ADMIN}`);
   console.log("Para entrar como administrador, escolha 'Administrador' e use a senha dos administradores.");
+  console.log(`Planilha de exemplo (fictícia): http://localhost:${PORTA}/_exemplo.xlsx`);
   console.log(`Depois de publicar uma planilha, abra http://localhost:${PORTA}/_demo para criar conferentes de exemplo.`);
   console.log("Tudo fica na memória e some ao fechar (Ctrl+C).\n");
 });

@@ -48,7 +48,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
    - **Ceia, sábado e domingo:** ignorados nas listas.
 4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF ou DOCX) ou **copia** a lista.
 5. O trabalho é salvo automaticamente num **rascunho individual cifrado**, para continuar depois.
-6. A **Conferência Geral** (administradores) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única (Municiados e NÃO municiados), com os mesmos filtros da rela individual.
+6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única (Municiados e NÃO municiados), com os mesmos filtros da rela individual.
 7. Os administradores acompanham o **registro de acessos** e gerenciam quem entra, tudo pelo painel `/admin`, **sem novo deploy**.
 
 ### Princípios de projeto
@@ -148,7 +148,7 @@ Detalhes e diagramas de cada fluxo: [docs/ARQUITETURA_E_FLUXO.md](docs/ARQUITETU
 | Liberar e excluir alunos | ❌ | ✅ | ✅ |
 | Trocar a **senha dos alunos** | ❌ | ✅ | ✅ |
 | Ver o registro de eventos (com filtros) e a planilha publicada (somente leitura) | ❌ | ✅ | ✅ |
-| **Conferência Geral** (junta as marcações de todas as conferentes de um dia e refeição) | ❌ | ✅ | ✅ |
+| **Conferência Geral** (junta as marcações de todas as conferentes de um dia e refeição) | ✅ | ✅ | ✅ |
 | Promover aluno a administrador / remover de administrador | ❌ | ❌ | ✅ |
 | Trocar a **senha dos administradores** | ❌ | ❌ | ✅ |
 | Baixar o backup da lista | ❌ | ❌ | ✅ |
@@ -257,7 +257,7 @@ Rotina sugerida, em [docs/OPERACAO.md](docs/OPERACAO.md#rotina-recomendada).
 npm run local        # abre http://localhost:4174
 ```
 
-Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis falso em memória**, chaves aleatórias e **pessoas fictícias** (Alfa/ranchef `B1901`, Bravo/administrador `B1902`, Charlie `B1903` e Delta `B1904`). As senhas de teste aparecem no terminal. Nada é gravado em disco e tudo some ao fechar. Para ver a Conferência Geral: entre como **Alfa** em modo Administrador, carregue `fonte-app/tests/fixtures/ficticio.xlsx`, publique e abra `http://localhost:4174/_demo`. Para regerar o app depois de mudar o código-fonte: `npm run local -- --build`.
+Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis falso em memória**, chaves aleatórias e **pessoas fictícias** (Alfa/ranchef `B1901`, Bravo/administrador `B1902`, Charlie `B1903` e Delta `B1904`). As senhas de teste aparecem no terminal. Nada é gravado em disco e tudo some ao fechar. Para ver a Conferência Geral: entre como **Alfa** em modo Administrador, carregue a planilha de exemplo (`fonte-app/tests/fixtures/ficticio.xlsx`, também em `http://localhost:4174/_exemplo.xlsx`), publique e abra `http://localhost:4174/_demo`. Para regerar o app depois de mudar o código-fonte: `npm run local -- --build`.
 
 ```bash
 npm run teste        # 38 testes do site (api/): autenticação, cargos, cofre, painel, limites...
@@ -289,7 +289,7 @@ npm run app:build    # gera fonte-app/conferencia_digital.html
 | `/api/admin-exportar` | GET | ranchef | Backup da lista (JSON: nomes, sais, hashes) |
 | `/api/planilha` | GET / POST / DELETE | GET: sessão · POST/DELETE: administrador | Lê, publica ou remove a planilha cifrada |
 | `/api/rascunho` | GET / PUT / DELETE | sessão (individual) | Rascunho cifrado do próprio usuário |
-| `/api/conferencia-geral` | GET | administrador (modo admin) | Sem parâmetros: dias e refeições com conferentes. Com `dia` e `refeicao`: conferentes e união das marcações |
+| `/api/conferencia-geral` | GET | sessão (qualquer perfil) | Sem parâmetros: dias e refeições com conferentes. Com `dia` e `refeicao`: conferentes e união das marcações |
 | `/api/evento` | POST | sessão | Eventos permitidos (carregou planilha, baixou PDF/DOCX), lista fechada |
 
 ---

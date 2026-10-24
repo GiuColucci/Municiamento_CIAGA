@@ -12,7 +12,7 @@
   // lista: {id, dia, refeicao, ano, alunos, marcados: Set, finalizada, criterio, agrupar, separar}
   var estado = null, proximoId = 1;
   var rascunhoTimer = null, rascunhoPronto = false; // rascunho automático (só na versão hospedada)
-  var geral = null; // conferência geral (administrador, versão hospedada): {aberta, opcoes, dia, refeicao, dados, lista}
+  var geral = null; // conferência geral (versão hospedada): {aberta, opcoes, dia, refeicao, dados, lista}
 
   function el(tag, classe, texto) {
     var e = document.createElement(tag);
@@ -819,7 +819,7 @@
   }
 
 
-  // ---------------------------------------------------------------- conferência geral (administrador)
+  // ---------------------------------------------------------------- conferência geral (todos os usuários)
 
   function horaDe(ms) {
     return ms ? new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -834,8 +834,8 @@
   /** Abre a tela: busca no servidor quais dias e refeições têm quem conferiu. */
   async function abrirGeral() {
     erro("");
-    if (!ehAdmin() || !estado || estado.origem !== "publicada") {
-      return erro("A conferência geral usa a planilha da semana publicada. Publique a planilha e confira alguma lista primeiro.");
+    if (!M.HOSPEDADO || !estado || estado.origem !== "publicada") {
+      return erro("A conferência geral usa a planilha da semana publicada. Quando ela estiver publicada, abra de novo.");
     }
     geral = { aberta: true, opcoes: [], dia: null, refeicao: null, dados: null, lista: null };
     mostrar($("tela-envio"), false);
@@ -853,8 +853,7 @@
     var r = await M.api("GET", "/api/conferencia-geral");
     if (r.status === 401) { window.location.href = "/"; return; }
     if (r.status !== 200 || !r.json) {
-      st.textContent = r.status === 404 ? "Não há planilha publicada." : r.status === 403 ? "Só administradores veem a conferência geral."
-        : "Não consegui buscar agora. Tente de novo.";
+      st.textContent = r.status === 404 ? "Não há planilha publicada." : "Não consegui buscar agora. Tente de novo.";
       return;
     }
     if (r.json.planilha !== estado.planilhaId) {
@@ -944,7 +943,7 @@
     if (!voltar || !atualizar) return;
     voltar.addEventListener("click", function () { mostrarTelaGeral(false); window.scrollTo(0, 0); });
     atualizar.addEventListener("click", function () { if (geral && geral.aberta) carregarOpcoesGeral(); else abrirGeral(); });
-    // o item "Conferência geral" do menu suspenso (colocado pelo servidor só para administradores)
+    // o item "Conferência geral" do menu suspenso (colocado pelo servidor para todos)
     document.addEventListener("click", function (ev) {
       var a = ev.target.closest && ev.target.closest("[data-abrir-geral]");
       if (!a) return;

@@ -323,15 +323,30 @@
     var alerta = el("p", "alerta-marcacao oculto");
     alerta.setAttribute("role", "alert");
     var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
+    function piscar(e) { mostrar(e, true); e.classList.remove("piscar"); void e.offsetWidth; e.classList.add("piscar"); } // reinicia a animação a cada alerta
+    // aviso laranja do rancho corrido: toque nele para ver o motivo
+    var alertaRancho = el("button", "alerta-rancho oculto");
+    alertaRancho.type = "button";
+    alertaRancho.setAttribute("role", "alert");
+    var ranchoMostrado = null;
+    function textoRancho(a, rancho, aberto) {
+      alertaRancho.textContent = "";
+      alertaRancho.appendChild(document.createTextNode("Atenção: " + a.nome + " (" + a.turma + ") está de RANCHO CORRIDO." + (aberto ? " Motivo: " + rancho.motivo + "." : "")));
+      if (!aberto) alertaRancho.appendChild(el("span", "dica-toque", "Toque aqui para ver o motivo"));
+    }
+    alertaRancho.addEventListener("click", function () { if (ranchoMostrado) textoRancho(ranchoMostrado.a, ranchoMostrado.r, true); });
     function avisar(a, municiado, rancho) {
-      var partes = [];
-      if (!municiado) partes.push("NÃO está municiado na " + rotuloRefeicao);
-      if (rancho) partes.push("está de RANCHO CORRIDO (" + rancho.motivo + ")");
-      alerta.textContent = "Atenção: " + a.nome + " (" + a.turma + ") " + partes.join(" e ") + ".";
-      mostrar(alerta, true);
-      alerta.classList.remove("piscar");
-      void alerta.offsetWidth; // reinicia a animação a cada alerta
-      alerta.classList.add("piscar");
+      if (!municiado) {
+        alerta.textContent = "Atenção: " + a.nome + " (" + a.turma + ") NÃO está municiado na " + rotuloRefeicao + ".";
+        piscar(alerta);
+      }
+      if (rancho) {
+        ranchoMostrado = { a: a, r: rancho };
+        textoRancho(a, rancho, false);
+        piscar(alertaRancho);
+      } else {
+        mostrar(alertaRancho, false);
+      }
     }
     var busca = el("div", "busca");
     var rotulo = el("label", null, "Pesquisar");
@@ -345,6 +360,7 @@
     busca.appendChild(campo);
     painel.appendChild(busca);
     painel.appendChild(alerta);
+    painel.appendChild(alertaRancho);
     var nRancho = l.alunos.filter(function (a) { return M.ranchoDoAluno(idxRancho, a); }).length;
     if (nRancho) {
       painel.appendChild(el("p", "aviso-rancho", plural(nRancho, "aluno") + (nRancho === 1 ? " desta lista está" : " desta lista estão") +
@@ -417,7 +433,7 @@
       caixa.addEventListener("change", function () {
         if (caixa.checked) l.marcados.add(chave); else l.marcados.delete(chave);
         li.classList.toggle("nao-municiado", caixa.checked && !municiado);
-        if (caixa.checked && (!municiado || rancho)) avisar(a, municiado, rancho);
+        if (caixa.checked) avisar(a, municiado, rancho);
         atualizarContagens(l);
       });
       lab.appendChild(caixa);
@@ -425,9 +441,26 @@
       lab.appendChild(el("span", "turma", a.turma));
       lab.appendChild(el("span", "aluno-codigo", a.codigo || "s/ código"));
       lab.appendChild(el("span", "selo-nao-municiado", "NÃO municiado"));
-      if (rancho) lab.appendChild(el("span", "selo-rancho", "RANCHO CORRIDO"));
+      var motivo = null;
+      if (rancho) {
+        // o selo é um botão: toque para ver o motivo embaixo do nome (e de novo para esconder)
+        var selo = el("button", "selo-rancho", "RANCHO CORRIDO");
+        selo.type = "button";
+        selo.setAttribute("aria-expanded", "false");
+        selo.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var abrir = motivo.classList.contains("oculto");
+          mostrar(motivo, abrir);
+          selo.setAttribute("aria-expanded", abrir ? "true" : "false");
+        });
+        lab.appendChild(selo);
+      }
       li.appendChild(lab);
-      if (rancho) li.appendChild(el("p", "rancho-motivo", "Rancho corrido: " + rancho.motivo));
+      if (rancho) {
+        motivo = el("p", "rancho-motivo oculto", "Motivo do rancho corrido: " + rancho.motivo + " (publicado por " + rancho.por + ")");
+        li.appendChild(motivo);
+      }
       ol.appendChild(li);
       return { li: li, caixa: caixa, aluno: a, municiado: municiado, rancho: rancho, busca: M.normalizar(a.nome + " " + a.codigo) };
     }
@@ -464,7 +497,7 @@
       campo.value = "";
       filtrar();
       status.textContent = a.nome + " (" + a.turma + ") " + (ja ? "já estava marcado." : "marcado.");
-      if (!ja && (!it.municiado || it.rancho)) avisar(a, it.municiado, it.rancho);
+      if (!ja) avisar(a, it.municiado, it.rancho);
     });
   }
 
@@ -1024,7 +1057,9 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }));
+          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
+            statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
+          }));
         } catch (e) {
           rancho.leituras.push({ nome: f.name, tipo: null, itens: [], data: null, avisos: [e && e.message ? e.message : "Não consegui ler esse arquivo."] });
         }
@@ -1061,7 +1096,7 @@
         var casados = M.casarRancho(r.itens, alunos), ol = el("ol", "rancho-alunos");
         casados.forEach(function (x) {
           var li = el("li", x.aluno ? null : "fora");
-          li.textContent = x.item.c + " · " + x.item.n + " — " + x.item.m + (x.aluno ? " (" + x.aluno.turma + ")" : " (não está na planilha da semana)");
+          li.textContent = x.item.c + " · " + x.item.n + " — " + x.item.m + (x.aluno ? " (" + x.aluno.turma + (x.porNome ? "; número lido " + x.item.c + ", será usado o da planilha: " + x.aluno.codigo : "") + ")" : " (não está na planilha da semana)");
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -1086,7 +1121,7 @@
       if (!r.tipo || !r.itens.length || !dia) return;
       var d = porDia[dia] = porDia[dia] || { itens: [], origens: {} };
       d.origens[r.tipo === "servico" ? "s" : "a"] = true;
-      r.itens.forEach(function (i) { d.itens.push({ c: i.c, n: i.n, m: i.m, r: i.r, p: i.p || "" }); });
+      M.casarRancho(r.itens, estado.res.alunos).forEach(function (x) { d.itens.push({ c: x.aluno ? x.aluno.codigo : x.item.c, n: x.item.n, m: x.item.m, r: x.item.r, p: x.item.p || "" }); }); // com o número da planilha quando o do arquivo veio errado
     });
     var dias = Object.keys(porDia).sort();
     if (!dias.length) return;

@@ -607,17 +607,19 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
+  F["Foto JPEG/PNG<br/>OCR no navegador"] --> L["linhas de células"]
   A["Autorização<br/>(lista): refeição + motivo escrito"] --> I
+  L --> I
   S["Detalhe de serviço<br/>(tabela): função + turno"] --> I
   I["Itens: número interno, nome, motivo,<br/>refeições (ou todas), pelotão"] --> D{"Dia do arquivo<br/>(ou escolhido na tela)"}
   D --> P1["rancho:2026-10-24 (lista cifrada)"]
-  P1 --> M["Marcação da lista: o aluno aparece com o selo<br/>se o dia da lista e a refeição combinam"]
+  P1 --> M["Marcação da lista: selo laranja (toque mostra o motivo)<br/>e aviso laranja ao marcar, se o dia e a refeição combinam"]
   P1 --> X["Painel: quem publicou e quantos alunos,<br/>com Remover o dia"]
 ```
 
 | Ponto | Comportamento |
 |---|---|
-| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha |
+| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha; **foto JPEG/PNG por OCR** (Tesseract.js em português, carregado de `/ocr/` só quando há foto; as palavras com posição viram linhas e células como no PDF) |
 | Armazenamento | Uma lista Redis por dia (`rancho:AAAA-MM-DD`); cada publicação é um item cifrado no contexto do dia; validade de 4 dias |
 | Concorrência | Publicar usa `RPUSH` (só acrescenta): publicações simultâneas não se perdem |
 | Quem publica | Qualquer sessão válida; limites: 300 alunos, 120 KB, 20 publicações por pessoa por hora, 40 por dia |

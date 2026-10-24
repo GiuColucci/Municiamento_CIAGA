@@ -245,7 +245,7 @@ stateDiagram-v2
 | Páginas do servidor (painel, ajuda, visualizador) | `default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'` — **sem scripts ou estilos inline** |
 | O app (`/app`) | `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' data: blob:; frame-ancestors 'none'; form-action 'self'` |
 
-O app precisa de `'unsafe-inline'`/`'unsafe-eval'` porque é **um HTML único** com `pdf.js`, `xlsx` e `jspdf` embutidos. O risco é contido porque: não há conteúdo de terceiros, o HTML vem cifrado do próprio servidor, e `connect-src 'self'` impede o envio de dados a outros domínios.
+A regra do app dentro do HTML (`<meta>`) é ajustada pelo servidor para o que o app precisa: `connect-src 'self'` (eventos), `style-src 'self'` (menu.css) e, para o leitor de fotos do rancho corrido, `script-src 'self' … 'unsafe-eval' blob:` e `worker-src 'self' blob:` (Tesseract.js e WebAssembly, só de `/ocr/` do próprio site). O app precisa de `'unsafe-inline'`/`'unsafe-eval'` porque é **um HTML único** com `pdf.js`, `xlsx` e `jspdf` embutidos. O risco é contido porque: não há conteúdo de terceiros, o HTML vem cifrado do próprio servidor, e `connect-src 'self'` impede o envio de dados a outros domínios.
 
 ### 8.3 CSRF
 

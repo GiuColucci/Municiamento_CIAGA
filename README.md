@@ -49,7 +49,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
 4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF) ou **copia** a lista.
 5. O trabalho é salvo automaticamente num **rascunho individual cifrado**, para continuar depois.
 6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única, sempre por antiguidade e por turma, com o filtro Todos / Municiados / NÃO municiados.
-7. **Rancho corrido:** qualquer pessoa lê a autorização de rancho corrido e/ou o detalhe de serviço do dia (PDF, XLSX ou CSV) e publica; quem está nos arquivos aparece na marcação com o selo **RANCHO CORRIDO** e o motivo.
+7. **Rancho corrido:** qualquer pessoa lê a autorização de rancho corrido e/ou o detalhe de serviço do dia (PDF, XLSX, CSV ou **foto**, com OCR no navegador) e publica; quem está nos arquivos aparece na marcação em **laranja**, com o selo **RANCHO CORRIDO**, e o motivo aparece ao tocar.
 8. Os administradores acompanham o **registro de acessos** e gerenciam quem entra, tudo pelo painel `/admin`, **sem novo deploy**.
 
 ### Princípios de projeto
@@ -121,7 +121,7 @@ Detalhes e diagramas de cada fluxo: [docs/ARQUITETURA_E_FLUXO.md](docs/ARQUITETU
 │   ├── login.js  sair.js  app.js  ajuda.js
 │   ├── admin.js  admin-acao.js  admin-baixar.js
 │   ├── planilha.js  planilha-ver.js  rascunho.js  evento.js  conferencia-geral.js
-├── public/                      Páginas estáticas: login, tema claro/escuro, brasão
+├── public/                      Páginas estáticas: login, tema claro/escuro, brasão, menu.css e ocr/ (Tesseract.js e português, para ler fotos)
 ├── scripts/
 │   ├── cifrar.mjs               cifra o app (gera dados/app.enc)
 │   ├── carregar-lista.mjs       carrega/restaura a lista de pessoas no banco
@@ -266,7 +266,7 @@ Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis fal
 
 ```bash
 npm run teste        # 42 testes do site (api/): autenticação, cargos, cofre, painel, limites...
-npm run app:teste    # 34 testes do app (parser, regras de lista, relatório, hospedado)
+npm run app:teste    # 36 testes do app (parser, regras de lista, relatório, hospedado)
 npm run teste:tudo   # os dois
 npm run app:build    # gera fonte-app/conferencia_digital.html
 ```

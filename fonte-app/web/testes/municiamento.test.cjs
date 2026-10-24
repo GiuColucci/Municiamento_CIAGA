@@ -610,3 +610,39 @@ test("rancho: casa o número interno com a planilha e o aviso respeita a refeiç
   assert.equal(M.ranchoDoAluno(janta, alunos[3]).motivo, "Serviço: Retém"); // serviço vale para qualquer refeição
   assert.equal(M.ranchoDoAluno(almoco, alunos[1]), null);
 });
+
+test("rancho: foto — palavras do OCR viram células (nome com duas palavras fica junto) e o formato é reconhecido pelos bytes", () => {
+  const w = (text, x0, y0, largura, altura = 20) => ({ text, bbox: { x0, y0, x1: x0 + largura, y1: y0 + altura }, confidence: 90 });
+  const palavras = [
+    w("AUTORIZAÇÃO", 200, 20, 150), w("PARA", 360, 20, 50), w("RANCHO", 420, 20, 80), w("CORRIDO", 510, 20, 90),
+    w("Data:", 40, 70, 60), w("24/10/2026", 110, 70, 120),
+    w("Motivo:", 40, 110, 80), w("Prova", 130, 110, 60), w("de", 200, 110, 30), w("recuperação", 240, 110, 130),
+    // linha de alunos: número, nome (duas palavras), pelotão; espaço grande entre as colunas
+    w("1037", 40, 200, 60), w("ALVES", 220, 202, 80), w("1º", 480, 200, 20), w("PEL", 505, 200, 40),
+    w("N3042", 40, 240, 70), w("MARIA", 220, 240, 80), w("SOUSA", 310, 240, 80),
+  ];
+  const linhas = M.linhasDePalavrasOcr(palavras);
+  assert.deepEqual(linhas[0], ["AUTORIZAÇÃO PARA RANCHO CORRIDO"]);
+  assert.deepEqual(linhas[1], ["Data: 24/10/2026"]);
+  assert.deepEqual(linhas[3], ["1037", "ALVES", "1º PEL"]);
+  assert.deepEqual(linhas[4], ["N3042", "MARIA SOUSA"]);
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.tipo, "autorizacao");
+  assert.equal(r.data, "2026-10-24");
+  assert.equal(r.motivo, "Prova de recuperação");
+  assert.deepEqual(r.itens.map((i) => [i.c, i.n, i.p]), [["1037", "ALVES", "1º PEL"], ["N3042", "MARIA SOUSA", ""]]);
+  // JPEG e PNG pelos primeiros bytes; qualquer outra coisa não é foto
+  assert.equal(M.tipoDeImagem(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0])), "jpeg");
+  assert.equal(M.tipoDeImagem(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0])), "png");
+  assert.equal(M.tipoDeImagem(new TextEncoder().encode("%PDF-1.4 ....")), null);
+});
+
+test("rancho: número que veio errado da foto é resolvido pelo nome de guerra (se único)", () => {
+  const alunos = [{ nome: "ALVES", codigo: "B1037", turma: "B12.1" }, { nome: "ARAUJO", codigo: "B1111", turma: "B12.1" }, { nome: "SILVA", codigo: "B1200", turma: "B12.2" }, { nome: "SILVA", codigo: "B1201", turma: "B12.2" }];
+  const itens = [{ c: "1O37", n: "ALVES", m: "x" }, { c: "9999", n: "SILVA", m: "x" }, { c: "9998", n: "INEXISTENTE", m: "x" }];
+  const c = M.casarRancho(itens.map((i) => ({ ...i, c: i.c.replace("O", "0").length === 4 ? "7777" : i.c })), alunos);
+  assert.equal(c[0].aluno.codigo, "B1037"); // número errado (7777), nome único: casa pelo nome
+  assert.equal(c[0].porNome, true);
+  assert.equal(c[1].aluno, null); // dois SILVA: não adivinha
+  assert.equal(c[2].aluno, null);
+});

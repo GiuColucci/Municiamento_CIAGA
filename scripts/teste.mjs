@@ -184,7 +184,7 @@ test("login: escolher entrar como administrador ou como aluno", async () => {
 test("app: Administrador no cabeçalho só em modo administrador; Sair ao final da página, não fixo", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
+  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; worker-src \'none\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
   const iv = crypto.randomBytes(12);
   const c = crypto.createCipheriv("aes-256-gcm", Buffer.from(chave, "hex"), iv);
   const enc = Buffer.concat([c.update(zlib.brotliCompressSync(html)), c.final()]);
@@ -213,6 +213,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
     assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
+    assert.ok(saida.includes("worker-src 'self' blob:") && saida.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:") && !saida.includes("worker-src 'none'")); // e o leitor de fotos (OCR) do rancho corrido
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -1309,7 +1310,7 @@ test("Como usar: tem a Conferência geral (para todos) e o painel atual (só adm
   const ajuda = require("../api/ajuda.js");
   const ver = async (quem, papel) => { const r = res(); await ajuda({ headers: { cookie: sessao(quem, papel) } }, r); return String(r.body); };
   const aluno = await ver("mike", 0);
-  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia"));
+  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("foto</strong> (JPEG ou PNG)") && aluno.includes("aviso laranja"));
   assert.ok(aluno.includes("7. Conferência geral") && aluno.includes("só existe naquele dia") && aluno.includes("sempre por antiguidade"));
   assert.ok(!aluno.includes("Só tentativas recusadas") && !aluno.includes("Ver a planilha"));
   const adm = await ver("romeo", 1);

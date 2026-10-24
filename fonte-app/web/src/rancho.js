@@ -1,6 +1,6 @@
 /* Rancho corrido: lê os arquivos de quem está de rancho corrido num dia e avisa na marcação.
 
-   Dois modelos de arquivo (PDF, XLSX ou CSV), reconhecidos pelo conteúdo:
+   Dois modelos de arquivo (PDF, XLSX, CSV ou FOTO em JPEG/PNG), reconhecidos pelo conteúdo:
    - "Autorização para rancho corrido" (lista): Data, Refeição, Motivo e, por ano, os alunos
      (Nº Interno, Nome de Guerra, Pelotão/CIA, dois por linha);
    - "Detalhe de serviço do Corpo de Alunos" (tabela de serviço): "SERVIÇO: 24 OUT 2026" e, por função
@@ -125,17 +125,19 @@
   // ---------------------------------------------------------------- arquivos -> grade de células
 
   /** Textos do PDF (com posição) -> linhas de células: junta os textos colados e separa os que têm espaço grande entre si. */
-  M.linhasDeItensPdf = function (itens) {
+  M.linhasDeItensPdf = function (itens, opcoes) {
+    opcoes = opcoes || {};
+    var tolY = opcoes.tolY || 3.5, gap = opcoes.gap || 2.5; // PDF: em pontos; foto: proporcional à altura das letras
     var ordenados = itens.slice().sort(function (a, b) { return b.y - a.y || a.x - b.x; }), linhas = [];
     ordenados.forEach(function (it) {
       var l = linhas[linhas.length - 1];
-      if (l && Math.abs(l.y - it.y) <= 3.5) l.itens.push(it); else linhas.push({ y: it.y, itens: [it] });
+      if (l && Math.abs(l.y - it.y) <= tolY) l.itens.push(it); else linhas.push({ y: it.y, itens: [it] });
     });
     return linhas.map(function (l) {
       l.itens.sort(function (a, b) { return a.x - b.x; });
       var cel = [], atual = null, fim = 0;
       l.itens.forEach(function (it) {
-        if (atual !== null && it.x - fim < 2.5) atual += (it.x - fim > 0.8 ? " " : "") + it.str;
+        if (atual !== null && it.x - fim < gap) atual += (opcoes.espaco || it.x - fim > gap / 3 ? " " : "") + it.str;
         else { if (atual !== null) cel.push(limpar(atual)); atual = it.str; }
         fim = it.x + (it.w || 0);
       });
@@ -173,11 +175,98 @@
     return linhas;
   }
 
-  /** arquivo: {nome, bytes}. Devolve a leitura do arquivo (ver interpretarRancho) com o nome. */
-  M.lerRanchoArquivo = async function (arquivo) {
-    var tipo = await M.detectar(arquivo.nome, arquivo.bytes); // valida tamanho e formato (nunca confia só na extensão)
-    var linhas = tipo === "pdf" ? await linhasDoPdf(arquivo.bytes) : linhasDaPlanilha(arquivo.bytes);
+  // ---------------------------------------------------------------- foto (JPEG/PNG) -> OCR no navegador
+
+  var LIMITE_BYTES_FOTO = 10 * 1024 * 1024;
+  var LADO_MAXIMO_FOTO = 2200; // fotos de celular são grandes; reduzir deixa a leitura bem mais rápida sem perder o texto
+  var CAMINHO_OCR = "/ocr/"; // Tesseract.js, o motor e o idioma português ficam no próprio site (a regra de segurança não deixa sair)
+
+  /** 'png', 'jpeg' ou null, pelos primeiros bytes (nunca pela extensão). */
+  M.tipoDeImagem = function (b) {
+    if (b && b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
+    if (b && b.length > 4 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpeg";
+    return null;
+  };
+
+  function carregarScript(url) {
+    return new Promise(function (ok, falha) {
+      if (globalThis.Tesseract) return ok();
+      var s = document.createElement("script");
+      s.src = url;
+      s.onload = function () { ok(); };
+      s.onerror = function () { falha(new M.ArquivoInvalido("Não consegui carregar o leitor de fotos. Confira a conexão e tente de novo.")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  /** Foto -> tela (canvas) reduzida e com a orientação certa (o celular grava fotos "de lado" com um aviso no arquivo). */
+  async function fotoParaCanvas(bytes, tipo) {
+    var blob = new Blob([bytes], { type: tipo === "png" ? "image/png" : "image/jpeg" }), bmp;
+    try { bmp = await createImageBitmap(blob, { imageOrientation: "from-image" }); }
+    catch (e) { throw new M.ArquivoInvalido("Não consegui abrir essa foto. Tire de novo ou escolha outro arquivo."); }
+    var escala = Math.min(1, LADO_MAXIMO_FOTO / Math.max(bmp.width, bmp.height));
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(bmp.width * escala));
+    c.height = Math.max(1, Math.round(bmp.height * escala));
+    var g = c.getContext("2d");
+    g.fillStyle = "#fff";
+    g.fillRect(0, 0, c.width, c.height); // PNG com fundo transparente vira fundo branco
+    g.drawImage(bmp, 0, 0, c.width, c.height);
+    if (bmp.close) bmp.close();
+    return c;
+  }
+
+  /** Palavras reconhecidas, com a caixa de cada uma. A forma da resposta mudou entre versões do Tesseract.js: aceita as duas. */
+  function palavrasDoOcr(dados) {
+    var ps = dados.words;
+    if (!ps && dados.blocks) {
+      ps = [];
+      dados.blocks.forEach(function (b) { (b.paragraphs || []).forEach(function (p) { (p.lines || []).forEach(function (l) { (l.words || []).forEach(function (w) { ps.push(w); }); }); }); });
+    }
+    return (ps || []).filter(function (w) { return w.text && w.text.trim() && w.bbox; });
+  }
+
+  /** Linhas de células a partir das palavras da foto: o espaço entre colunas é bem maior que o entre palavras de um mesmo nome. */
+  M.linhasDePalavrasOcr = function (palavras) {
+    var alturas = palavras.map(function (w) { return w.bbox.y1 - w.bbox.y0; }).sort(function (a, b) { return a - b; });
+    var h = alturas.length ? alturas[Math.floor(alturas.length / 2)] : 12;
+    var itens = palavras.map(function (w) {
+      return { str: w.text, x: w.bbox.x0, y: -(w.bbox.y0 + w.bbox.y1) / 2, w: w.bbox.x1 - w.bbox.x0 };
+    });
+    return M.linhasDeItensPdf(itens, { tolY: h * 0.6, gap: h * 1.1, espaco: true }); // cada item já é uma palavra: sempre com espaço entre elas
+  };
+
+  async function linhasDaFoto(bytes, tipo, aoProgresso) {
+    if (bytes.length > LIMITE_BYTES_FOTO) throw new M.ArquivoInvalido("A foto passa de 10 MB. Tire de novo em resolução menor.");
+    var canvas = await fotoParaCanvas(bytes, tipo);
+    await carregarScript(CAMINHO_OCR + "tesseract.min.js");
+    var worker;
+    try {
+      worker = await globalThis.Tesseract.createWorker("por", 1, {
+        workerPath: CAMINHO_OCR + "worker.min.js", corePath: CAMINHO_OCR, langPath: CAMINHO_OCR,
+        workerBlobURL: false, cacheMethod: "none", gzip: true,
+        logger: function (m) { if (aoProgresso && m && typeof m.progress === "number") aoProgresso(m.status, m.progress); }
+      });
+    } catch (e) { throw new M.ArquivoInvalido("Não consegui iniciar o leitor de fotos neste aparelho. Tente enviar o PDF."); }
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" }); // texto espalhado (tabelas e formulários)
+      var res = await worker.recognize(canvas, {}, { blocks: true, text: true });
+      return M.linhasDePalavrasOcr(palavrasDoOcr(res.data).filter(function (w) { return w.confidence == null || w.confidence >= 25; }));
+    } finally {
+      try { await worker.terminate(); } catch (e) { /* já encerrado */ }
+    }
+  }
+
+  /** arquivo: {nome, bytes}. Devolve a leitura do arquivo (ver interpretarRancho) com o nome.
+      aoProgresso(etapa, 0..1): só a foto demora (a leitura por OCR). */
+  M.lerRanchoArquivo = async function (arquivo, aoProgresso) {
+    var foto = M.tipoDeImagem(arquivo.bytes), tipo = foto ? "foto" : await M.detectar(arquivo.nome, arquivo.bytes); // valida tamanho e formato (nunca confia só na extensão)
+    var linhas = tipo === "foto" ? await linhasDaFoto(arquivo.bytes, foto, aoProgresso) : tipo === "pdf" ? await linhasDoPdf(arquivo.bytes) : linhasDaPlanilha(arquivo.bytes);
     var r = M.interpretarRancho(linhas);
+    if (tipo === "foto") {
+      r.origemFoto = true;
+      r.avisos.unshift("Lido de uma foto: confira com atenção os números e os nomes. Foto reta, bem iluminada e de perto lê melhor.");
+    }
     r.nome = arquivo.nome;
     return r;
   };
@@ -194,7 +283,12 @@
       var cands = (porDigitos[soDigitos(i.c)] || []).filter(function (a) { return !/^[BMN]/.test(i.c) || a.codigo === i.c; });
       var nome = M.normalizar(i.n);
       var a = cands.length > 1 ? (cands.filter(function (x) { var n = M.normalizar(x.nome); return n.indexOf(nome) >= 0 || nome.indexOf(n) >= 0; })[0] || cands[0]) : cands[0];
-      return { item: i, aluno: a || null };
+      // número que não existe na planilha (erro de digitação ou de leitura da foto): o nome de guerra, se for único, resolve
+      if (!a && nome.length >= 4) {
+        var porNome = alunos.filter(function (x) { return M.normalizar(x.nome) === nome; });
+        if (porNome.length === 1) a = porNome[0];
+      }
+      return { item: i, aluno: a || null, porNome: !!a && cands.length === 0 };
     });
   };
 

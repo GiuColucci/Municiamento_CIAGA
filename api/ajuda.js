@@ -67,7 +67,18 @@ const SECOES = [
 <p>Errou algo? Toque em <strong>Voltar a marcar</strong>. Com várias listas abertas, o cartão <strong>Rela de todas as listas</strong> junta tudo num só lugar.</p>`,
   },
   {
-    id: "salvar", titulo: "7. Salvamento automático e limpeza",
+    id: "geral", titulo: "7. Conferência geral",
+    html: `<p>Junta, numa listagem só, o que <strong>todas as pessoas que conferiram</strong> o mesmo dia e a mesma refeição marcaram. Abra por <strong>Menu → Conferência geral</strong>; para sair dela, <strong>Menu → Voltar ao app</strong>.</p>
+<ol class="passos">
+<li>Escolha a refeição na lista de <strong>Dia e refeição</strong>. Cada opção mostra quantos conferentes marcaram alguém.</li>
+<li>A tabela <strong>Todos os conferentes</strong> mostra quem conferiu, quantas listas, quantos marcou e quando salvou.</li>
+<li>Embaixo está a listagem geral, <strong>sempre por antiguidade e separada por turma</strong>. Um aluno marcado por mais de uma pessoa aparece uma vez só.</li>
+<li>Use <strong>Mostrar</strong> para ver <strong>Todos</strong>, só <strong>Municiados</strong> ou só <strong>NÃO municiados</strong>, e toque em <strong>Copiar</strong> ou <strong>Baixar PDF</strong>.</li>
+</ol>
+<p class="dica">A listagem de um dia <strong>só existe naquele dia</strong>: no dia seguinte ela some. Toque em <strong>Atualizar</strong> para buscar de novo o que os outros marcaram. Ela usa a planilha da semana publicada; se uma planilha nova for publicada, as marcações antigas deixam de valer.</p>`,
+  },
+  {
+    id: "salvar", titulo: "8. Salvamento automático e limpeza",
     html: `<ul class="lista">
 <li>A cada marcação, o sistema <strong>salva sozinho</strong> o seu progresso (aparece "Rascunho salvo às ..."). Se você fechar a janela ou atualizar a página sem querer, abra o site de novo: as listas e as marcações voltam do jeito que estavam.</li>
 <li>O rascunho é <strong>só seu</strong> (ninguém vê o de outra pessoa) e fica guardado <strong>cifrado</strong> por até 7 dias.</li>
@@ -76,8 +87,9 @@ const SECOES = [
 </ul>`,
   },
   {
-    id: "extras", titulo: "8. Tema, ajuda e sair",
+    id: "extras", titulo: "9. Menu, tema e sair",
     html: `<ul class="lista">
+<li>O botão <strong>Menu</strong> no alto reúne os atalhos: <strong>Conferência geral</strong>, <strong>Como usar</strong> (e <strong>Administrador</strong>, para quem é administrador). Dentro da Conferência Geral, o primeiro item vira <strong>Voltar ao app</strong>.</li>
 <li>O botão de <strong>sol/lua</strong> no alto troca entre tema claro e escuro; o sistema lembra sua escolha.</li>
 <li><strong>Como usar</strong> abre este guia. Para continuar de onde parou, toque em <strong>Voltar ao app</strong>: suas listas e marcações ficam salvas e voltam sozinhas.</li>
 <li><strong>Sair</strong> fica no fim da página. Use sempre que terminar, principalmente em aparelho de outra pessoa.</li>
@@ -90,11 +102,12 @@ const SECOES = [
 </ul>`,
   },
   {
-    id: "problemas", titulo: "9. Deu algum problema?",
+    id: "problemas", titulo: "10. Deu algum problema?",
     html: `<ul class="lista">
 <li><strong>"Nome, número interno ou senha incorretos":</strong> confira o nome de guerra (acentos e maiúsculas não importam), o número interno e a senha.</li>
 <li><strong>"Muitas tentativas erradas":</strong> espere 15 minutos. O contador de erros também zera todo dia à meia-noite.</li>
 <li><strong>Não aparece a planilha:</strong> ainda não foi publicada; peça a um administrador.</li>
+<li><strong>A Conferência geral está vazia:</strong> ninguém marcou presença naquele dia ainda, ou a listagem é de ontem (ela só vale no próprio dia).</li>
 <li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar PDF</strong> de novo; o arquivo vai para o app Arquivos.</li>
 <li><strong>A página pediu para entrar de novo:</strong> a sessão acabou. Entre; seu rascunho está salvo.</li>
 </ul>`,
@@ -102,7 +115,7 @@ const SECOES = [
   {
     id: "admin-entrar", titulo: "Administradores: entrar e publicar a planilha", admin: true,
     html: `<ol class="passos">
-<li>No login, escolha <strong>Entrar como: Administrador</strong> e use o <strong>senha de administrador</strong> (é outro, diferente do dos alunos).</li>
+<li>No login, escolha <strong>Entrar como: Administrador</strong> e use a <strong>senha de administrador</strong> (é outra, diferente da dos alunos).</li>
 <li>Se ainda não há planilha publicada, abre a tela de envio. Se já há, toque em <strong>Nova planilha</strong> (no alto).</li>
 <li>Escolha o arquivo: <strong>XLSX</strong> (o melhor), <strong>CSV</strong> (um por turma, escolhidos de uma vez) ou <strong>PDF</strong>, até 10 MB. A data da sexta-feira é opcional (no XLSX é lida sozinha).</li>
 <li>Toque em <strong>Ler planilha</strong> e confira o resumo e a <strong>Conferência da planilha</strong> (avisos de contagens que não batem, turmas assumidas etc.).</li>
@@ -112,22 +125,23 @@ const SECOES = [
   },
   {
     id: "admin-painel", titulo: "Administradores: o painel", admin: true,
-    html: `<p>Toque em <strong>Administrador</strong> no alto do app para abrir o painel.</p>
+    html: `<p>Toque em <strong>Menu → Administrador</strong> no alto do app para abrir o painel.</p>
 <ul class="lista">
 <li><strong>Liberar novo acesso:</strong> nome de guerra e número interno da pessoa. O nome precisa ser único (acrescente o sobrenome se repetir).</li>
-<li><strong>Pessoas com acesso:</strong> lista de todos, com o papel. <strong>Excluir acesso</strong> vale na hora, até para quem está com o app aberto. Administrador não é excluído direto.</li>
+<li><strong>Pessoas com acesso:</strong> lista de todos, com o papel e o <strong>número interno</strong> ao lado do nome (todos os administradores veem o de todos, para conferir). <strong>Excluir acesso</strong> vale na hora, até para quem está com o app aberto. Administrador não é excluído direto. O número de quem já estava cadastrado aparece depois do primeiro login da pessoa.</li>
 <li><strong>Baixar lista (.txt)</strong> e <strong>Copiar lista</strong>: a rela de quem está liberado (nomes e papéis, sem números internos).</li>
-<li><strong>Planilha da semana:</strong> mostra quem publicou e quando, e permite remover a planilha publicada.</li>
-<li><strong>Último acesso de cada pessoa</strong> e <strong>Registro de eventos:</strong> quem entrou, tentativas recusadas, downloads. O filtro aceita <strong>nome de guerra</strong> ou <strong>número interno</strong> (a busca por número interno vale só para alunos).</li>
+<li><strong>Planilha da semana:</strong> mostra quem publicou e quando. <strong>Ver a planilha</strong> abre uma tabela, turma por turma, só para conferir o que foi lido (inclusive quando o arquivo era PDF), sem baixar. Também permite <strong>remover</strong> a planilha publicada.</li>
+<li><strong>Último acesso de cada pessoa</strong> e <strong>Registro de eventos:</strong> quem entrou, tentativas recusadas, downloads. O filtro aceita <strong>nome de guerra</strong> ou <strong>número interno</strong> (a busca por número interno vale só para alunos) e tem a opção <strong>Só tentativas recusadas</strong>, para achar rápido quem errou a senha ou tentou algo sem permissão.</li>
 </ul>`,
   },
   {
     id: "admin-codigos", titulo: "Administradores: senhas de acesso", admin: true,
     html: `<p>No cartão <strong>Senhas de acesso</strong> do painel:</p>
 <ul class="lista">
-<li>Ranchef e administradores trocam o <strong>senha dos alunos</strong>. Só o <strong>ranchef</strong> troca o <strong>senha dos administradores</strong>.</li>
+<li>Ranchef e administradores trocam a <strong>senha dos alunos</strong>. Só o <strong>ranchef</strong> troca a <strong>senha dos administradores</strong>.</li>
 <li>Digite a senha nova duas vezes (de 8 a 64 caracteres) e <strong>seu número interno</strong> para confirmar. As duas senhas precisam ser diferentes.</li>
 <li>A troca vale para os <strong>próximos logins</strong>; quem já está dentro continua até a sessão acabar. Depois, passe a senha nova às pessoas.</li>
+<li><strong>Troque a senha dos alunos a cada 30 dias.</strong> O painel mostra há quantos dias foi a última troca e avisa quando passa de 30.</li>
 <li>Se um perfil estiver sem senha definida, o painel avisa e <strong>ninguém consegue entrar nele</strong> até alguém definir um.</li>
 </ul>`,
   },

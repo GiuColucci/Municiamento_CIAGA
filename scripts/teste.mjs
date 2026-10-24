@@ -1300,3 +1300,17 @@ test("menu.css é a única fonte do menu suspenso: páginas do servidor e app o 
   assert.ok(String(r.body).includes('<link rel="stylesheet" href="/menu.css">'));
   assert.ok(String(r.body).indexOf("/menu.css") < String(r.body).indexOf("<body>")); // no <head>
 });
+
+test("Como usar: tem a Conferência geral (para todos) e o painel atual (só administradores)", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const ajuda = require("../api/ajuda.js");
+  const ver = async (quem, papel) => { const r = res(); await ajuda({ headers: { cookie: sessao(quem, papel) } }, r); return String(r.body); };
+  const aluno = await ver("mike", 0);
+  assert.ok(aluno.includes("7. Conferência geral") && aluno.includes("só existe naquele dia") && aluno.includes("sempre por antiguidade"));
+  assert.ok(!aluno.includes("Só tentativas recusadas") && !aluno.includes("Ver a planilha"));
+  const adm = await ver("romeo", 1);
+  assert.ok(adm.includes("Só tentativas recusadas") && adm.includes("Ver a planilha") && adm.includes("a cada 30 dias") && adm.includes("Menu → Administrador"));
+  assert.ok(!/o <strong>senha d|o senha d|seu <strong>senha/.test(adm + aluno)); // concordância depois da troca de "código" por "senha"
+  assert.ok(!aluno.includes("DOCX") && !adm.includes("DOCX"));
+});

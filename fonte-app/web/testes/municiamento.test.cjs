@@ -492,3 +492,157 @@ test("rela geral: união das marcações de várias conferentes, de todos os ano
   assert.deepEqual(porTurma.secoes[0].grupos.map((g) => g.turma), ["B12.1", "N24.1"]);
   assert.match(porTurma.titulo, /Turmas B12\.1, N24\.1$/);
 });
+
+// ---------------------------------------------------------------- rancho corrido (dados FICTÍCIOS)
+
+test("rancho: autorização preenchida (lista) vira alunos com data, refeição e motivo", () => {
+  const linhas = [
+    ["MARINHA DO BRASIL"], ["AUTORIZAÇÃO PARA RANCHO CORRIDO"],
+    ["Data: 24/10/2026"], ["Refeição: Almoço"], ["Motivo: Prova de recuperação"], ["Total de alunos: 3"],
+    ["3º ANO"], ["Nº Interno", "Nome de Guerra", "Pelotão/", "Nº Interno", "Nome de Guerra", "Pelotão/"], ["CIA", "CIA"],
+    ["3025", "TANGO", "1º PEL", "N3042", "ROMEO", ""],
+    ["Total de alunos do 3º ano:", "2"],
+    ["1º ANO"], ["1037", "ALVES", "A", "", "", ""],
+  ];
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.tipo, "autorizacao");
+  assert.equal(r.data, "2026-10-24");
+  assert.deepEqual(r.refeicoes, ["Almoço"]);
+  assert.equal(r.motivo, "Prova de recuperação");
+  assert.deepEqual(r.itens.map((i) => [i.c, i.n, i.p, i.m, i.r]), [
+    ["3025", "TANGO", "1º PEL", "Prova de recuperação", ["Almoço"]],
+    ["N3042", "ROMEO", "", "Prova de recuperação", ["Almoço"]],
+    ["1037", "ALVES", "A", "Prova de recuperação", ["Almoço"]]]);
+  assert.deepEqual(r.avisos, []);
+});
+
+test("rancho: formulário em branco não gera alunos nem lixo; sem motivo e sem data avisa", () => {
+  const branco = M.interpretarRancho([["AUTORIZAÇÃO PARA RANCHO CORRIDO"], ["Data: ____/____/_____"], ["Refeição: ______"], ["Motivo: ______"], ["3º ANO"], ["Nº Interno", "Nome de Guerra"]]);
+  assert.equal(branco.itens.length, 0);
+  assert.equal(branco.data, null);
+  assert.equal(branco.refeicoes, null);
+  assert.ok(branco.avisos.some((a) => /nenhum aluno/.test(a)) && branco.avisos.some((a) => /data/.test(a)));
+  const semMotivo = M.interpretarRancho([["Autorização para rancho corrido"], ["Data: 01/11/2026"], ["Motivo: ____"], ["2154", "BRITO", "B"]]);
+  assert.equal(semMotivo.itens[0].m, "Rancho corrido autorizado");
+  assert.ok(semMotivo.avisos.some((a) => /motivo/.test(a)));
+});
+
+test("rancho: detalhe de serviço (tabela) vira alunos com a função e o turno como motivo", () => {
+  const linhas = [
+    ["CENTRO DE INSTRUÇÃO ALMIRANTE GRAÇA ARANHA"], ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"],
+    ["ROTINA DE DOMINGO"], ["DETALHE DE SÁBADO"], ["SERVIÇO: 24 OUT 2026"],
+    ["3° ANO"], ["SERVIÇO DIÁRIO"],
+    ["AJOSCA", "3025", "N", "TANGO", ""], ["RETÉM", "3042", "N", "ROMEO"],
+    ["SERVIÇO DE QUARTO"],
+    ["0800-1200P / 2000-0000P / 0800-1200", "1200-1600P / 0000-0400P", "1600-2000P / 0400-0800P"],
+    ["CHEFE DE DIA", "3048", "N", "MIKE", "TR", "3145", "M", "RIBEIRO", "TR", "3134", "M", "D'ALMEIDA"],
+    ["2° ANO"], ["SERVIÇO DE QUARTO"], ["0800-1200P / 2000-0000P / 0800-1200"],
+    ["POLÍCIA", "2166", "M", "DIEGO", "SE"],
+    ["1° ANO"], ["PAV 3A", "1011", "B", "CARLOS"],
+  ];
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.tipo, "servico");
+  assert.equal(r.data, "2026-10-24");
+  const por = Object.fromEntries(r.itens.map((i) => [i.c, i]));
+  assert.equal(por.N3025.m, "Serviço: AJOSCA"); // serviço diário: sem turno
+  assert.equal(por.N3048.m, "Serviço: CHEFE DE DIA (0800-1200P / 2000-0000P / 0800-1200)");
+  assert.equal(por.M3145.m, "Serviço: CHEFE DE DIA (1200-1600P / 0000-0400P)");
+  assert.equal(por.M3134.n, "D'ALMEIDA");
+  assert.equal(por.M3134.m, "Serviço: CHEFE DE DIA (1600-2000P / 0400-0800P)");
+  assert.equal(por.M2166.m, "Serviço: POLÍCIA (0800-1200P / 2000-0000P / 0800-1200)"); // "SE" não vira nome
+  assert.equal(por.B1011.m, "Serviço: PAV 3A (0800-1200P / 2000-0000P / 0800-1200)"); // o turno continua valendo até outro cabeçalho
+  assert.ok(r.itens.every((i) => i.r === null && /^[BMN]\d{4}$/.test(i.c)));
+  assert.equal(r.itens.length, 7);
+});
+
+test("rancho: arquivo que não é de rancho corrido avisa sem quebrar; mesmo aluno em duas funções vira um só", () => {
+  const r = M.interpretarRancho([["Outra coisa qualquer"], ["1037", "ALVES"]]);
+  assert.equal(r.tipo, null);
+  assert.equal(r.itens.length, 0);
+  assert.match(r.avisos[0], /Não reconheci/);
+  const dois = M.interpretarRancho([["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 24 OUT 2026"], ["RETÉM", "3042", "N", "ROMEO"], ["POLÍCIA", "3042", "N", "ROMEO"]]);
+  assert.equal(dois.itens.length, 1);
+  assert.equal(dois.itens[0].m, "Serviço: RETÉM; Serviço: POLÍCIA");
+});
+
+test("rancho: PDF de verdade (gerado aqui) é lido pela posição dos textos nos dois modelos", async () => {
+  const { jsPDF } = globalThis.jspdf;
+  const pdf = (fn) => { const d = new jsPDF({ unit: "pt", format: "a4" }); d.setFontSize(10); fn((x, y, t) => d.text(t, x, 842 - y)); return new Uint8Array(d.output("arraybuffer")); };
+  // autorização: mesma posição das colunas do formulário da unidade
+  const aut = pdf((t) => {
+    t(207, 721, "AUTORIZAÇÃO PARA RANCHO CORRIDO"); t(57, 694, "Data: 24/10/2026"); t(57, 667, "Refeição: Janta"); t(57, 640, "Motivo: Visita técnica");
+    t(281, 569, "3º ANO"); t(62, 550, "Nº Interno"); t(139, 550, "Nome de Guerra"); t(242, 550, "Pelotão/"); t(298, 550, "Nº Interno"); t(385, 550, "Nome de Guerra");
+    t(62, 536, "3025"); t(139, 536, "TANGO"); t(242, 536, "1º PEL"); t(298, 536, "N3042"); t(385, 536, "ROMEO"); t(493, 536, "2º PEL");
+    t(62, 522, "1037"); t(139, 522, "ALVES"); t(242, 522, "A");
+  });
+  const a = await M.lerRanchoArquivo({ nome: "autorizacao.pdf", bytes: aut });
+  assert.equal(a.tipo, "autorizacao");
+  assert.equal(a.data, "2026-10-24");
+  assert.deepEqual(a.refeicoes, ["Janta"]);
+  assert.equal(a.motivo, "Visita técnica");
+  assert.deepEqual(a.itens.map((i) => [i.c, i.n, i.p]), [["3025", "TANGO", "1º PEL"], ["N3042", "ROMEO", "2º PEL"], ["1037", "ALVES", "A"]]);
+  // tabela de serviço
+  const srv = pdf((t) => {
+    t(200, 800, "DETALHE DE SERVIÇO DO CORPO DE ALUNOS"); t(60, 760, "SERVIÇO: 24 OUT 2026");
+    t(250, 700, "SERVIÇO DE QUARTO"); t(240, 688, "0800-1200P / 2000-0000P"); t(470, 688, "1200-1600P / 0000-0400P");
+    t(60, 672, "CHEFE DE DIA"); t(190, 672, "3048"); t(225, 672, "N"); t(260, 672, "MIKE"); t(470, 672, "3145"); t(505, 672, "M"); t(540, 672, "RIBEIRO");
+  });
+  const s = await M.lerRanchoArquivo({ nome: "servico.pdf", bytes: srv });
+  assert.equal(s.tipo, "servico");
+  assert.equal(s.data, "2026-10-24");
+  assert.deepEqual(s.itens.map((i) => [i.c, i.n, i.m]), [["N3048", "MIKE", "Serviço: CHEFE DE DIA (0800-1200P / 2000-0000P)"], ["M3145", "RIBEIRO", "Serviço: CHEFE DE DIA (1200-1600P / 0000-0400P)"]]);
+});
+
+test("rancho: casa o número interno com a planilha e o aviso respeita a refeição", () => {
+  const alunos = [
+    { nome: "TANGO", codigo: "N3025", turma: "N36.1" }, { nome: "ALVES", codigo: "B1037", turma: "B12.1" },
+    { nome: "OUTRO", codigo: "M3025", turma: "M36.1" }, { nome: "MIKE", codigo: "N3048", turma: "N36.1" }];
+  const itens = [{ c: "3025", n: "TANGO", m: "Prova", r: ["Almoço"], p: "" }, { c: "N3048", n: "MIKE", m: "Serviço: Retém", r: null, p: "" }, { c: "9999", n: "NINGUEM", m: "x", r: null, p: "" }];
+  const casados = M.casarRancho(itens, alunos);
+  assert.equal(casados[0].aluno.codigo, "N3025"); // dois com 3025: o nome desempata
+  assert.equal(casados[1].aluno.codigo, "N3048");
+  assert.equal(casados[2].aluno, null);
+  const almoco = M.indiceRancho([{ por: "Mike", itens }], "Almoço");
+  assert.equal(M.ranchoDoAluno(almoco, alunos[0]).motivo, "Prova");
+  assert.equal(M.ranchoDoAluno(almoco, alunos[3]).motivo, "Serviço: Retém");
+  const janta = M.indiceRancho([{ por: "Mike", itens }], "Janta"); // a autorização vale só para o almoço
+  assert.equal(M.ranchoDoAluno(janta, alunos[0]), null);
+  assert.equal(M.ranchoDoAluno(janta, alunos[3]).motivo, "Serviço: Retém"); // serviço vale para qualquer refeição
+  assert.equal(M.ranchoDoAluno(almoco, alunos[1]), null);
+});
+
+test("rancho: foto — palavras do OCR viram células (nome com duas palavras fica junto) e o formato é reconhecido pelos bytes", () => {
+  const w = (text, x0, y0, largura, altura = 20) => ({ text, bbox: { x0, y0, x1: x0 + largura, y1: y0 + altura }, confidence: 90 });
+  const palavras = [
+    w("AUTORIZAÇÃO", 200, 20, 150), w("PARA", 360, 20, 50), w("RANCHO", 420, 20, 80), w("CORRIDO", 510, 20, 90),
+    w("Data:", 40, 70, 60), w("24/10/2026", 110, 70, 120),
+    w("Motivo:", 40, 110, 80), w("Prova", 130, 110, 60), w("de", 200, 110, 30), w("recuperação", 240, 110, 130),
+    // linha de alunos: número, nome (duas palavras), pelotão; espaço grande entre as colunas
+    w("1037", 40, 200, 60), w("ALVES", 220, 202, 80), w("1º", 480, 200, 20), w("PEL", 505, 200, 40),
+    w("N3042", 40, 240, 70), w("MARIA", 220, 240, 80), w("SOUSA", 310, 240, 80),
+  ];
+  const linhas = M.linhasDePalavrasOcr(palavras);
+  assert.deepEqual(linhas[0], ["AUTORIZAÇÃO PARA RANCHO CORRIDO"]);
+  assert.deepEqual(linhas[1], ["Data: 24/10/2026"]);
+  assert.deepEqual(linhas[3], ["1037", "ALVES", "1º PEL"]);
+  assert.deepEqual(linhas[4], ["N3042", "MARIA SOUSA"]);
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.tipo, "autorizacao");
+  assert.equal(r.data, "2026-10-24");
+  assert.equal(r.motivo, "Prova de recuperação");
+  assert.deepEqual(r.itens.map((i) => [i.c, i.n, i.p]), [["1037", "ALVES", "1º PEL"], ["N3042", "MARIA SOUSA", ""]]);
+  // JPEG e PNG pelos primeiros bytes; qualquer outra coisa não é foto
+  assert.equal(M.tipoDeImagem(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0])), "jpeg");
+  assert.equal(M.tipoDeImagem(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0])), "png");
+  assert.equal(M.tipoDeImagem(new TextEncoder().encode("%PDF-1.4 ....")), null);
+});
+
+test("rancho: número que veio errado da foto é resolvido pelo nome de guerra (se único)", () => {
+  const alunos = [{ nome: "ALVES", codigo: "B1037", turma: "B12.1" }, { nome: "ARAUJO", codigo: "B1111", turma: "B12.1" }, { nome: "SILVA", codigo: "B1200", turma: "B12.2" }, { nome: "SILVA", codigo: "B1201", turma: "B12.2" }];
+  const itens = [{ c: "1O37", n: "ALVES", m: "x" }, { c: "9999", n: "SILVA", m: "x" }, { c: "9998", n: "INEXISTENTE", m: "x" }];
+  const c = M.casarRancho(itens.map((i) => ({ ...i, c: i.c.replace("O", "0").length === 4 ? "7777" : i.c })), alunos);
+  assert.equal(c[0].aluno.codigo, "B1037"); // número errado (7777), nome único: casa pelo nome
+  assert.equal(c[0].porNome, true);
+  assert.equal(c[1].aluno, null); // dois SILVA: não adivinha
+  assert.equal(c[2].aluno, null);
+});

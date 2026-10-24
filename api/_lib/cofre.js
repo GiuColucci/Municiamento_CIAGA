@@ -10,6 +10,8 @@ const reg = require("./registro");
 const PREFIXO = "v1.";
 const TTL_PLANILHA_S = 14 * 24 * 60 * 60; // a planilha publicada some sozinha em 14 dias
 const TTL_RASCUNHO_S = 7 * 24 * 60 * 60; // o rascunho de cada pessoa, em 7 dias (renovado a cada salvamento)
+const TTL_RANCHO_S = 4 * 24 * 60 * 60; // o rancho corrido de um dia some sozinho (vale só naquele dia; sobra margem)
+const MAX_PUBLICACOES_RANCHO = 40; // por dia
 
 function chaveMestra() {
   const hex = s.exigir("DATA_KEY");
@@ -67,8 +69,22 @@ async function lerRascunhos(nomes) {
   return nomes.map((n, i) => { try { return abrir(valores[i], "rascunho:" + n); } catch { return null; } });
 }
 
+// Rancho corrido: uma lista no Redis por dia ("rancho:AAAA-MM-DD"); cada publicação é um item cifrado, no contexto do dia.
+// Publicar só ACRESCENTA (RPUSH): duas pessoas publicando ao mesmo tempo não se atropelam.
+const chaveRancho = (data) => "rancho:" + data;
+async function gravarRancho(data, obj) {
+  const chave = chaveRancho(data);
+  await reg.chamar([["RPUSH", chave, cifrar(obj, chave)], ["LTRIM", chave, -MAX_PUBLICACOES_RANCHO, -1], ["EXPIRE", chave, TTL_RANCHO_S]]);
+}
+async function lerRancho(data) {
+  const chave = chaveRancho(data);
+  const r = await reg.chamar([["LRANGE", chave, 0, -1]]);
+  return ((r && r[0].result) || []).map((v) => { try { return abrir(v, chave); } catch { return null; } }).filter(Boolean);
+}
+const apagarRancho = (data) => apagar(chaveRancho(data));
+
 module.exports = {
-  cifrar, abrir, chaveRascunho, ler, gravar, apagar, lerRascunhos,
+  cifrar, abrir, chaveRascunho, ler, gravar, apagar, lerRascunhos, gravarRancho, lerRancho, apagarRancho, TTL_RANCHO_S,
   TTL_PLANILHA_S, TTL_RASCUNHO_S,
   lerPlanilha: () => ler("planilha", "planilha"),
   gravarPlanilha: (obj) => gravar("planilha", "planilha", obj, TTL_PLANILHA_S),

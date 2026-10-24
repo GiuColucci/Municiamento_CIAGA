@@ -43,6 +43,7 @@ function inserirMenu(html, admin) {
   const links = menuSuspenso([
     { href: "/app", texto: "Voltar ao app", attrs: "data-voltar-app hidden" }, // o app o mostra só na Conferência Geral
     { href: "#conferencia-geral", texto: "Conferência geral", attrs: "data-abrir-geral" },
+    { href: "#rancho-corrido", texto: "Rancho corrido", attrs: "data-abrir-rancho" },
     ...(admin ? [{ href: "/admin", texto: "Administrador" }] : []),
     { href: "/ajuda", texto: "Como usar" },
   ]);
@@ -107,6 +108,9 @@ module.exports = async (req, res) => {
     html = html.replace("connect-src 'none'", "connect-src 'self'");
     // idem para estilos: o app só aceita estilo embutido; liberamos o arquivo /menu.css do próprio site (menu e cabeçalho)
     html = html.replace("style-src 'unsafe-inline'", "style-src 'self' 'unsafe-inline'");
+    // leitor de fotos do rancho corrido (OCR): scripts, worker e WebAssembly só do próprio site (/ocr/); a regra do cabeçalho HTTP já permitia
+    html = html.replace("script-src 'unsafe-inline'", "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:");
+    html = html.replace("worker-src 'none'", "worker-src 'self' blob:");
     const admin = await pessoas.ehAdmin(sess.u, sess);
     html = inserirMenu(html, admin) || html;
     const config = configApp(admin, await pessoas.nomeExibido(sess.u));

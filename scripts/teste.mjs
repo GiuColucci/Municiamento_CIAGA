@@ -18,17 +18,19 @@ const p = require("../api/_lib/pessoas.js");
 const reg = require("../api/_lib/registro.js");
 
 // Redis falso em memória
-const db = { h: new Map(), l: [], s: new Map(), ttl: new Map() };
+const db = { h: new Map(), l: [], s: new Map(), ttl: new Map(), k: new Map() }; // k: listas por chave (rancho corrido)
 const fatia = (arr, a, b) => arr.slice(a < 0 ? Math.max(arr.length + a, 0) : a, (b < 0 ? arr.length + b : b) + 1);
 function cmd([c, k, ...a]) {
   switch (c) {
     case "LPUSH": db.l.unshift(a[0]); return 1;
-    case "LTRIM": db.l = fatia(db.l, Number(a[0]), Number(a[1])); return "OK";
-    case "LRANGE": return fatia(db.l, Number(a[0]), Number(a[1]));
+    case "LTRIM": if (k !== "log") { db.k.set(k, fatia(db.k.get(k) || [], Number(a[0]), Number(a[1]))); return "OK"; } db.l = fatia(db.l, Number(a[0]), Number(a[1])); return "OK";
+    case "LRANGE": return k !== "log" ? fatia(db.k.get(k) || [], Number(a[0]), Number(a[1])) : fatia(db.l, Number(a[0]), Number(a[1]));
+    case "RPUSH": db.k.set(k, (db.k.get(k) || []).concat(a[0])); return 1;
+    case "EXPIRE": db.ttl.set(k, a[0]); return 1;
     case "SET": db.s.set(k, a[0]); db.ttl.set(k, a[1] === "EX" ? a[2] : null); return "OK";
     case "GET": return db.s.get(k) ?? null;
     case "MGET": return [k, ...a].map((x) => db.s.get(x) ?? null);
-    case "DEL": return db.s.delete(k) ? 1 : 0;
+    case "DEL": return db.s.delete(k) || db.k.delete(k) ? 1 : 0;
     case "HGETALL": return [...db.h].flat();
     case "HGET": return db.h.get(a[0]) ?? null;
     case "HSET": db.h.set(a[0], a[1]); return 1;
@@ -40,7 +42,7 @@ global.fetch = async (url, init) => {
   const out = JSON.parse(init.body).map((x) => ({ result: cmd(x) }));
   return { ok: true, json: async () => out };
 };
-const zerar = () => { db.h.clear(); db.l = []; db.s.clear(); db.ttl.clear(); };
+const zerar = () => { db.h.clear(); db.l = []; db.s.clear(); db.ttl.clear(); db.k.clear(); };
 const res = () => ({ headers: {}, setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b; } });
 
 const LISTA = [
@@ -182,7 +184,7 @@ test("login: escolher entrar como administrador ou como aluno", async () => {
 test("app: Administrador no cabeçalho só em modo administrador; Sair ao final da página, não fixo", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
+  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; worker-src \'none\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
   const iv = crypto.randomBytes(12);
   const c = crypto.createCipheriv("aes-256-gcm", Buffer.from(chave, "hex"), iv);
   const enc = Buffer.concat([c.update(zlib.brotliCompressSync(html)), c.final()]);
@@ -205,12 +207,13 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.includes('</main><div id="cg-rodape"><a href="/sair">Sair</a></div><script>globalThis.Municiamento')); // Sair no fim, depois do conteúdo
     assert.ok(saida.indexOf("Municiamento.HOSPEDADO") < saida.indexOf("<script>lib</script>")); // e antes das bibliotecas
     // no cabeçalho, o aluno tem o menu suspenso com "Conferência geral" e "Como usar"; nada de Administrador
-    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
+    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="#rancho-corrido" data-abrir-rancho>Rancho corrido</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
     assert.ok(!saida.includes('href="/admin"'));
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
     assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
+    assert.ok(saida.includes("worker-src 'self' blob:") && saida.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:") && !saida.includes("worker-src 'none'")); // e o leitor de fotos (OCR) do rancho corrido
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -218,7 +221,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
       saida = (await abrir(sessao(quem, papel))).body.toString();
       // menu suspenso: Conferência geral, Administrador e Como usar numa só entrada
       assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista">' +
-        '<a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/admin">Administrador</a>' +
+        '<a class="menu-suspenso-item" href="/app" data-voltar-app hidden>Voltar ao app</a><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="#rancho-corrido" data-abrir-rancho>Rancho corrido</a><a class="menu-suspenso-item" href="/admin">Administrador</a>' +
         '<a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
       assert.ok(saida.includes('<div id="cg-rodape"><a href="/sair">Sair</a></div>'));
       assert.equal(saida.split('href="/sair"').length - 1, 1); // um só Sair
@@ -1307,10 +1310,73 @@ test("Como usar: tem a Conferência geral (para todos) e o painel atual (só adm
   const ajuda = require("../api/ajuda.js");
   const ver = async (quem, papel) => { const r = res(); await ajuda({ headers: { cookie: sessao(quem, papel) } }, r); return String(r.body); };
   const aluno = await ver("mike", 0);
+  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("foto</strong> (JPEG ou PNG)") && aluno.includes("aviso laranja"));
   assert.ok(aluno.includes("7. Conferência geral") && aluno.includes("só existe naquele dia") && aluno.includes("sempre por antiguidade"));
   assert.ok(!aluno.includes("Só tentativas recusadas") && !aluno.includes("Ver a planilha"));
   const adm = await ver("romeo", 1);
   assert.ok(adm.includes("Só tentativas recusadas") && adm.includes("Ver a planilha") && adm.includes("a cada 30 dias") && adm.includes("Menu → Administrador"));
   assert.ok(!/o <strong>senha d|o senha d|seu <strong>senha/.test(adm + aluno)); // concordância depois da troca de "código" por "senha"
   assert.ok(!aluno.includes("DOCX") && !adm.includes("DOCX"));
+});
+
+test("rancho corrido: qualquer pessoa publica e lê; só acrescenta; cifrado; um dia some; só administrador remove", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const api = require("../api/planilha.js");
+  const acao = require("../api/admin-acao.js");
+  const relogio = Date.now;
+  Date.now = () => new Date("2026-10-24T10:00:00-03:00").getTime();
+  try {
+    const chamar = async (quem, papel, metodo, url, body) => {
+      const r = res();
+      await api({ method: metodo, url, headers: { cookie: quem ? sessao(quem, papel) : "", "sec-fetch-site": "same-origin" }, body }, r);
+      return { status: r.statusCode, json: r.body ? JSON.parse(r.body) : null };
+    };
+    const item = (c, n, m, r) => ({ c, n, m, r: r || null, p: "" });
+    const base = "/api/planilha?rancho=2026-10-24";
+    assert.equal((await chamar("", 0, "GET", base)).status, 401); // sem sessão
+    // um aluno comum publica (qualquer pessoa pode)
+    let r = await chamar("mike", 0, "POST", base, { origem: "a", itens: [item("1037", "ALVES", "Prova de recuperação", ["Almoço"])] });
+    assert.equal(r.status, 200);
+    // outra pessoa publica depois: acrescenta, não substitui
+    assert.equal((await chamar("tango", 0, "POST", base, { origem: "s", itens: [item("N3025", "CAIO", "Serviço: Chefe de dia (0800-1200P)"), item("3042", "BRENO", "Serviço: Retém")] })).status, 200);
+    r = await chamar("ana lima", 0, "GET", "/api/planilha?rancho=2026-10-24,2026-10-25,lixo");
+    assert.equal(r.status, 200);
+    assert.deepEqual(Object.keys(r.json.dias), ["2026-10-24", "2026-10-25"]); // data inválida ignorada
+    assert.equal(r.json.dias["2026-10-24"].length, 2);
+    assert.deepEqual(r.json.dias["2026-10-24"].map((x) => [x.por, x.itens.length]), [["Mike", 1], ["Tango", 2]]);
+    assert.deepEqual(r.json.dias["2026-10-25"], []);
+    // cifrado no banco: nem nomes nem motivos legíveis
+    const tudo = JSON.stringify([...db.k]);
+    assert.ok(tudo.includes("v1.") && !tudo.includes("ALVES") && !tudo.includes("Prova") && !tudo.includes("CAIO"));
+    assert.ok(db.ttl.get("rancho:2026-10-24") > 0);
+    // validações
+    assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [] })).status, 400);
+    assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [item("12", "X", "m")] })).status, 400); // número interno inválido
+    assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [item("1037", "ALVES", "m", ["Lanche"])] })).status, 400);
+    assert.equal((await chamar("mike", 0, "POST", "/api/planilha?rancho=2026-12-31", { origem: "a", itens: [item("1037", "ALVES", "m")] })).status, 400); // fora da semana
+    assert.equal((await chamar("mike", 0, "POST", "/api/planilha?rancho=amanha", { origem: "a", itens: [item("1037", "ALVES", "m")] })).status, 400);
+    const cross = res();
+    await api({ method: "POST", url: base, headers: { cookie: sessao("mike"), "sec-fetch-site": "cross-site" }, body: { origem: "a", itens: [item("1037", "ALVES", "m")] } }, cross);
+    assert.equal(cross.statusCode, 403);
+    assert.ok(db.l.join("|").includes("publicou_rancho") && !db.l.join("|").includes("ALVES"));
+    // só administrador remove um dia (pelo painel)
+    const remover = async (quem, papel) => { const x = res(); await acao({ method: "POST", headers: { cookie: sessao(quem, papel), "sec-fetch-site": "same-origin" }, body: { acao: "limpar_rancho", data: "2026-10-24" } }, x); return x; };
+    assert.equal((await remover("mike", 0)).statusCode, 403);
+    assert.match((await remover("romeo", 1)).headers.Location, /m=limpar_rancho/);
+    assert.deepEqual((await chamar("mike", 0, "GET", base)).json.dias["2026-10-24"], []);
+    // no painel: cartão com os dias publicados
+    await cofre_publica();
+  } finally { Date.now = relogio; }
+
+  async function cofre_publica() {
+    const cofre = require("../api/_lib/cofre.js");
+    await cofre.gravarPlanilha({ id: "p1", por: "Romeo", em: Date.now(), dados: { v: 1, formato: "XLSX", sexta: "2026-10-23", turmas: [], avisos: [], alunos: [] } });
+    await cofre.gravarRancho("2026-10-24", { por: "Mike", em: Date.now(), origem: "a", itens: [{ c: "1037", n: "ALVES", m: "x", r: null, p: "" }] });
+    const admin = require("../api/admin.js");
+    const x = res();
+    await admin({ headers: { cookie: sessao("romeo", 1) }, url: "/admin" }, x);
+    const h = String(x.body);
+    assert.ok(h.includes("<h2>Rancho corrido</h2>") && h.includes("24/10/2026") && h.includes('value="limpar_rancho"') && !h.includes("ALVES"));
+  }
 });

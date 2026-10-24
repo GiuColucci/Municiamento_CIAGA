@@ -509,3 +509,55 @@ tbody tr:last-child td { border-bottom: 0; }
   .tabela-geral td::before { content: attr(data-rotulo); color: var(--texto-suave); font-weight: 700; text-align: left; }
   .geral-opcoes .chip-geral { width: 100%; justify-content: space-between; }
 }
+
+/* rancho corrido: tudo em LARANJA (o vermelho é de "NÃO municiado") */
+:root { --laranja: #C2570C; --laranja-fundo: #FFE9D2; }
+:root[data-tema="escuro"] { --laranja: #FF9F4A; --laranja-fundo: #3D2410; }
+.selo-rancho { display: none; }
+.aluno.rancho-corrido label { background: var(--laranja-fundo); outline: 1px solid var(--laranja); }
+.aluno.rancho-corrido .selo-rancho {
+  display: inline; flex: none; font: 700 .75rem var(--sistema); color: var(--laranja); white-space: nowrap; cursor: pointer;
+  background: transparent; border: 1px solid var(--laranja); border-radius: 999px; padding: .1rem .55rem;
+}
+.rancho-motivo { margin: 0; padding: .3rem .8rem .5rem 2.2rem; color: var(--texto); font-size: .92rem; border-left: 4px solid var(--laranja); margin-left: .4rem; }
+.aviso-rancho { margin: 0; padding: .7rem 1rem; border-radius: 8px; border-left: 5px solid var(--laranja); background: var(--laranja-fundo); color: var(--texto); }
+/* aviso ao marcar quem está de rancho corrido: toca para ver o motivo */
+.alerta-rancho {
+  display: block; width: 100%; margin: 0; padding: .7rem 1rem; border-radius: 8px; border: 0; border-left: 5px solid var(--laranja);
+  background: var(--laranja-fundo); color: var(--texto); font: 700 1rem var(--sistema); text-align: left; cursor: pointer;
+}
+.alerta-rancho:focus-visible { outline: 3px solid var(--laranja); outline-offset: 2px; }
+.alerta-rancho .dica-toque { display: block; margin-top: .25rem; font-weight: 400; font-size: .9rem; color: var(--laranja); text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) { .alerta-rancho.piscar { animation: alerta-rancho-piscar .9s ease-out 2; } }
+@keyframes alerta-rancho-piscar { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 40% { box-shadow: 0 0 0 4px var(--laranja); } }
+#tela-rancho > .cartao + .cartao { margin-top: 1.2rem; }
+#tela-rancho .cartao { display: grid; gap: var(--e1); }
+#tela-rancho .cartao > h2, #tela-rancho .cartao > p { margin: 0; }
+.rancho-arquivo { display: grid; gap: .4rem; padding: .8rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
+.rancho-arquivo > * { margin: 0; }
+.rancho-arquivo h3 { font-size: 1.05rem; }
+.rancho-alunos { margin: 0; padding-left: 1.4rem; display: grid; gap: .2rem; }
+.rancho-alunos .fora { color: var(--erro-borda); }
+.rancho-dia { display: grid; gap: .2rem; padding: .6rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
+.rancho-dia > * { margin: 0; }
+#tela-rancho .botao { justify-self: start; }
+@media (max-width: 640px) { #tela-rancho .botao { justify-self: stretch; } }
+
+/* ---------- ajustes de layout (auditoria no celular e no computador) */
+/* linha do aluno: selos e código quebram para a linha de baixo em vez de passar da caixa */
+.aluno label { flex-wrap: wrap; row-gap: .15rem; }
+.rancho-motivo { margin-top: .4rem; }
+/* campo de arquivo do rancho corrido: grande e com botão no desenho do app */
+#rancho-arquivos { width: 100%; min-height: 48px; padding: .55rem .7rem; border: 1px dashed var(--secundaria-borda); border-radius: 10px; background: var(--superficie-2); color: var(--texto); font: 400 .95rem var(--sistema); }
+#rancho-arquivos::file-selector-button {
+  margin-right: .8rem; padding: .5rem 1rem; border: 1px solid var(--secundaria-borda); border-radius: 8px; background: transparent; color: var(--link); font: 700 .95rem var(--sistema); cursor: pointer;
+}
+/* celular: tudo que se toca tem pelo menos 40 px */
+@media (max-width: 640px) {
+  .link-faixa { min-height: 40px; }
+  .botao-tema { width: 40px; height: 40px; }
+  .botao.link { min-height: 40px; padding: .5rem 0; display: inline-flex; align-items: center; }
+  #conferencia > summary { min-height: 40px; display: flex; align-items: center; }
+  .aba-nome, .aba-fechar { min-height: 40px; }
+  .botao-info { width: 2.2rem; height: 2.2rem; }
+}

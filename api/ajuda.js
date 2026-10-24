@@ -78,7 +78,24 @@ const SECOES = [
 <p class="dica">A listagem de um dia <strong>só existe naquele dia</strong>: no dia seguinte ela some. Toque em <strong>Atualizar</strong> para buscar de novo o que os outros marcaram. Ela usa a planilha da semana publicada; se uma planilha nova for publicada, as marcações antigas deixam de valer.</p>`,
   },
   {
-    id: "salvar", titulo: "8. Salvamento automático e limpeza",
+    id: "rancho", titulo: "8. Rancho corrido",
+    html: `<p>Quem está de <strong>rancho corrido</strong> no dia aparece na marcação, com o <strong>motivo</strong>. Qualquer pessoa pode publicar o arquivo do dia: <strong>Menu → Rancho corrido</strong>.</p>
+<ol class="passos">
+<li>Escolha o arquivo: a <strong>autorização para rancho corrido</strong> (lista) e/ou o <strong>detalhe de serviço</strong> (tabela), em <strong>PDF, XLSX, CSV ou foto</strong> (JPEG ou PNG). Dá para escolher os dois de uma vez.</li>
+<li>Confira o <strong>dia</strong> (vem do arquivo; se faltar, escolha) e toque em <strong>Ler arquivos</strong>.</li>
+<li>Veja o que foi lido: tipo, dia, refeição, motivo e cada aluno (<strong>nome de guerra e número interno</strong>). Quem não está na planilha da semana aparece em vermelho. Na <strong>foto</strong>, a leitura é por reconhecimento de texto e pode errar letras e números: confira com atenção (se o número vier errado, mas o nome de guerra existir só uma vez na planilha, o sistema usa o número certo).</li>
+<li>Toque em <strong>Publicar rancho corrido</strong>. Quem publicou mais de um arquivo no mesmo dia não apaga o do outro: as publicações se somam.</li>
+</ol>
+<ul class="lista">
+<li>Na lista da refeição, o aluno aparece em <strong>laranja</strong> com o selo <strong>RANCHO CORRIDO</strong>. Toque no selo para ver o <strong>motivo</strong> embaixo do nome.</li>
+<li>Ao marcar o aluno, aparece um <strong>aviso laranja</strong> ("está de RANCHO CORRIDO"). <strong>Toque no aviso</strong> para ver o motivo. O aviso vermelho continua sendo só para quem NÃO está municiado.</li>
+<li>A <strong>autorização</strong> vale só para a refeição escrita nela; o <strong>detalhe de serviço</strong> vale para o dia todo, com a função e o turno como motivo.</li>
+<li>O rancho corrido <strong>vale só no dia</strong> do arquivo e some sozinho depois. O cartão <strong>Já publicado nesta semana</strong> mostra quem publicou cada dia.</li>
+<li>Se alguém publicar algo errado, um administrador remove o dia pelo painel.</li>
+</ul>`,
+  },
+  {
+    id: "salvar", titulo: "9. Salvamento automático e limpeza",
     html: `<ul class="lista">
 <li>A cada marcação, o sistema <strong>salva sozinho</strong> o seu progresso (aparece "Rascunho salvo às ..."). Se você fechar a janela ou atualizar a página sem querer, abra o site de novo: as listas e as marcações voltam do jeito que estavam.</li>
 <li>O rascunho é <strong>só seu</strong> (ninguém vê o de outra pessoa) e fica guardado <strong>cifrado</strong> por até 7 dias.</li>
@@ -87,9 +104,9 @@ const SECOES = [
 </ul>`,
   },
   {
-    id: "extras", titulo: "9. Menu, tema e sair",
+    id: "extras", titulo: "10. Menu, tema e sair",
     html: `<ul class="lista">
-<li>O botão <strong>Menu</strong> no alto reúne os atalhos: <strong>Conferência geral</strong>, <strong>Como usar</strong> (e <strong>Administrador</strong>, para quem é administrador). Dentro da Conferência Geral, o primeiro item vira <strong>Voltar ao app</strong>.</li>
+<li>O botão <strong>Menu</strong> no alto reúne os atalhos: <strong>Conferência geral</strong>, <strong>Rancho corrido</strong>, <strong>Como usar</strong> (e <strong>Administrador</strong>, para quem é administrador). Dentro da Conferência Geral ou do Rancho corrido, o primeiro item vira <strong>Voltar ao app</strong>.</li>
 <li>O botão de <strong>sol/lua</strong> no alto troca entre tema claro e escuro; o sistema lembra sua escolha.</li>
 <li><strong>Como usar</strong> abre este guia. Para continuar de onde parou, toque em <strong>Voltar ao app</strong>: suas listas e marcações ficam salvas e voltam sozinhas.</li>
 <li><strong>Sair</strong> fica no fim da página. Use sempre que terminar, principalmente em aparelho de outra pessoa.</li>
@@ -102,11 +119,12 @@ const SECOES = [
 </ul>`,
   },
   {
-    id: "problemas", titulo: "10. Deu algum problema?",
+    id: "problemas", titulo: "11. Deu algum problema?",
     html: `<ul class="lista">
 <li><strong>"Nome, número interno ou senha incorretos":</strong> confira o nome de guerra (acentos e maiúsculas não importam), o número interno e a senha.</li>
 <li><strong>"Muitas tentativas erradas":</strong> espere 15 minutos. O contador de erros também zera todo dia à meia-noite.</li>
 <li><strong>Não aparece a planilha:</strong> ainda não foi publicada; peça a um administrador.</li>
+<li><strong>O arquivo do rancho corrido não foi lido:</strong> veja os avisos da tela de conferência. Confira se é a autorização ou o detalhe de serviço preenchidos (não o formulário em branco) e se o arquivo é PDF, XLSX, CSV ou foto JPEG/PNG. Para foto: reta, de perto, bem iluminada e sem sombra; se não ler direito, envie o PDF.</li>
 <li><strong>A Conferência geral está vazia:</strong> ninguém marcou presença naquele dia ainda, ou a listagem é de ontem (ela só vale no próprio dia).</li>
 <li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar PDF</strong> de novo; o arquivo vai para o app Arquivos.</li>
 <li><strong>A página pediu para entrar de novo:</strong> a sessão acabou. Entre; seu rascunho está salvo.</li>
@@ -130,6 +148,7 @@ const SECOES = [
 <li><strong>Liberar novo acesso:</strong> nome de guerra e número interno da pessoa. O nome precisa ser único (acrescente o sobrenome se repetir).</li>
 <li><strong>Pessoas com acesso:</strong> lista de todos, com o papel e o <strong>número interno</strong> ao lado do nome (todos os administradores veem o de todos, para conferir). <strong>Excluir acesso</strong> vale na hora, até para quem está com o app aberto. Administrador não é excluído direto. O número de quem já estava cadastrado aparece depois do primeiro login da pessoa.</li>
 <li><strong>Baixar lista (.txt)</strong> e <strong>Copiar lista</strong>: a rela de quem está liberado (nomes e papéis, sem números internos).</li>
+<li><strong>Rancho corrido:</strong> mostra, dia a dia, quem publicou e quantos alunos. <strong>Remover o dia</strong> apaga o que estiver errado.</li>
 <li><strong>Planilha da semana:</strong> mostra quem publicou e quando. <strong>Ver a planilha</strong> abre uma tabela, turma por turma, só para conferir o que foi lido (inclusive quando o arquivo era PDF), sem baixar. Também permite <strong>remover</strong> a planilha publicada.</li>
 <li><strong>Último acesso de cada pessoa</strong> e <strong>Registro de eventos:</strong> quem entrou, tentativas recusadas, downloads. O filtro aceita <strong>nome de guerra</strong> ou <strong>número interno</strong> (a busca por número interno vale só para alunos) e tem a opção <strong>Só tentativas recusadas</strong>, para achar rápido quem errou a senha ou tentou algo sem permissão.</li>
 </ul>`,

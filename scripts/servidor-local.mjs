@@ -32,9 +32,11 @@ if (!fs.existsSync(appHtml) || process.argv.includes("--build")) {
 const iv = crypto.randomBytes(12);
 const c = crypto.createCipheriv("aes-256-gcm", Buffer.from(process.env.APP_KEY, "hex"), iv);
 const cifrado = Buffer.concat([c.update(zlib.brotliCompressSync(fs.readFileSync(appHtml))), c.final()]);
-const tmp = path.join(os.tmpdir(), "conferencia-local.enc");
+const tmp = path.join(os.tmpdir(), "conferencia-local-" + process.pid + ".enc");
 fs.writeFileSync(tmp, Buffer.concat([iv, c.getAuthTag(), cifrado]));
 process.env.APP_ENC_PATH = tmp;
+process.on("exit", () => { try { fs.rmSync(tmp, { force: true }); } catch { /* já apagado */ } }); // o app cifrado temporário some ao fechar
+process.on("SIGINT", () => process.exit(0));
 
 // 2) Redis falso em memória
 const hash = new Map(), textos = new Map(), listas = new Map(); // listas: por chave (rancho corrido)
@@ -126,6 +128,11 @@ const servidor = http.createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${url.pathname.slice(1)}"`);
     return res.end(Buffer.from(exemploRancho(url.pathname.includes("servico"))));
+  }
+  // auditoria de layout (só desenvolvimento): http://localhost:4174/_auditoria.js
+  if (url.pathname === "/_auditoria.js") {
+    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    return res.end(fs.readFileSync(path.join(raiz, "scripts", "auditoria-layout.js")));
   }
   // planilha de exemplo (fictícia) para carregar no app: http://localhost:4174/_exemplo.xlsx
   if (url.pathname === "/_exemplo.xlsx") {

@@ -182,7 +182,7 @@ test("login: escolher entrar como administrador ou como aluno", async () => {
 test("app: Administrador no cabeçalho só em modo administrador; Sair ao final da página, não fixo", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
+  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
   const iv = crypto.randomBytes(12);
   const c = crypto.createCipheriv("aes-256-gcm", Buffer.from(chave, "hex"), iv);
   const enc = Buffer.concat([c.update(zlib.brotliCompressSync(html)), c.final()]);
@@ -210,6 +210,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
+    assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -1221,6 +1222,9 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   zerar();
   await p.carregarLista(LISTA);
   const api = require("../api/conferencia-geral.js");
+  const relogio = Date.now;
+  const comoSe = (iso) => { Date.now = () => new Date(iso).getTime(); };
+  comoSe("2026-10-23T12:00:00-03:00"); // o dia da sexta da planilha
   const rasc = require("../api/rascunho.js");
   const cofre = require("../api/_lib/cofre.js");
   await cofre.gravarPlanilha({ id: "p1", por: "Romeo", em: Date.now(), dados: { v: 1, formato: "XLSX", sexta: "2026-10-23", turmas: [], avisos: [], alunos: [] } });
@@ -1243,7 +1247,7 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 200);
   // combinações disponíveis (só as com marcações, com o número de conferentes)
   let r = (await chamar("romeo", 1, "/api/conferencia-geral")).json;
-  assert.deepEqual(r.opcoes, [{ dia: "Sexta", refeicao: "Janta", conferentes: 2 }, { dia: "Segunda", refeicao: "Café", conferentes: 1 }]);
+  assert.deepEqual(r.opcoes, [{ dia: "Sexta", refeicao: "Janta", conferentes: 2 }]); // a de Segunda só valeria na segunda
   // união: ALVES (marcado pelas duas) aparece uma vez
   r = (await chamar("romeo", 1, "/api/conferencia-geral?dia=Sexta&refeicao=Janta")).json;
   assert.deepEqual([...r.marcados].sort(), ["B12.1|B1037|ALVES", "B12.1|B1038|BRAGA", "N24.1|N2005|CORREA"]);
@@ -1251,6 +1255,21 @@ test("conferência geral: qualquer pessoa autenticada; une as marcações de tod
   assert.ok(r.conferentes.every((c) => c.em > 0) && !JSON.stringify(r).includes("FANTASMA"));
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral?dia=Xis&refeicao=Janta")).status, 400);
   assert.ok(db.l.join("|").includes("viu_conferencia_geral"));
+  // no dia seguinte a listagem de sexta some (e o endereço dela deixa de responder)
+  comoSe("2026-10-24T09:00:00-03:00");
+  assert.deepEqual((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes, []);
+  const velha = await chamar("romeo", 1, "/api/conferencia-geral?dia=Sexta&refeicao=Janta");
+  assert.equal(velha.status, 404);
+  assert.equal(velha.json.expirada, true);
+  // na segunda (26/10) vale a de segunda
+  comoSe("2026-10-26T20:00:00-03:00");
+  assert.deepEqual((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes, [{ dia: "Segunda", refeicao: "Café", conferentes: 1 }]);
+  // virada do dia no horário de Brasília (23h59 ainda é sexta; 00h01 de sábado já não)
+  comoSe("2026-10-23T23:59:00-03:00");
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes.length, 1);
+  comoSe("2026-10-24T00:01:00-03:00");
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).json.opcoes.length, 0);
+  Date.now = relogio;
   // sem planilha publicada
   db.s.delete("planilha");
   assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 404);
@@ -1263,4 +1282,21 @@ test("o plano gratuito da hospedagem aceita no máximo 12 funções: api/ não p
   const conf = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
   const origens = conf.rewrites.map((r) => r.source);
   assert.ok(origens.includes("/api/admin-lista") && origens.includes("/api/admin-exportar"));
+});
+
+test("menu.css é a única fonte do menu suspenso: páginas do servidor e app o carregam; não há cópia do CSS no HTML", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const css = fs.readFileSync(new URL("../public/menu.css", import.meta.url), "utf8");
+  assert.ok(css.includes(".menu-suspenso-lista") && css.includes("#cg-rodape") && css.includes(".faixa-interna"));
+  assert.ok(/@media \(max-width: 640px\)[^}]*\.menu \{ width: 100%/.test(css) && css.includes("left: clamp(1rem, 4vw, 2.5rem)")); // no celular a lista abre na largura da tela
+  // sem cópias nos outros arquivos de estilo
+  for (const f of ["../public/tema.css", "../fonte-app/web/estilo.css"]) {
+    assert.ok(!fs.readFileSync(new URL(f, import.meta.url), "utf8").includes(".menu-suspenso"), f);
+  }
+  const admin = require("../api/admin.js");
+  const r = res();
+  await admin({ headers: { cookie: sessao("romeo", 1) }, url: "/admin" }, r);
+  assert.ok(String(r.body).includes('<link rel="stylesheet" href="/menu.css">'));
+  assert.ok(String(r.body).indexOf("/menu.css") < String(r.body).indexOf("<body>")); // no <head>
 });

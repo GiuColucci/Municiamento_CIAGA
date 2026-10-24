@@ -18,6 +18,16 @@ function json(res, status, obj) {
 
 const chaveTexto = (k) => typeof k === "string" && k.length <= 160;
 
+// A listagem de um dia só existe naquele dia (horário de Brasília): no dia seguinte ela some da Conferência Geral.
+// A data de cada dia vem da sexta-feira da planilha (Sexta = +0, Sábado = +1 ... Quinta = +6).
+const hojeBrasilia = () => new Date(Date.now()).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }); // AAAA-MM-DD
+function dataDoDia(sexta, dia) {
+  const [a, m, d] = sexta.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d + DIAS.indexOf(dia))).toISOString().slice(0, 10);
+}
+// Sem a data da sexta na planilha não dá para saber o dia de cada lista: nesse caso nada é escondido.
+const valeHoje = (sexta, dia) => !sexta || dataDoDia(sexta, dia) === hojeBrasilia();
+
 module.exports = async (req, res) => {
   const sess = s.lerSessao(req);
   if (!sess || (await pessoas.removido(sess.u))) return json(res, 401, { erro: "Entre de novo." });
@@ -45,7 +55,7 @@ module.exports = async (req, res) => {
         const vistas = new Set();
         for (const l of r.listas) {
           if (!l || !Array.isArray(l.marcados) || !l.marcados.length) continue;
-          if (!DIAS.includes(l.dia) || !REFEICOES.includes(l.refeicao)) continue;
+          if (!DIAS.includes(l.dia) || !REFEICOES.includes(l.refeicao) || !valeHoje(pub.dados.sexta, l.dia)) continue;
           vistas.add(l.dia + "|" + l.refeicao);
         }
         for (const k of vistas) cont.set(k, (cont.get(k) || 0) + 1);
@@ -55,6 +65,7 @@ module.exports = async (req, res) => {
       return json(res, 200, { planilha: pub.id, sexta: pub.dados.sexta || null, opcoes });
     }
     if (!DIAS.includes(dia) || !REFEICOES.includes(refeicao)) return json(res, 400, { erro: "Dia ou refeição inválidos." });
+    if (!valeHoje(pub.dados.sexta, dia)) return json(res, 404, { erro: "Essa listagem só vale no próprio dia.", expirada: true });
 
     const marcados = new Set();
     const conferentes = [];

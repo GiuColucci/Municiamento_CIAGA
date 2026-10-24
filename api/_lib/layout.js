@@ -32,6 +32,7 @@ function pagina({ titulo, corpo, links = [], centro = false, sair = false, scrip
 <link rel="icon" href="/brasao.png">
 <script src="/tema.js"></script>
 <link rel="stylesheet" href="/tema.css">
+<link rel="stylesheet" href="/menu.css">
 </head>
 <body>
 <header class="faixa">

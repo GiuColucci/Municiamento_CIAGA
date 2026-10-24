@@ -21,8 +21,9 @@ Hoje cada pessoa que confere uma refeição (a "conferente") usa o app e marca q
    - **Ordem:** **Alfabética** ou **Antiguidade** (a "continuidade" do pedido original é a ordem de antiguidade do app);
    - **Separar em duas listas** (Municiados e NÃO municiados em folhas separadas), **Copiar** e **Baixar PDF**.
 5. **Quem pode usar:** **qualquer pessoa autenticada** (aluno ou administrador), pelo item "Conferência geral" do menu. A tela mostra **quem conferiu** (nome, quantos marcou e quando salvou), para todos saberem de onde vêm os dados.
-6. **Escolha do dia e da refeição:** a tela lista só as combinações (dia × refeição) em que **há pelo menos uma conferente com marcações**; para cada uma mostra quantas conferentes.
-7. **Atualização:** o botão **Atualizar** busca de novo os registros; nada é recalculado sozinho.
+6. **Validade de um dia:** a listagem de um dia **só existe naquele dia** (horário de Brasília). Em 23/10 só aparece o que é de 23/10; a partir de 00h de 24/10 ela some da Conferência Geral (o endereço dela deixa de responder). A data de cada dia vem da sexta-feira da planilha. Sem essa data, nada é escondido.
+7. **Escolha da refeição:** a tela lista só as combinações (dia × refeição) **de hoje** em que **há pelo menos um conferente com marcações**, com o número de conferentes. A tabela com todos eles chama-se **Todos os conferentes**.
+8. **Atualização:** o botão **Atualizar** busca de novo os registros; nada é recalculado sozinho.
 
 ### Decisões tomadas
 | Ponto | Decisão |

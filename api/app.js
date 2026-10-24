@@ -29,22 +29,7 @@ document.addEventListener("change",function(e){if(e.target&&e.target.type==="fil
 
 // "Administrador" fica no cabeçalho do app (mesmo estilo dos outros botões), só para quem entrou como administrador
 // (decidido no servidor). "Sair" fica no fim da página, como um botão comum, não fixo na tela.
-const ESTILO_EXTRA = `<style>
-.menu a.link-faixa,.menu summary.link-faixa{display:inline-flex;align-items:center;text-decoration:none}
-.faixa-interna{max-width:none;padding-inline:clamp(1rem,2.5vw,2rem)}
-.menu-suspenso{position:relative}.menu-suspenso>summary{list-style:none;cursor:pointer;user-select:none}
-.menu-suspenso>summary::-webkit-details-marker{display:none}.menu-suspenso>summary::after{content:"▾";margin-left:.45rem;font-size:.85em}
-.menu-suspenso[open]>summary::after{content:"▴"}
-.menu-suspenso-lista{position:absolute;z-index:30;top:calc(100% + .5rem);right:0;min-width:14rem;display:grid;gap:.3rem;padding:.5rem;background:var(--superficie,#fff);border:1px solid var(--borda,#CBD5E3);border-radius:10px;box-shadow:var(--sombra,0 6px 20px rgba(11,31,58,.15))}
-.menu-suspenso-item{display:flex;align-items:center;min-height:44px;padding:.5rem .9rem;border-radius:8px;text-decoration:none;font:600 1rem var(--sistema,"Times New Roman",serif);color:var(--texto,#1B2433);background:transparent}
-.menu-suspenso-item:hover,.menu-suspenso-item:focus-visible{background:var(--superficie-2,#F5F7FB);color:var(--link,#17345F)}
-@media print{.menu-suspenso{display:none}}
-#cg-rodape{width:100%;max-width:var(--largura,1240px);margin:0 auto;padding:0 var(--margem,1rem) 2.5rem;display:flex;justify-content:flex-end}
-#cg-rodape a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:.6rem 1.6rem;border-radius:10px;font:700 1rem var(--sistema,"Times New Roman",serif);text-decoration:none;color:var(--link,#17345F);background:var(--vidro,rgba(255,255,255,.7));border:1px solid var(--secundaria-borda,#17345F)}
-#cg-rodape a:hover{border-color:var(--destaque,#C8A24A)}
-@media (max-width:640px){#cg-rodape a{width:100%}}
-@media print{#cg-rodape,.menu a.link-faixa{display:none}}
-</style>`;
+const LINK_CSS = '<link rel="stylesheet" href="/menu.css">'; // menu suspenso, cabeçalho largo e Sair: um só arquivo, o mesmo das páginas do servidor
 const RODAPE = '<div id="cg-rodape"><a href="/sair">Sair</a></div>';
 
 // As bibliotecas embutidas no app têm "</main>", "<nav" etc. dentro de textos de código; por isso a busca parte
@@ -119,12 +104,17 @@ module.exports = async (req, res) => {
     // O app traz uma regra que bloqueia toda rede (connect-src 'none'). Liberamos só o próprio site, para o monitor
     // avisar "carregou planilha / baixou PDF". Rede externa continua bloqueada.
     html = html.replace("connect-src 'none'", "connect-src 'self'");
+    // idem para estilos: o app só aceita estilo embutido; liberamos o arquivo /menu.css do próprio site (menu e cabeçalho)
+    html = html.replace("style-src 'unsafe-inline'", "style-src 'self' 'unsafe-inline'");
     const admin = await pessoas.ehAdmin(sess.u, sess);
     html = inserirMenu(html, admin) || html;
     const config = configApp(admin, await pessoas.nomeExibido(sess.u));
     const comRodape = inserirRodape(html, config);
     if (comRodape) html = comRodape;
-    const extra = MONITOR + ESTILO_EXTRA + (comRodape ? "" : RODAPE + config);
+    const extra = MONITOR + (comRodape ? "" : RODAPE + config);
+    // o CSS vai no <head> (o primeiro </head> é o do app; as bibliotecas ficam depois, dentro do <body>)
+    const cab = html.indexOf("</head>");
+    html = cab >= 0 ? html.slice(0, cab) + LINK_CSS + html.slice(cab) : html;
     // O </body> verdadeiro é o ÚLTIMO: o app embute bibliotecas que têm "</body>" dentro de textos de código.
     const fim = html.lastIndexOf("</body>");
     html = fim >= 0 ? html.slice(0, fim) + extra + html.slice(fim) : html + extra;

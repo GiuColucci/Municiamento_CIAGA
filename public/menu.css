@@ -1,0 +1,49 @@
+/* Cabeçalho e rodapé comuns ao app e às páginas do servidor: ÚNICA fonte do menu suspenso, do cabeçalho em toda a largura
+   e do botão Sair no fim da página. Carregado pelas páginas do servidor (api/_lib/layout.js) e injetado no app (api/app.js),
+   por isso funciona mesmo que o app cifrado seja de uma versão mais antiga. As variáveis de cor vêm do tema de cada tela;
+   os valores depois da vírgula são só reserva. */
+
+/* cabeçalho em toda a largura: marca perto do canto esquerdo e botão de tema perto do direito */
+.faixa-interna { max-width: none; padding-inline: clamp(1rem, 2.5vw, 2rem); }
+.menu a.link-faixa, .menu summary.link-faixa { display: inline-flex; align-items: center; text-decoration: none; }
+
+/* a lista do menu se ancora no cabeçalho inteiro (no celular ela ocupa a largura da tela) */
+.faixa { position: relative; }
+
+/* menu suspenso (um só botão no lugar de vários links) */
+.menu-suspenso { position: relative; }
+.menu-suspenso > summary { list-style: none; cursor: pointer; user-select: none; }
+.menu-suspenso > summary::-webkit-details-marker { display: none; }
+.menu-suspenso > summary::after { content: "▾"; margin-left: .45rem; font-size: .85em; }
+.menu-suspenso[open] > summary::after { content: "▴"; }
+.menu-suspenso-lista {
+  position: absolute; z-index: 30; top: calc(100% + .5rem); right: 0; min-width: 14rem; display: grid; gap: .3rem; padding: .5rem;
+  background: var(--superficie, #fff); border: 1px solid var(--borda, #CBD5E3); border-radius: 10px;
+  box-shadow: var(--sombra, 0 6px 20px rgba(11, 31, 58, .15));
+}
+.menu-suspenso-item {
+  display: flex; align-items: center; min-height: 44px; padding: .5rem .9rem; border-radius: 8px; text-decoration: none;
+  font: 600 1rem var(--sistema, var(--serifa, "Times New Roman", serif)); color: var(--texto, #1B2433); background: transparent;
+}
+.menu-suspenso-item:hover, .menu-suspenso-item:focus-visible { background: var(--superficie-2, #F5F7FB); color: var(--link, #17345F); }
+
+/* celular: a fileira do menu usa a largura toda (tema à direita) e a lista abre embaixo do cabeçalho, de ponta a ponta,
+   com a mesma margem lateral da página */
+@media (max-width: 640px) {
+  .menu { width: 100%; }
+  .menu .botao-tema { margin-left: auto; }
+  .menu-suspenso { position: static; }
+  .menu-suspenso-lista { left: clamp(1rem, 4vw, 2.5rem); right: clamp(1rem, 4vw, 2.5rem); top: calc(100% + .5rem); min-width: 0; }
+}
+
+/* botão Sair no fim do app (não fica fixo na tela) */
+#cg-rodape { width: 100%; max-width: var(--largura, 1240px); margin: 0 auto; padding: 0 var(--margem, 1rem) 2.5rem; display: flex; justify-content: flex-end; }
+#cg-rodape a {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .6rem 1.6rem; border-radius: 10px;
+  font: 700 1rem var(--sistema, var(--serifa, "Times New Roman", serif)); text-decoration: none; color: var(--link, #17345F);
+  background: var(--vidro, rgba(255, 255, 255, .7)); border: 1px solid var(--secundaria-borda, #17345F);
+}
+#cg-rodape a:hover { border-color: var(--destaque, #C8A24A); }
+@media (max-width: 640px) { #cg-rodape a { width: 100%; } }
+
+@media print { .menu-suspenso, #cg-rodape, .menu a.link-faixa { display: none; } }

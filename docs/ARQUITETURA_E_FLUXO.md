@@ -549,6 +549,7 @@ flowchart TD
 |---|---|
 | Cruzamento | **União**: um aluno consta se **qualquer** conferente o marcou; marcado por vários aparece **uma vez** |
 | Listas em andamento | Entram todas as listas com pelo menos uma marcação; a tela mostra quantas estão finalizadas |
+| Validade | A listagem de um dia só aparece **naquele dia** (Brasília): a data de cada dia sai da sexta da planilha; no dia seguinte some e o endereço responde 404 |
 | Planilha | Só rascunhos feitos **na planilha publicada agora** (o rascunho guarda o id da planilha) |
 | Separação | Pela planilha, como na rela individual: marcado e municiado → Municiados; marcado e não municiado → NÃO municiados |
 | Quem aparece como conferente | Nome, quantas listas, quantos marcados e **quando salvou** (`salvoEm`, gravado pelo servidor a cada salvamento) |
@@ -569,4 +570,4 @@ O cabeçalho agrupa os links num único menu (`<details class="menu-suspenso">`)
 | App (administrador) | Conferência geral, Administrador, Como usar |
 | Painel e demais páginas do servidor | Voltar ao app (ou ao painel), Como usar |
 
-O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.
+**Uma só fonte de estilo:** `public/menu.css` (menu suspenso, cabeçalho em toda a largura e botão Sair). As páginas do servidor o carregam por `<link>` e o servidor o injeta no `<head>` do app, liberando `style-src 'self'` na regra do app; assim o menu fica certo mesmo com um `app.enc` mais antigo. O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.

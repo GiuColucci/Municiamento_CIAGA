@@ -98,7 +98,7 @@ function exemploRancho(servico) {
 }
 const lerCorpo = (req) => new Promise((ok) => { let b = ""; req.on("data", (d) => (b += d)); req.on("end", () => ok(b)); });
 
-http.createServer(async (req, res) => {
+const servidor = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   // atalho só do servidor local: com a planilha já publicada, cria dois rascunhos de conferentes fictícios (hoje, Janta)
   if (url.pathname === "/_demo") {
@@ -152,7 +152,17 @@ http.createServer(async (req, res) => {
   }
   res.statusCode = 404;
   res.end("não achei");
-}).listen(PORTA, "127.0.0.1", () => {
+});
+// se a porta já estiver em uso (outro servidor local aberto), tenta as próximas em vez de falhar
+function subir(porta, restantes) {
+  servidor.once("error", (e) => {
+    if (e.code === "EADDRINUSE" && restantes > 0) { console.log(`A porta ${porta} já está em uso (talvez outro "npm run local" aberto). Tentando a ${porta + 1}…`); subir(porta + 1, restantes - 1); }
+    else { console.error(e.code === "EADDRINUSE" ? "Nenhuma porta livre entre " + PORTA + " e " + porta + ". Feche o outro servidor local." : e); process.exit(1); }
+  });
+  servidor.listen(porta, "127.0.0.1");
+}
+servidor.once("listening", () => {
+    const PORTA = servidor.address().port; // o texto abaixo usa a porta que ficou valendo
   console.log(`\nSite local pronto: http://localhost:${PORTA}/\n`);
   console.log("Pessoas FICTÍCIAS (nome · número interno · cargo):");
   PESSOAS.forEach((p) => console.log(`  ${p.nome.padEnd(8)} ${p.codigo}  ${p.papel || "aluno"}`));
@@ -163,3 +173,5 @@ http.createServer(async (req, res) => {
   console.log(`Depois de publicar uma planilha, abra http://localhost:${PORTA}/_demo para criar conferentes de exemplo.`);
   console.log("Tudo fica na memória e some ao fechar (Ctrl+C).\n");
 });
+subir(PORTA, 9);
+

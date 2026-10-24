@@ -182,7 +182,7 @@ test("login: escolher entrar como administrador ou como aluno", async () => {
 test("app: Administrador no cabeçalho só em modo administrador; Sair ao final da página, não fixo", async () => {
   zerar();
   await p.carregarLista(LISTA);
-  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
+  const html = '<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script><head><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; connect-src \'none\'; form-action \'none\'"></head><body><header class="faixa"><nav class="menu" aria-label="Ações"><button id="nova">Nova</button></nav></header><main id="conteudo">teste</main><script>lib</script></body></html>';
   const iv = crypto.randomBytes(12);
   const c = crypto.createCipheriv("aes-256-gcm", Buffer.from(chave, "hex"), iv);
   const enc = Buffer.concat([c.update(zlib.brotliCompressSync(html)), c.final()]);
@@ -210,6 +210,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
+    assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -1263,4 +1264,20 @@ test("o plano gratuito da hospedagem aceita no máximo 12 funções: api/ não p
   const conf = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
   const origens = conf.rewrites.map((r) => r.source);
   assert.ok(origens.includes("/api/admin-lista") && origens.includes("/api/admin-exportar"));
+});
+
+test("menu.css é a única fonte do menu suspenso: páginas do servidor e app o carregam; não há cópia do CSS no HTML", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const css = fs.readFileSync(new URL("../public/menu.css", import.meta.url), "utf8");
+  assert.ok(css.includes(".menu-suspenso-lista") && css.includes("#cg-rodape") && css.includes(".faixa-interna"));
+  // sem cópias nos outros arquivos de estilo
+  for (const f of ["../public/tema.css", "../fonte-app/web/estilo.css"]) {
+    assert.ok(!fs.readFileSync(new URL(f, import.meta.url), "utf8").includes(".menu-suspenso"), f);
+  }
+  const admin = require("../api/admin.js");
+  const r = res();
+  await admin({ headers: { cookie: sessao("romeo", 1) }, url: "/admin" }, r);
+  assert.ok(String(r.body).includes('<link rel="stylesheet" href="/menu.css">'));
+  assert.ok(String(r.body).indexOf("/menu.css") < String(r.body).indexOf("<body>")); // no <head>
 });

@@ -569,4 +569,4 @@ O cabeçalho agrupa os links num único menu (`<details class="menu-suspenso">`)
 | App (administrador) | Conferência geral, Administrador, Como usar |
 | Painel e demais páginas do servidor | Voltar ao app (ou ao painel), Como usar |
 
-O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.
+**Uma só fonte de estilo:** `public/menu.css` (menu suspenso, cabeçalho em toda a largura e botão Sair). As páginas do servidor o carregam por `<link>` e o servidor o injeta no `<head>` do app, liberando `style-src 'self'` na regra do app; assim o menu fica certo mesmo com um `app.enc` mais antigo. O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.

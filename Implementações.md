@@ -15,11 +15,7 @@ Hoje cada pessoa que confere uma refeição (a "conferente") usa o app e marca q
 1. **Fonte dos dados:** os registros (rascunhos) de cada pessoa que usou o app para conferir **aquele dia e aquela refeição**, na planilha da semana publicada.
 2. **Cruzamento (união):** um aluno aparece na listagem geral se **qualquer** conferente o marcou como presente. Alunos marcados por mais de uma conferente aparecem **uma só vez**.
 3. **Separação:** a listagem geral é dividida em **Municiados** e **NÃO municiados**, usando a planilha da semana (a mesma regra da rela individual: quem foi marcado e estava municiado naquele dia e refeição entra em "Municiados"; quem foi marcado e não estava municiado entra em "NÃO municiados").
-4. **Mesmo padrão da rela individual** (exceto o filtro de turmas, que não existe aqui), para escolher o que copiar ou baixar:
-   - **Mostrar:** Todos · só **Municiados** · só **NÃO municiados**;
-   - **Agrupar:** Ano inteiro (toda a lista junta) · **Por turma** (um bloco por turma). **Sem** a escolha de quais turmas mostrar: a conferência geral traz todas;
-   - **Ordem:** **Alfabética** ou **Antiguidade** (a "continuidade" do pedido original é a ordem de antiguidade do app);
-   - **Separar em duas listas** (Municiados e NÃO municiados em folhas separadas), **Copiar** e **Baixar PDF**.
+4. **Formato fixo e um só filtro.** A listagem sai sempre **por antiguidade** e **separada por turma** (um bloco por turma, todas as turmas). A única escolha da pessoa é o filtro **Mostrar**: **Todos** · só **Municiados** · só **NÃO municiados**. Sem Ordem, sem Agrupar, sem escolha de turmas e sem "Separar em duas listas". Continuam **Copiar** e **Baixar PDF**.
 5. **Quem pode usar:** **qualquer pessoa autenticada** (aluno ou administrador), pelo item "Conferência geral" do menu. A tela mostra **quem conferiu** (nome, quantos marcou e quando salvou), para todos saberem de onde vêm os dados.
 6. **Validade de um dia:** a listagem de um dia **só existe naquele dia** (horário de Brasília). Em 23/10 só aparece o que é de 23/10; a partir de 00h de 24/10 ela some da Conferência Geral (o endereço dela deixa de responder). A data de cada dia vem da sexta-feira da planilha. Sem essa data, nada é escondido.
 7. **Escolha da refeição:** a tela lista só as combinações (dia × refeição) **de hoje** em que **há pelo menos um conferente com marcações**, com o número de conferentes. A tabela com todos eles chama-se **Todos os conferentes**.

@@ -48,7 +48,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
    - **Ceia, sábado e domingo:** ignorados nas listas.
 4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF) ou **copia** a lista.
 5. O trabalho é salvo automaticamente num **rascunho individual cifrado**, para continuar depois.
-6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única (Municiados e NÃO municiados), com os mesmos filtros da rela individual.
+6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única, sempre por antiguidade e por turma, com o filtro Todos / Municiados / NÃO municiados.
 7. Os administradores acompanham o **registro de acessos** e gerenciam quem entra, tudo pelo painel `/admin`, **sem novo deploy**.
 
 ### Princípios de projeto

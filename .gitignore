@@ -20,3 +20,4 @@ dados/app.enc
 # fixtures FICTÍCIAS do app (as únicas planilhas permitidas)
 !fonte-app/tests/fixtures/
 !fonte-app/tests/fixtures/*.csv
+Implementações.md

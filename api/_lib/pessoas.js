@@ -98,7 +98,7 @@ async function conferir(nome, codigo) {
   const alvo = v || { s: SAL_FALSO, h: HASH_FALSO }; // mesmo custo para nome inexistente
   const calc = Buffer.from(s.hashCodigo(codigo, alvo.s).split("$")[2], "base64");
   const ok = crypto.timingSafeEqual(calc, Buffer.from(alvo.h, "base64"));
-  if (ok && v && !v.k) {
+  if (ok && v && !lerCodigo(v)) { // sem código guardado, ou guardado com outra chave (não abre): refaz
     const k = selarCodigo(String(codigo).trim().toUpperCase());
     if (k) { try { await reg.chamar([["HSET", "usuarios", n, JSON.stringify({ ...v, k })]]); } catch { /* tenta no próximo login */ } }
   }
@@ -289,7 +289,7 @@ async function carregarLista(itens) {
       gravar.push([n, { ...existente, k: existente.k || selarCodigo(c), adm: 2 }]);
       ranchefs++;
       if (existente.adm === 1) admins--;
-    } else if (!existente.k) {
+    } else if (!lerCodigo(existente)) {
       const calc = Buffer.from(s.hashCodigo(c, existente.s).split("$")[2], "base64");
       if (calc.length === 64 && crypto.timingSafeEqual(calc, Buffer.from(existente.h, "base64"))) gravar.push([n, { ...existente, k: selarCodigo(c) }]);
     }

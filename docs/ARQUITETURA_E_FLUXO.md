@@ -539,7 +539,7 @@ flowchart TD
   U{{"União (sem repetir)<br/>ALVES, BRAGA, CORREA, EVA"}} --> P["Planilha da semana<br/>quem estava municiado naquele dia e refeição?"]
   P --> M["MUNICIADOS<br/>ALVES, CORREA, EVA"]
   P --> N["NÃO MUNICIADOS<br/>BRAGA"]
-  M --> F["Filtros da rela: Todos, só Municiados, só NÃO municiados<br/>Ano inteiro ou Por turma (sem escolher turmas)<br/>Alfabética ou Antiguidade<br/>Copiar e Baixar PDF"]
+  M --> F["Sempre por antiguidade e por turma<br/>Filtro único: Todos, só Municiados ou só NÃO municiados<br/>Copiar e Baixar PDF"]
   N --> F
 ```
 

@@ -457,7 +457,7 @@
   // ---------------------------------------------------------------- fase 2: a rela
 
   function desenharResultado(painel, l, opcoesTopo) {
-    opcoesTopo.appendChild(escolha("Agrupar", "agrupar-" + l.id, [["ano", "Ano inteiro"], ["turma", "Por turma"]],
+    if (!l.geral) opcoesTopo.appendChild(escolha("Agrupar", "agrupar-" + l.id, [["ano", "Ano inteiro"], ["turma", "Por turma"]],
       l.agrupar, function (v) { l.agrupar = v; refazer(); }));
     opcoesTopo.appendChild(escolha("Mostrar", "mostrar-" + l.id,
       [["todos", "Todos"], ["municiados", "Municiados"], ["nao", "NÃO municiados"]],
@@ -474,7 +474,7 @@
       painel.appendChild(acoes);
     }
     var extras = el("div", "painel-extras");
-    if (todos) extras.appendChild(botao("link", l.separar ? "Juntar numa lista só" : "Separar em duas listas", function () {
+    if (todos && !l.geral) extras.appendChild(botao("link", l.separar ? "Juntar numa lista só" : "Separar em duas listas", function () {
       l.separar = !l.separar;
       refazer();
     }));
@@ -482,7 +482,7 @@
       l.finalizada = false;
       desenharAbas();
     }));
-    painel.appendChild(extras);
+    if (extras.children.length) painel.appendChild(extras);
 
     var folhas = el("div", "folhas");
     M.relaEstruturada(l, l.marcados, estado.sexta, opcoesDe(l)).forEach(function (f) {
@@ -879,8 +879,9 @@
     // mantém as escolhas de ordem, agrupamento e filtro ao atualizar ou trocar de refeição
     geral.lista = {
       geral: true, id: "geral", dia: dia, refeicao: refeicao, ano: "geral", rotuloAno: "Conferência geral", alunos: estado.res.alunos,
-      marcados: marcados, finalizada: true, criterio: anterior ? anterior.criterio : "alfabetica", agrupar: anterior ? anterior.agrupar : "ano",
-      separar: anterior ? anterior.separar : false, turmas: anterior ? anterior.turmas : null, mostrar: anterior ? anterior.mostrar : "todos"
+      // sempre por antiguidade e agrupada por turma; a única escolha da pessoa é o filtro Mostrar (guardado ao trocar de refeição)
+      marcados: marcados, finalizada: true, criterio: "antiguidade", agrupar: "turma", separar: false, turmas: null,
+      mostrar: anterior ? anterior.mostrar : "todos"
     };
     st.textContent = "";
     Array.prototype.forEach.call($("geral-opcoes").children, function (b, i) {
@@ -919,17 +920,14 @@
     var rolar = el("div", "rolar");
     rolar.appendChild(t);
     c.appendChild(rolar);
-    c.appendChild(el("p", "dica", "Um aluno marcado por mais de uma pessoa aparece uma vez só. Total na listagem geral: " + plural(l.marcados.size, "aluno") + "."));
     mostrar(c, true);
     // a listagem geral, com as mesmas opções da rela
     var painel = $("geral-painel");
     painel.textContent = "";
     painel.appendChild(el("h2", "painel-titulo", M.tituloRela(l, estado.sexta)));
     var opcoesTopo = el("div", "painel-opcoes");
-    opcoesTopo.appendChild(escolha("Ordem", "ordem-geral", [["alfabetica", "Alfabética"], ["antiguidade", "Antiguidade"]],
-      l.criterio, function (v) { l.criterio = v; desenharGeral(); }));
     painel.appendChild(opcoesTopo);
-    desenharResultado(painel, l, opcoesTopo);
+    desenharResultado(painel, l, opcoesTopo); // acrescenta o filtro Mostrar: Todos, Municiados ou NÃO municiados
     mostrar(painel, true);
   }
 

@@ -1097,7 +1097,7 @@ test("Gordilho vira ranchef sozinho no login quando o banco está sem ranchef (e
   delete process.env.ACCESS_CODE_ADMIN;
 });
 
-test("painel mostra o código ao lado do nome (ranchef vê todos; administrador vê alunos e o próprio) e o banco não guarda o código legível", async () => {
+test("painel mostra o número interno de todos, ao lado do nome, para ranchef e administradores; o banco não guarda o código legível", async () => {
   zerar();
   await p.carregarLista(LISTA);
   const admin = require("../api/admin.js");
@@ -1111,7 +1111,8 @@ test("painel mostra o código ao lado do nome (ranchef vê todos; administrador 
   assert.match(painel, /codigo-aluno">B1902</); // ranchef vê o código do administrador
   painel = await ver("romeo", 1);
   assert.match(painel, /codigo-aluno">B1902</); // o próprio
-  assert.ok(!painel.includes(">B1901<")); // administrador não vê o código de outro administrador/ranchef
+  assert.match(painel, /codigo-aluno">B1901</); // e o da ranchef (todos os administradores conferem todos os números)
+  assert.match(painel, /codigo-aluno">B1903</); // e o dos alunos
   assert.ok(!db.l.join("|").includes("B1901") && !JSON.stringify([...db.h || []]).includes("B1901"));
 });
 

@@ -244,8 +244,8 @@ module.exports = async (req, res) => {
           }
         }
         const classe = v.adm === 2 ? "ranchef" : v.adm === 1 ? "admin" : "";
-        // o código aparece para o ranchef (de todos) e para os administradores (dos alunos e o próprio)
-        const cod = papel === 2 || v.adm === 0 || n === sess.u ? pessoas.lerCodigo(v) : null;
+        // todos os administradores (e o ranchef) conferem o número interno de todas as pessoas cadastradas
+        const cod = pessoas.lerCodigo(v);
         return `<tr><td data-rotulo="Nome">${esc(v.d || n)}${cod ? ` <span class="codigo-aluno">${esc(cod)}</span>` : ""}</td><td data-rotulo="Papel"><span class="selo-papel ${classe}">${esc(pessoas.ROTULO_PAPEL[v.adm] || "Aluno")}</span></td><td data-rotulo="Ações" class="sem-rotulo"><div class="acoes">${acoes.join("") || '<span class="dica">—</span>'}</div></td></tr>`;
       })
       .join("");

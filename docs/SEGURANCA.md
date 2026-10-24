@@ -35,7 +35,7 @@ Documento técnico do esquema de segurança: ativos, modelo de ameaças, control
 |---|---|---|
 | Planilha publicada (nomes, turmas, marcações) | Exposição de dados pessoais | Cifragem AES-256-GCM, TTL de 14 dias, só entregue a quem está autenticado, o arquivo original não é guardado |
 | Rascunhos | Exposição do trabalho individual | Cifragem por pessoa, TTL de 7 dias, acessível só ao dono |
-| Números internos e senhas | Personificação de usuários | Hash scrypt + HMAC com `PEPPER`; nunca em texto; exibição no painel limitada por cargo e cifrada em repouso |
+| Números internos e senhas | Personificação de usuários | Hash scrypt + HMAC com `PEPPER`; nunca em texto; exibição no painel só para ranchef e administradores, cifrada em repouso |
 | Contas de administrador | Alteração da lista, troca de senhas | Senha própria, sessão curta (2 h), cargo conferido ao vivo, confirmação com o número interno, limites |
 | O próprio app | Cópia do código | Cifrado em repouso e entregue só após o login (não é segredo crítico, mas é protegido) |
 | Registro de eventos | Vazamento de IP/nomes; adulteração | IP mascarado, retenção de 30 dias, somente o servidor escreve |
@@ -187,7 +187,7 @@ Para conferência, o painel mostra o número interno ao lado do nome, **cifrado 
 | Quem vê | O que vê |
 |---|---|
 | Ranchef | O número de **todos** |
-| Administrador | O dos **alunos** e o **próprio**; **não** o de outro administrador nem o do ranchef (evita personificação entre administradores) |
+| Administrador | O número de **todos** (decisão da operação: os administradores conferem todos os números cadastrados) |
 | Aluno | Nada (não acessa o painel) |
 
 A busca por número interno no registro retorna **só alunos**, nunca administradores.
@@ -269,6 +269,7 @@ Todo texto dinâmico das páginas do servidor passa por `esc()` (`& < > " '`). O
 | R8 | CSP do app com `unsafe-inline`/`unsafe-eval` | Baixa | Médio | Sem terceiros, `connect-src 'self'`, HTML cifrado e próprio | Separar bibliotecas em arquivos estáticos com hash (SRI) |
 | R9 | Nome de guerra e cargo legíveis no banco | Baixa | Baixo | Acesso ao banco restrito por token | Cifrar o nome com índice cego (HMAC) |
 | R10 | Sem auditoria de segurança externa | — | — | 36 testes de segurança/regra, revisão interna | Pentest independente antes de ampliar o uso |
+| R11 | Administradores veem o número interno do ranchef e dos demais; como a senha dos administradores é compartilhada, um administrador mal-intencionado poderia entrar como outra pessoa (inclusive o ranchef) | Baixa | Alto | Decisão consciente; sessão de administrador de 2 h; todas as entradas e ações ficam no registro; troca da senha dos administradores só pelo ranchef | Senha individual por administrador ou segundo fator (TOTP) |
 
 ---
 

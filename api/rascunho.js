@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
     const dados = req.body;
     if (JSON.stringify(dados || null).length > MAX_BYTES) return json(res, 413, { erro: "Rascunho grande demais." });
     if (!rascunhoValido(dados)) return json(res, 400, { erro: "Rascunho inválido." });
-    await cofre.gravarRascunho(sess.u, dados); // não vai para o registro de eventos: salvar é só do dono
+    await cofre.gravarRascunho(sess.u, { ...dados, salvoEm: Date.now() }); // salvoEm: a Conferência Geral mostra quando foi salvo; // não vai para o registro de eventos: salvar é só do dono
     return json(res, 200, { ok: true });
   } catch (e) {
     console.error("falha no rascunho:", e.message);

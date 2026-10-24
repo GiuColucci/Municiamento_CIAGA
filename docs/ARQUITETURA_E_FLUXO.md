@@ -18,6 +18,8 @@ Este documento descreve **como o sistema é composto e como cada fluxo funciona*
 12. [Registro de eventos](#12-registro-de-eventos)
 13. [Pipeline de build e implantação](#13-pipeline-de-build-e-implantação)
 14. [Tratamento de falhas](#14-tratamento-de-falhas)
+15. [Conferência Geral](#15-conferência-geral)
+16. [Menu suspenso do cabeçalho](#16-menu-suspenso-do-cabeçalho)
 
 ---
 
@@ -494,3 +496,77 @@ O que **entra** no deploy: `api/`, `public/`, `dados/app.enc`, `vercel.json`. O 
 | `APP_KEY` incorreta | `/app` responde 500 "Erro interno" (a autenticação do GCM falha) |
 | Planilha adulterada no banco | O GCM rejeita (tag inválida): erro tratado, nada é exibido |
 | Senha de um perfil não definida | Ninguém entra naquele perfil; o painel exibe um aviso em destaque |
+
+---
+
+## 15. Conferência Geral
+
+Cruza o trabalho de **todas as pessoas que conferiram** o mesmo dia e a mesma refeição, produzindo **uma listagem única**. Qualquer pessoa autenticada usa (aluno ou administrador).
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor ADM as Administrador
+  participant APP as App (tela Conferência geral)
+  participant API as /api/conferencia-geral
+  participant PES as pessoas.js
+  participant COF as cofre.js
+  participant R as Redis
+
+  ADM->>APP: Menu, Conferência geral
+  APP->>API: GET (sem parâmetros)
+  API->>API: sessão válida e pessoa ainda existente na lista
+  API->>COF: lerPlanilha() para obter o id da planilha publicada
+  API->>PES: estado() lista de pessoas
+  API->>COF: lerRascunhos(nomes)
+  COF->>R: MGET r:id1 r:id2 ... (uma só chamada)
+  R-->>COF: blobs cifrados
+  COF->>COF: decifra cada um (contexto rascunho:nome), ignora os inválidos
+  API->>API: descarta rascunhos de outra planilha, agrupa por dia e refeição
+  API-->>APP: opcoes (dia, refeicao, conferentes)
+  ADM->>APP: escolhe Sexta, Janta
+  APP->>API: GET ?dia=Sexta e refeicao=Janta
+  API->>API: união das marcações, lista de conferentes
+  API->>R: LPUSH log viu_conferencia_geral
+  API-->>APP: conferentes e marcados
+  APP->>APP: monta a lista (relaEstruturada) com a planilha da semana
+```
+
+```mermaid
+flowchart TD
+  C1["Conferente A marcou<br/>ALVES, BRAGA"] --> U
+  C2["Conferente B marcou<br/>CORREA, ALVES, EVA"] --> U
+  U{{"União (sem repetir)<br/>ALVES, BRAGA, CORREA, EVA"}} --> P["Planilha da semana<br/>quem estava municiado naquele dia e refeição?"]
+  P --> M["MUNICIADOS<br/>ALVES, CORREA, EVA"]
+  P --> N["NÃO MUNICIADOS<br/>BRAGA"]
+  M --> F["Filtros da rela: Todos, só Municiados, só NÃO municiados<br/>Ano inteiro ou Por turma<br/>Alfabética ou Antiguidade<br/>Copiar e Baixar (PDF ou DOCX)"]
+  N --> F
+```
+
+**Regras**
+
+| Ponto | Comportamento |
+|---|---|
+| Cruzamento | **União**: um aluno consta se **qualquer** conferente o marcou; marcado por vários aparece **uma vez** |
+| Listas em andamento | Entram todas as listas com pelo menos uma marcação; a tela mostra quantas estão finalizadas |
+| Planilha | Só rascunhos feitos **na planilha publicada agora** (o rascunho guarda o id da planilha) |
+| Separação | Pela planilha, como na rela individual: marcado e municiado → Municiados; marcado e não municiado → NÃO municiados |
+| Quem aparece como conferente | Nome, quantas listas, quantos marcados e **quando salvou** (`salvoEm`, gravado pelo servidor a cada salvamento) |
+| Persistência | **Nada é guardado**: a união é calculada a cada consulta e devolvida; os rascunhos continuam cifrados e individuais |
+| Acesso | Qualquer sessão válida (aluno ou administrador); consulta registrada como `viu_conferencia_geral` |
+
+**Detalhe de segurança:** os rascunhos são decifrados **no servidor**, que tem a `DATA_KEY`; é a única parte do sistema que lê rascunhos de várias pessoas, e devolve só o resultado agregado (nunca o rascunho bruto), a uma pessoa autenticada. As chaves dos rascunhos continuam sendo HMAC dos nomes (o banco não revela quem salvou o quê). Ver [SEGURANCA.md](SEGURANCA.md).
+
+---
+
+## 16. Menu suspenso do cabeçalho
+
+O cabeçalho agrupa os links num único menu (`<details class="menu-suspenso">`), igual nas páginas do servidor e no app:
+
+| Contexto | Itens |
+|---|---|
+| App (aluno) | Conferência geral, Como usar |
+| App (administrador) | Conferência geral, Administrador, Como usar |
+| Painel e demais páginas do servidor | Voltar ao app (ou ao painel), Como usar |
+
+O botão de tema e "Nova planilha" ficam fora do menu. O menu abre e fecha por clique ou teclado, fecha ao clicar fora ou com `Esc` e não aparece na impressão. O item "Conferência geral" tem `data-abrir-geral`: o app o intercepta e abre a tela **sem recarregar a página**.

@@ -27,6 +27,7 @@ function cmd([c, k, ...a]) {
     case "LRANGE": return fatia(db.l, Number(a[0]), Number(a[1]));
     case "SET": db.s.set(k, a[0]); db.ttl.set(k, a[1] === "EX" ? a[2] : null); return "OK";
     case "GET": return db.s.get(k) ?? null;
+    case "MGET": return [k, ...a].map((x) => db.s.get(x) ?? null);
     case "DEL": return db.s.delete(k) ? 1 : 0;
     case "HGETALL": return [...db.h].flat();
     case "HGET": return db.h.get(a[0]) ?? null;
@@ -203,8 +204,8 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(saida.startsWith('<html><script>var x="</body></html><nav class=\\"menu\\"></main>";</script>')); // texto do app intacto
     assert.ok(saida.includes('</main><div id="cg-rodape"><a href="/sair">Sair</a></div><script>globalThis.Municiamento')); // Sair no fim, depois do conteúdo
     assert.ok(saida.indexOf("Municiamento.HOSPEDADO") < saida.indexOf("<script>lib</script>")); // e antes das bibliotecas
-    // no cabeçalho, o aluno só tem "Como usar" (mesma página); nada de Administrador
-    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><a class="link-faixa" href="/ajuda">Como usar</a><button id="nova">'));
+    // no cabeçalho, o aluno tem o menu suspenso com "Conferência geral" e "Como usar"; nada de Administrador
+    assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista"><a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
     assert.ok(!saida.includes('href="/admin"'));
     assert.ok(saida.includes("/api/evento") && saida.endsWith("</body></html>"));
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
@@ -214,7 +215,10 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
     for (const [quem, papel] of [["gordilho", 2], ["romeo", 1]]) {
       saida = (await abrir(sessao(quem, papel))).body.toString();
-      assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><a class="link-faixa" href="/ajuda">Como usar</a><a class="link-faixa" href="/admin">Administrador</a><button id="nova">'));
+      // menu suspenso: Conferência geral, Administrador e Como usar numa só entrada
+      assert.ok(saida.includes('<nav class="menu" aria-label="Ações"><details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista">' +
+        '<a class="menu-suspenso-item" href="#conferencia-geral" data-abrir-geral>Conferência geral</a><a class="menu-suspenso-item" href="/admin">Administrador</a>' +
+        '<a class="menu-suspenso-item" href="/ajuda">Como usar</a></div></details><button id="nova">'));
       assert.ok(saida.includes('<div id="cg-rodape"><a href="/sair">Sair</a></div>'));
       assert.equal(saida.split('href="/sair"').length - 1, 1); // um só Sair
     }
@@ -877,7 +881,8 @@ test("Como usar muda de página (não abre aba nova) a partir do app e do painel
   const admin = require("../api/admin.js");
   const r = res();
   await admin({ headers: { cookie: sessao("romeo", 1) }, url: "/admin" }, r);
-  assert.ok(String(r.body).includes('<a class="link-faixa" href="/ajuda">Como usar</a>'));
+  assert.ok(String(r.body).includes('<a class="menu-suspenso-item" href="/app">Voltar ao app</a><a class="menu-suspenso-item" href="/ajuda">Como usar</a>'));
+  assert.ok(String(r.body).includes('<details class="menu-suspenso"><summary class="link-faixa">Menu</summary>'));
 });
 
 test("ranchef transfere o cargo a outra pessoa e vira administrador; sempre um só ranchef", async () => {
@@ -1208,4 +1213,43 @@ test("número interno exibido: login completa quem não tem e conserta o que nã
   assert.equal(await entrar("aluno"), "/app"); // entrando como aluno também completa
   assert.ok((await painel()).includes(">B1901<"));
   delete process.env.ACCESS_CODE; delete process.env.ACCESS_CODE_ADMIN;
+});
+
+test("conferência geral: qualquer pessoa autenticada; une as marcações de todas as conferentes do mesmo dia e refeição", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const api = require("../api/conferencia-geral.js");
+  const rasc = require("../api/rascunho.js");
+  const cofre = require("../api/_lib/cofre.js");
+  await cofre.gravarPlanilha({ id: "p1", por: "Romeo", em: Date.now(), dados: { v: 1, formato: "XLSX", sexta: "2026-10-23", turmas: [], avisos: [], alunos: [] } });
+  const salvar = async (quem, listas) => {
+    const r = res();
+    await rasc({ method: "PUT", headers: { cookie: sessao(quem), "sec-fetch-site": "same-origin" }, body: { v: 1, planilha: "p1", sexta: "2026-10-23", ativa: 1, proximoId: 3, listas } }, r);
+    assert.equal(r.statusCode, 200);
+  };
+  const lista = (id, dia, refeicao, ano, marcados, finalizada) => ({ id, dia, refeicao, ano, marcados, finalizada: !!finalizada });
+  await salvar("mike", [lista(1, "Sexta", "Janta", "1", ["B12.1|B1037|ALVES", "B12.1|B1038|BRAGA"], true), lista(2, "Segunda", "Café", "1", ["B12.1|B1037|ALVES"])]);
+  await salvar("tango", [lista(1, "Sexta", "Janta", "2", ["N24.1|N2005|CORREA", "B12.1|B1037|ALVES"]), lista(2, "Sexta", "Almoço", "1", [])]);
+  await cofre.gravarRascunho("ana lima", { v: 1, planilha: "antiga", listas: [lista(1, "Sexta", "Janta", "1", ["B12.1|B9999|FANTASMA"])] }); // outra planilha: ignorada
+  const chamar = async (quem, papel, url) => {
+    const r = res();
+    await api({ method: "GET", headers: { cookie: quem ? sessao(quem, papel) : "" }, url }, r);
+    return { status: r.statusCode, json: r.body ? JSON.parse(r.body) : null };
+  };
+  assert.equal((await chamar("", 0, "/api/conferencia-geral")).status, 401); // sem sessão
+  assert.equal((await chamar("mike", 0, "/api/conferencia-geral")).status, 200); // aluno (modo aluno) também vê
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 200);
+  // combinações disponíveis (só as com marcações, com o número de conferentes)
+  let r = (await chamar("romeo", 1, "/api/conferencia-geral")).json;
+  assert.deepEqual(r.opcoes, [{ dia: "Sexta", refeicao: "Janta", conferentes: 2 }, { dia: "Segunda", refeicao: "Café", conferentes: 1 }]);
+  // união: ALVES (marcado pelas duas) aparece uma vez
+  r = (await chamar("romeo", 1, "/api/conferencia-geral?dia=Sexta&refeicao=Janta")).json;
+  assert.deepEqual([...r.marcados].sort(), ["B12.1|B1037|ALVES", "B12.1|B1038|BRAGA", "N24.1|N2005|CORREA"]);
+  assert.deepEqual(r.conferentes.map((c) => [c.nome, c.marcados, c.finalizadas]), [["Mike", 2, 1], ["Tango", 2, 0]]);
+  assert.ok(r.conferentes.every((c) => c.em > 0) && !JSON.stringify(r).includes("FANTASMA"));
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral?dia=Xis&refeicao=Janta")).status, 400);
+  assert.ok(db.l.join("|").includes("viu_conferencia_geral"));
+  // sem planilha publicada
+  db.s.delete("planilha");
+  assert.equal((await chamar("romeo", 1, "/api/conferencia-geral")).status, 404);
 });

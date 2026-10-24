@@ -12,6 +12,7 @@
   // lista: {id, dia, refeicao, ano, alunos, marcados: Set, finalizada, criterio, agrupar, separar}
   var estado = null, proximoId = 1;
   var rascunhoTimer = null, rascunhoPronto = false; // rascunho automático (só na versão hospedada)
+  var geral = null; // conferência geral (versão hospedada): {aberta, opcoes, dia, refeicao, dados, lista}
 
   function el(tag, classe, texto) {
     var e = document.createElement(tag);
@@ -53,6 +54,9 @@
     return { criterio: l.criterio, agrupar: l.agrupar, separar: l.separar, turmas: l.agrupar === "turma" ? l.turmas : null,
       mostrar: l.mostrar };
   }
+
+  /** Redesenha o painel que está na tela: o da lista ativa ou o da conferência geral. */
+  function refazer() { if (geral && geral.aberta) desenharGeral(); else desenharPainel(); }
 
   // ---------------------------------------------------------------- tela 1
 
@@ -454,10 +458,10 @@
 
   function desenharResultado(painel, l, opcoesTopo) {
     opcoesTopo.appendChild(escolha("Agrupar", "agrupar-" + l.id, [["ano", "Ano inteiro"], ["turma", "Por turma"]],
-      l.agrupar, function (v) { l.agrupar = v; desenharPainel(); }));
+      l.agrupar, function (v) { l.agrupar = v; refazer(); }));
     opcoesTopo.appendChild(escolha("Mostrar", "mostrar-" + l.id,
       [["todos", "Todos"], ["municiados", "Municiados"], ["nao", "NÃO municiados"]],
-      l.mostrar, function (v) { l.mostrar = v; desenharPainel(); }));
+      l.mostrar, function (v) { l.mostrar = v; refazer(); }));
     if (l.agrupar === "turma") painel.appendChild(escolhaTurmas(l));
 
     var acoes = el("div", "painel-acoes");
@@ -472,9 +476,9 @@
     var extras = el("div", "painel-extras");
     if (todos) extras.appendChild(botao("link", l.separar ? "Juntar numa lista só" : "Separar em duas listas", function () {
       l.separar = !l.separar;
-      desenharPainel();
+      refazer();
     }));
-    extras.appendChild(botao("link", "Voltar a marcar", function () {
+    if (!l.geral) extras.appendChild(botao("link", "Voltar a marcar", function () {
       l.finalizada = false;
       desenharAbas();
     }));
@@ -505,12 +509,12 @@
       var marcadas = Array.prototype.filter.call(caixas.querySelectorAll("input"), function (c) { return c.checked; })
         .map(function (c) { return c.value; });
       l[campo] = marcadas.length === todas.length ? null : marcadas;
-      desenharPainel();
+      refazer();
     });
     grupo.appendChild(caixas);
     var atalhos = el("div", "atalhos-turmas");
-    atalhos.appendChild(botao("link", "Marcar todas", function () { l[campo] = null; desenharPainel(); }));
-    atalhos.appendChild(botao("link", "Desmarcar todas", function () { l[campo] = []; desenharPainel(); }));
+    atalhos.appendChild(botao("link", "Marcar todas", function () { l[campo] = null; refazer(); }));
+    atalhos.appendChild(botao("link", "Desmarcar todas", function () { l[campo] = []; refazer(); }));
     grupo.appendChild(atalhos);
     if (l[campo] && !l[campo].length) grupo.appendChild(el("p", "dica", "Marque pelo menos uma turma."));
     return grupo;
@@ -581,7 +585,7 @@
     return menu;
   }
   function fecharMenus(ev) {
-    Array.prototype.forEach.call(document.querySelectorAll("details.menu-baixar[open]"), function (m) {
+    Array.prototype.forEach.call(document.querySelectorAll("details.menu-baixar[open], details.menu-suspenso[open]"), function (m) {
       if (!ev || !m.contains(ev.target)) m.open = false;
     });
   }
@@ -642,7 +646,7 @@
   /** Nome do arquivo baixado: rela_2026-10-23_janta_3ano[_municiados].pdf (sem data, o nome do dia). */
   function nomeArquivo(l, tipo, situacao) {
     var dia = estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : l.dia;
-    var partes = [tipo, dia, l.refeicao, l.ano + "ano"];
+    var partes = [tipo, dia, l.refeicao, l.geral ? "geral" : l.ano + "ano"];
     if (situacao) partes.push(situacao);
     return M.semAcento(partes.join("_")).toLowerCase().replace(/\s+/g, "-");
   }
@@ -814,6 +818,142 @@
     carregarSemana();
   }
 
+
+  // ---------------------------------------------------------------- conferência geral (todos os usuários)
+
+  function horaDe(ms) {
+    return ms ? new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  }
+
+  function mostrarTelaGeral(sim) {
+    mostrar($("tela-geral"), sim);
+    mostrar($("tela-listas"), !sim && !!estado);
+    if (geral) geral.aberta = sim;
+  }
+
+  /** Abre a tela: busca no servidor quais dias e refeições têm quem conferiu. */
+  async function abrirGeral() {
+    erro("");
+    if (!M.HOSPEDADO || !estado || estado.origem !== "publicada") {
+      return erro("A conferência geral usa a planilha da semana publicada. Quando ela estiver publicada, abra de novo.");
+    }
+    geral = { aberta: true, opcoes: [], dia: null, refeicao: null, dados: null, lista: null };
+    mostrar($("tela-envio"), false);
+    mostrarTelaGeral(true);
+    $("geral-opcoes").textContent = "";
+    mostrar($("geral-conferentes"), false);
+    mostrar($("geral-painel"), false);
+    window.scrollTo(0, 0);
+    await carregarOpcoesGeral();
+  }
+
+  async function carregarOpcoesGeral() {
+    var st = $("geral-status"), ops = $("geral-opcoes");
+    st.textContent = "Buscando quem conferiu…";
+    var r = await M.api("GET", "/api/conferencia-geral");
+    if (r.status === 401) { window.location.href = "/"; return; }
+    if (r.status !== 200 || !r.json) {
+      st.textContent = r.status === 404 ? "Não há planilha publicada." : "Não consegui buscar agora. Tente de novo.";
+      return;
+    }
+    if (r.json.planilha !== estado.planilhaId) {
+      st.textContent = "A planilha publicada mudou. Recarregue a página para abrir a nova.";
+      return;
+    }
+    geral.opcoes = r.json.opcoes;
+    ops.textContent = "";
+    if (!geral.opcoes.length) { st.textContent = "Ninguém marcou presença ainda nesta planilha."; return; }
+    st.textContent = "Escolha o dia e a refeição para juntar o que cada conferente marcou.";
+    geral.opcoes.forEach(function (o) {
+      var b = el("button", "chip-geral" + (geral.dia === o.dia && geral.refeicao === o.refeicao ? " ativa" : ""));
+      b.type = "button";
+      b.appendChild(document.createTextNode(M.tituloRela({ dia: o.dia, refeicao: o.refeicao, rotuloAno: "geral" }, estado.sexta).replace(/ · geral$/, "") + " "));
+      b.appendChild(el("span", "chip-qtd", plural(o.conferentes, "conferente")));
+      b.addEventListener("click", function () { escolherGeral(o.dia, o.refeicao); });
+      ops.appendChild(b);
+    });
+    if (geral.dia) await escolherGeral(geral.dia, geral.refeicao);
+  }
+
+  async function escolherGeral(dia, refeicao) {
+    var st = $("geral-status");
+    st.textContent = "Juntando as marcações…";
+    var r = await M.api("GET", "/api/conferencia-geral?dia=" + encodeURIComponent(dia) + "&refeicao=" + encodeURIComponent(refeicao));
+    if (r.status !== 200 || !r.json) { st.textContent = "Não consegui juntar agora. Tente de novo."; return; }
+    var anterior = geral.lista;
+    geral.dia = dia; geral.refeicao = refeicao; geral.dados = r.json;
+    var validos = new Set(estado.res.alunos.map(M.chaveAluno));
+    var marcados = new Set(r.json.marcados.filter(function (k) { return validos.has(k); }));
+    // mantém as escolhas de ordem, agrupamento e filtro ao atualizar ou trocar de refeição
+    geral.lista = {
+      geral: true, id: "geral", dia: dia, refeicao: refeicao, ano: "geral", rotuloAno: "Conferência geral", alunos: estado.res.alunos,
+      marcados: marcados, finalizada: true, criterio: anterior ? anterior.criterio : "alfabetica", agrupar: anterior ? anterior.agrupar : "ano",
+      separar: anterior ? anterior.separar : false, turmas: anterior ? anterior.turmas : null, mostrar: anterior ? anterior.mostrar : "todos"
+    };
+    st.textContent = "";
+    Array.prototype.forEach.call($("geral-opcoes").children, function (b, i) {
+      var o = geral.opcoes[i];
+      b.classList.toggle("ativa", !!o && o.dia === dia && o.refeicao === refeicao);
+    });
+    desenharGeral();
+  }
+
+  function desenharGeral() {
+    var l = geral && geral.lista, d = geral && geral.dados;
+    if (!l || !d) return;
+    // quem conferiu
+    var c = $("geral-conferentes");
+    c.textContent = "";
+    var h = el("h2", null, "Quem conferiu");
+    h.id = "t-geral-conf";
+    c.appendChild(h);
+    var t = el("table", "tabela-geral");
+    var cab = el("tr");
+    ["Conferente", "Listas", "Marcados", "Salvo em"].forEach(function (x) { cab.appendChild(el("th", null, x)); });
+    t.appendChild(el("thead")).appendChild(cab);
+    var corpo = el("tbody");
+    d.conferentes.forEach(function (x) {
+      var linha = el("tr");
+      linha.appendChild(el("td", null, x.nome));
+      linha.appendChild(el("td", null, x.listas + (x.finalizadas ? " (" + x.finalizadas + " finalizada" + (x.finalizadas === 1 ? "" : "s") + ")" : "")));
+      linha.appendChild(el("td", null, String(x.marcados)));
+      linha.appendChild(el("td", null, horaDe(x.em)));
+      corpo.appendChild(linha);
+    });
+    t.appendChild(corpo);
+    var rolar = el("div", "rolar");
+    rolar.appendChild(t);
+    c.appendChild(rolar);
+    c.appendChild(el("p", "dica", "Um aluno marcado por mais de uma pessoa aparece uma vez só. Total na listagem geral: " + plural(l.marcados.size, "aluno") + "."));
+    mostrar(c, true);
+    // a listagem geral, com as mesmas opções da rela
+    var painel = $("geral-painel");
+    painel.textContent = "";
+    painel.appendChild(el("h2", "painel-titulo", M.tituloRela(l, estado.sexta)));
+    var opcoesTopo = el("div", "painel-opcoes");
+    opcoesTopo.appendChild(escolha("Ordem", "ordem-geral", [["alfabetica", "Alfabética"], ["antiguidade", "Antiguidade"]],
+      l.criterio, function (v) { l.criterio = v; desenharGeral(); }));
+    painel.appendChild(opcoesTopo);
+    desenharResultado(painel, l, opcoesTopo);
+    mostrar(painel, true);
+  }
+
+  function iniciarGeral() {
+    var voltar = $("geral-voltar"), atualizar = $("geral-atualizar");
+    if (!voltar || !atualizar) return;
+    voltar.addEventListener("click", function () { mostrarTelaGeral(false); window.scrollTo(0, 0); });
+    atualizar.addEventListener("click", function () { if (geral && geral.aberta) carregarOpcoesGeral(); else abrirGeral(); });
+    // o item "Conferência geral" do menu suspenso (colocado pelo servidor para todos)
+    document.addEventListener("click", function (ev) {
+      var a = ev.target.closest && ev.target.closest("[data-abrir-geral]");
+      if (!a) return;
+      ev.preventDefault();
+      var m = a.closest("details");
+      if (m) m.open = false;
+      abrirGeral();
+    });
+  }
+
   // ---------------------------------------------------------------- início
 
   function tema() {
@@ -879,6 +1019,6 @@
     document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") descarregar(); });
     mostrarArquivos();
     M.carregarBibliotecasEmSegundoPlano();
-    if (M.HOSPEDADO) iniciarHospedado();
+    if (M.HOSPEDADO) { iniciarHospedado(); iniciarGeral(); }
   };
 })(globalThis.Municiamento = globalThis.Municiamento || {});

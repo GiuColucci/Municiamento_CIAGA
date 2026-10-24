@@ -10,9 +10,17 @@ const TEMA_BOTAO = `<button type="button" class="botao-tema" id="botao-tema" ari
 <svg class="icone-lua" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
 </button>`;
 
+// Menu suspenso do cabeçalho (uma só entrada no lugar de vários botões). links: [{href, texto, attrs?}]; attrs é texto fixo do
+// código (por exemplo, um atributo data-), nunca vem do usuário. Sempre um menu, mesmo com poucos itens (o cabeçalho fica igual para todos).
+function menuSuspenso(links) {
+  const item = (l) => `<a class="menu-suspenso-item" href="${esc(l.href)}"${l.novaAba ? ' target="_blank" rel="noopener"' : ""}${l.attrs ? " " + l.attrs : ""}>${esc(l.texto)}</a>`;
+  if (!links.length) return "";
+  return `<details class="menu-suspenso"><summary class="link-faixa">Menu</summary><div class="menu-suspenso-lista">${links.map(item).join("")}</div></details>`;
+}
+
 // links: [{href, texto}]
 function pagina({ titulo, corpo, links = [], centro = false, sair = false, scripts = [] }) {
-  const menu = links.map((l) => `<a class="link-faixa" href="${esc(l.href)}"${l.novaAba ? ' target="_blank" rel="noopener"' : ""}>${esc(l.texto)}</a>`).join("");
+  const menu = menuSuspenso(links);
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -47,4 +55,4 @@ ${sair ? '<div class="rodape-sair"><a class="botao sec" href="/sair">Sair</a></d
 </html>`;
 }
 
-module.exports = { esc, pagina, CSP_PAGINA };
+module.exports = { esc, pagina, menuSuspenso, CSP_PAGINA };

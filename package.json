@@ -12,6 +12,7 @@
     "teste": "node --test scripts/teste.mjs",
     "app:build": "node fonte-app/web/build.mjs rela",
     "app:teste": "node --test fonte-app/web/testes/municiamento.test.cjs",
-    "teste:tudo": "npm run teste && npm run app:teste"
+    "teste:tudo": "npm run teste && npm run app:teste",
+    "local": "node scripts/servidor-local.mjs"
   }
 }

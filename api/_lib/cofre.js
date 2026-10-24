@@ -58,8 +58,17 @@ async function apagar(chave) {
   await reg.chamar([["DEL", chave]]);
 }
 
+// Lê os rascunhos de várias pessoas de uma vez (uma só chamada MGET). Quem não tem, ou tem um adulterado, vem como null.
+// Só a Conferência Geral usa isto, e devolve apenas o resultado agregado (nunca o rascunho bruto) a uma pessoa autenticada.
+async function lerRascunhos(nomes) {
+  if (!nomes.length) return [];
+  const r = await reg.chamar([["MGET", ...nomes.map(chaveRascunho)]]);
+  const valores = (r && r[0].result) || [];
+  return nomes.map((n, i) => { try { return abrir(valores[i], "rascunho:" + n); } catch { return null; } });
+}
+
 module.exports = {
-  cifrar, abrir, chaveRascunho, ler, gravar, apagar,
+  cifrar, abrir, chaveRascunho, ler, gravar, apagar, lerRascunhos,
   TTL_PLANILHA_S, TTL_RASCUNHO_S,
   lerPlanilha: () => ler("planilha", "planilha"),
   gravarPlanilha: (obj) => gravar("planilha", "planilha", obj, TTL_PLANILHA_S),

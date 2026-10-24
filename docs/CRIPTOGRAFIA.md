@@ -181,6 +181,10 @@ chave Redis = "r:" + id
 
 O nome da pessoa **não aparece** na chave do Redis: quem olha o banco não sabe quem tem rascunho.
 
+### 4.4.1 Leitura em lote (Conferência Geral)
+
+`cofre.lerRascunhos(nomes)` calcula o identificador (HMAC) de cada pessoa, faz **uma única chamada `MGET`** e decifra cada blob com **o contexto da própria pessoa** (`rascunho:<nome>`). Um blob adulterado, ausente ou de outra chave vira `null` e é ignorado. O servidor grava em cada rascunho o campo `salvoEm` (horário do último salvamento), que aparece **dentro** do blob cifrado.
+
 ### 4.5 Retenção
 
 | Dado | TTL |

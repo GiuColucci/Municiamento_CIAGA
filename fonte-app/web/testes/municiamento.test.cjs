@@ -471,3 +471,24 @@ test("bibliotecas preguiçosas: sem etiquetas (Node e outros builds) resolvem na
   await M.aberturaTerminou();
   assert.equal(M.carregarBibliotecasEmSegundoPlano(), undefined);
 });
+
+test("rela geral: união das marcações de várias conferentes, de todos os anos, separada pela planilha", () => {
+  const a = (nome, codigo, turma, municiado) => ({ nome, codigo, turma, marcas: { "Sexta|Janta": !!municiado } });
+  const alunos = [a("ALVES", "B1037", "B12.1", true), a("BRAGA", "B1038", "B12.1"), a("CORREA", "N2005", "N24.1", true),
+    a("DIAS", "M3001", "M36.1"), a("EVA", "N3005", "N36.1", true)];
+  // duas conferentes: ALVES foi marcado pelas duas; a união tem 4 alunos (DIAS ninguém marcou)
+  const conferente1 = ["B12.1|B1037|ALVES", "B12.1|B1038|BRAGA"], conferente2 = ["N24.1|N2005|CORREA", "B12.1|B1037|ALVES", "N36.1|N3005|EVA"];
+  const uniao = new Set(conferente1.concat(conferente2));
+  assert.equal(uniao.size, 4);
+  const cfg = { dia: "Sexta", refeicao: "Janta", ano: "geral", rotuloAno: "Conferência geral", alunos };
+  const [folha] = M.relaEstruturada(cfg, uniao, SEXTA);
+  assert.equal(folha.titulo, "Sexta-feira, 23/10/2026 · Janta · Conferência geral");
+  assert.deepEqual(folha.secoes[0].grupos[0].alunos.map((x) => x.nome), ["ALVES", "CORREA", "EVA"]); // municiados, A–Z, sem repetir
+  assert.deepEqual(folha.secoes[1].grupos[0].alunos.map((x) => x.nome), ["BRAGA"]); // NÃO municiados
+  // mesmos filtros da rela: só NÃO municiados, por turma e antiguidade
+  const [so] = M.relaEstruturada(cfg, uniao, SEXTA, { mostrar: "nao" });
+  assert.equal(so.situacao, "NÃO MUNICIADOS");
+  const [porTurma] = M.relaEstruturada(cfg, uniao, SEXTA, { agrupar: "turma", turmas: ["B12.1", "N24.1"], criterio: "antiguidade" });
+  assert.deepEqual(porTurma.secoes[0].grupos.map((g) => g.turma), ["B12.1", "N24.1"]);
+  assert.match(porTurma.titulo, /Turmas B12\.1, N24\.1$/);
+});

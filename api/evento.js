@@ -2,7 +2,7 @@ const s = require("./_lib/seguranca");
 const reg = require("./_lib/registro");
 
 // Só estas ações são aceitas; o navegador não consegue gravar texto livre no registro.
-const PERMITIDAS = new Set(["planilha_carregada", "baixar_pdf", "baixar_docx"]);
+const PERMITIDAS = new Set(["planilha_carregada", "baixar_pdf"]);
 
 module.exports = async (req, res) => {
   const sess = s.lerSessao(req);

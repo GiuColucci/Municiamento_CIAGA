@@ -463,22 +463,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .bloco-turma + .bloco-turma { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--borda); }
 .bloco-turma .folha-turma { margin: 0 0 var(--e1); }
 
-/* ---------- Baixar: um botão só, com a escolha entre PDF e DOCX */
-.menu-baixar { position: relative; display: inline-block; }
-.menu-baixar > summary { list-style: none; cursor: pointer; }
-.menu-baixar > summary::-webkit-details-marker { display: none; }
-.menu-baixar > summary::after { content: "▾"; font-size: .9em; }
-.menu-baixar[open] > summary::after { content: "▴"; }
-.menu-baixar-lista {
-  position: absolute; z-index: 20; top: calc(100% + .6rem); left: 0; min-width: 100%; display: grid; gap: .55rem; padding: .7rem;
-  background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px; box-shadow: var(--sombra);
-}
-.folha-acoes .menu-baixar-lista { left: auto; right: 0; }
-.menu-baixar-item {
-  font: 600 1rem var(--sistema); color: var(--texto); background: transparent; border: 0; border-radius: 8px;
-  min-height: 44px; padding: .5rem 1.4rem; text-align: left; cursor: pointer;
-}
-.menu-baixar-item:hover, .menu-baixar-item:focus-visible { background: var(--superficie-2); color: var(--link); }
 
 /* ações secundárias da marcação em forma de texto, para a tela não ficar poluída */
 .painel-extras { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e1) 1.4rem; }
@@ -491,7 +475,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .carregando, .sem-semana { display: grid; gap: var(--e1); justify-items: center; text-align: center; }
 .perfil-aluno #botao-nova { display: none !important; }
 
-@media print { .menu-baixar, .barra-rascunho, .painel-extras, #cartao-publicar, #info-semana { display: none !important; } }
+@media print { .barra-rascunho, .painel-extras, #cartao-publicar, #info-semana { display: none !important; } }
 #cartao-publicar { display: grid; gap: var(--e1); }
 #cartao-publicar > * { margin-top: 0; margin-bottom: 0; }
 
@@ -525,3 +509,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .tabela-geral { width: 100%; border-collapse: collapse; }
 .tabela-geral th, .tabela-geral td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--borda); }
 .tabela-geral th { color: var(--texto-suave); font-size: .9rem; }
+
+/* cabeçalho em toda a largura: o botão de tema fica perto do canto superior direito (e a marca, do esquerdo) */
+.faixa-interna { max-width: none; padding-inline: clamp(1rem, 2.5vw, 2rem); }

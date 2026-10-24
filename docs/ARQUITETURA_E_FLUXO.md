@@ -85,7 +85,7 @@ flowchart TB
 | `api/_lib/acessos.js` | Senha de acesso por perfil (hash no banco ou variável de ambiente) | Falha fechada |
 | `api/_lib/registro.js` | Cliente REST do Redis, registro de eventos, máscara de IP | Retenção de 30 dias |
 | `api/_lib/layout.js` | HTML das páginas do servidor e a CSP rígida delas | `default-src 'none'` |
-| `fonte-app/web` | Leitura de XLSX/CSV/PDF, regras de lista, relatório, PDF/DOCX, modo hospedado | Compilado em um único HTML |
+| `fonte-app/web` | Leitura de XLSX/CSV/PDF, regras de lista, relatório, PDF, modo hospedado | Compilado em um único HTML |
 
 ---
 
@@ -251,7 +251,7 @@ flowchart LR
   P --> RES["Resultado<br/>alunos, turmas, avisos"]
   RES --> R["report.js<br/>regras: café = municiados,<br/>almoço e janta = NÃO municiados"]
   R --> UI["rela.js<br/>telas, marcação, filtros,<br/>antiguidade, agrupar por turma"]
-  UI --> D["documentos.js e pdf.js<br/>PDF e DOCX no estilo da Marinha"]
+  UI --> D["documentos.js e pdf.js<br/>PDF no estilo da Marinha"]
   UI --> H["hospedado.js<br/>empacotar planilha e rascunho,<br/>chamadas à API"]
 ```
 
@@ -453,7 +453,7 @@ flowchart LR
   subgraph Origem["Quem registra"]
     L["login: login_ok, login_admin, login_falha, admin_negado"]
     APP["app: app_aberto, sair"]
-    EV["/api/evento: planilha_carregada, baixar_pdf, baixar_docx"]
+    EV["/api/evento: planilha_carregada, baixar_pdf"]
     ADM["admin-acao: admin_cadastrou, _removeu, _promoveu, _rebaixou,<br/>_mudou_codigo_*, _transferiu_ranchef, ..."]
     PV["planilha-ver: admin_viu_planilha"]
   end
@@ -539,7 +539,7 @@ flowchart TD
   U{{"União (sem repetir)<br/>ALVES, BRAGA, CORREA, EVA"}} --> P["Planilha da semana<br/>quem estava municiado naquele dia e refeição?"]
   P --> M["MUNICIADOS<br/>ALVES, CORREA, EVA"]
   P --> N["NÃO MUNICIADOS<br/>BRAGA"]
-  M --> F["Filtros da rela: Todos, só Municiados, só NÃO municiados<br/>Ano inteiro ou Por turma<br/>Alfabética ou Antiguidade<br/>Copiar e Baixar (PDF ou DOCX)"]
+  M --> F["Filtros da rela: Todos, só Municiados, só NÃO municiados<br/>Ano inteiro ou Por turma (sem escolher turmas)<br/>Alfabética ou Antiguidade<br/>Copiar e Baixar PDF"]
   N --> F
 ```
 

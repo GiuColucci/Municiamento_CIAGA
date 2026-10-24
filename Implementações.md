@@ -15,11 +15,11 @@ Hoje cada pessoa que confere uma refeição (a "conferente") usa o app e marca q
 1. **Fonte dos dados:** os registros (rascunhos) de cada pessoa que usou o app para conferir **aquele dia e aquela refeição**, na planilha da semana publicada.
 2. **Cruzamento (união):** um aluno aparece na listagem geral se **qualquer** conferente o marcou como presente. Alunos marcados por mais de uma conferente aparecem **uma só vez**.
 3. **Separação:** a listagem geral é dividida em **Municiados** e **NÃO municiados**, usando a planilha da semana (a mesma regra da rela individual: quem foi marcado e estava municiado naquele dia e refeição entra em "Municiados"; quem foi marcado e não estava municiado entra em "NÃO municiados").
-4. **Mesmo padrão de filtragem da rela individual**, para escolher o que copiar ou baixar:
+4. **Mesmo padrão da rela individual** (exceto o filtro de turmas, que não existe aqui), para escolher o que copiar ou baixar:
    - **Mostrar:** Todos · só **Municiados** · só **NÃO municiados**;
-   - **Agrupar:** Ano inteiro (toda a lista junta) · **Por turma**, com escolha das turmas;
+   - **Agrupar:** Ano inteiro (toda a lista junta) · **Por turma** (um bloco por turma). **Sem** a escolha de quais turmas mostrar: a conferência geral traz todas;
    - **Ordem:** **Alfabética** ou **Antiguidade** (a "continuidade" do pedido original é a ordem de antiguidade do app);
-   - **Separar em duas listas** (Municiados e NÃO municiados em folhas separadas), **Copiar** e **Baixar** (PDF ou DOCX).
+   - **Separar em duas listas** (Municiados e NÃO municiados em folhas separadas), **Copiar** e **Baixar PDF**.
 5. **Quem pode usar:** **qualquer pessoa autenticada** (aluno ou administrador), pelo item "Conferência geral" do menu. A tela mostra **quem conferiu** (nome, quantos marcou e quando salvou), para todos saberem de onde vêm os dados.
 6. **Escolha do dia e da refeição:** a tela lista só as combinações (dia × refeição) em que **há pelo menos uma conferente com marcações**; para cada uma mostra quantas conferentes.
 7. **Atualização:** o botão **Atualizar** busca de novo os registros; nada é recalculado sozinho.

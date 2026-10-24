@@ -7,7 +7,7 @@ O repositório contém tudo o que é necessário para colocar o sistema no ar e 
 | Parte | Pasta | O que é |
 |---|---|---|
 | **Site** | `api/`, `public/`, `scripts/`, `vercel.json` | Servidor (funções serverless em Node.js), páginas de login/painel/ajuda e scripts de operação |
-| **App** | `fonte-app/` | O aplicativo que roda no navegador: lê a planilha, monta as listas e gera PDF/DOCX. É compilado em **um único HTML** |
+| **App** | `fonte-app/` | O aplicativo que roda no navegador: lê a planilha, monta as listas e gera PDF. É compilado em **um único HTML** |
 | **Documentação** | `docs/` | Arquitetura, fluxos, segurança e criptografia (com diagramas) e guia de operação |
 
 > **Resumo de segurança em uma frase:** só quem está numa lista de autorizados, com nome de guerra + número interno + senha da unidade, recebe o app; o app, a planilha publicada, os rascunhos e os códigos ficam **cifrados em repouso** (AES-256-GCM); o servidor confere o cargo da pessoa **no banco a cada ação**; e tudo o que é sensível pode ser rotacionado sem reescrever código.
@@ -46,7 +46,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
    - **Café da manhã:** mostra os **municiados**;
    - **Almoço e janta:** mostram os **não municiados**;
    - **Ceia, sábado e domingo:** ignorados nas listas.
-4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF ou DOCX) ou **copia** a lista.
+4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF) ou **copia** a lista.
 5. O trabalho é salvo automaticamente num **rascunho individual cifrado**, para continuar depois.
 6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única (Municiados e NÃO municiados), com os mesmos filtros da rela individual.
 7. Os administradores acompanham o **registro de acessos** e gerenciam quem entra, tudo pelo painel `/admin`, **sem novo deploy**.
@@ -65,7 +65,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
 ```mermaid
 flowchart LR
   subgraph NAV["Navegador (aluno ou administrador)"]
-    APP["App (HTML único)<br/>lê XLSX/CSV/PDF<br/>monta listas, PDF, DOCX"]
+    APP["App (HTML único)<br/>lê XLSX/CSV/PDF<br/>monta listas e PDF"]
     PAG["Páginas do servidor<br/>login, painel, ajuda"]
   end
   subgraph VER["Funções serverless (Node.js)"]
@@ -141,7 +141,7 @@ Detalhes e diagramas de cada fluxo: [docs/ARQUITETURA_E_FLUXO.md](docs/ARQUITETU
 
 | Capacidade | Aluno | Administrador (até 2) | Ranchef (1) |
 |---|:--:|:--:|:--:|
-| Entrar, ver a planilha publicada, marcar, filtrar, copiar, baixar PDF/DOCX | ✅ | ✅ | ✅ |
+| Entrar, ver a planilha publicada, marcar, filtrar, copiar, baixar PDF | ✅ | ✅ | ✅ |
 | Rascunho individual cifrado | ✅ | ✅ | ✅ |
 | Abrir o painel `/admin` (entrando no modo **Administrador**) | ❌ | ✅ | ✅ |
 | Publicar / remover a planilha da semana | ❌ | ✅ | ✅ |
@@ -292,7 +292,7 @@ npm run app:build    # gera fonte-app/conferencia_digital.html
 | `/api/planilha` | GET / POST / DELETE | GET: sessão · POST/DELETE: administrador | Lê, publica ou remove a planilha cifrada |
 | `/api/rascunho` | GET / PUT / DELETE | sessão (individual) | Rascunho cifrado do próprio usuário |
 | `/api/conferencia-geral` | GET | sessão (qualquer perfil) | Sem parâmetros: dias e refeições com conferentes. Com `dia` e `refeicao`: conferentes e união das marcações |
-| `/api/evento` | POST | sessão | Eventos permitidos (carregou planilha, baixou PDF/DOCX), lista fechada |
+| `/api/evento` | POST | sessão | Eventos permitidos (carregou planilha, baixou PDF), lista fechada |
 
 ---
 
@@ -339,7 +339,7 @@ Lista completa em [docs/SEGURANCA.md](docs/SEGURANCA.md#9-riscos-residuais-e-lim
 
 ## 14. Regras de contribuição
 
-- **Nunca** versionar: planilhas reais, `AUTORIZADOS.txt`, backups da lista, `dados/app.enc`, `.env`, bancos `.db`, listas geradas (PDF/DOCX com nomes). O `.gitignore` já bloqueia esses arquivos; **não o enfraqueça**.
+- **Nunca** versionar: planilhas reais, `AUTORIZADOS.txt`, backups da lista, `dados/app.enc`, `.env`, bancos `.db`, listas geradas (PDFs com nomes). O `.gitignore` já bloqueia esses arquivos; **não o enfraqueça**.
 - Testes usam **somente dados fictícios**.
 - Antes de cada commit: `git status` e `git diff --cached --stat`.
 - Commits pequenos, em português, no imperativo (ex.: `Adiciona visualizador da planilha`); uma branch por assunto e *pull request* com resumo do que mudou e do que foi testado.

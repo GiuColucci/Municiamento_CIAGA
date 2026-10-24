@@ -1,6 +1,6 @@
 /* Interface da versão "rela": ler a planilha, montar listas (dia, refeição, ano) em abas,
    marcar quem veio, pesquisar por nome de guerra ou código, finalizar a marcação e gerar a rela
-   (ordem alfabética ou por antiguidade, por ano ou por turma, junta ou separada) para copiar ou baixar em PDF ou DOCX.
+   (ordem alfabética ou por antiguidade, por ano ou por turma, junta ou separada) para copiar ou baixar em PDF.
    Aberto no computador, tudo fica na memória da página; nada é guardado. Na versão hospedada (Municiamento.HOSPEDADO,
    definido pelo servidor), a planilha da semana carrega sozinha, só administradores a publicam e as marcações de
    cada pessoa são salvas sozinhas (cifradas) como rascunho. */
@@ -462,7 +462,7 @@
     opcoesTopo.appendChild(escolha("Mostrar", "mostrar-" + l.id,
       [["todos", "Todos"], ["municiados", "Municiados"], ["nao", "NÃO municiados"]],
       l.mostrar, function (v) { l.mostrar = v; refazer(); }));
-    if (l.agrupar === "turma") painel.appendChild(escolhaTurmas(l));
+    if (l.agrupar === "turma" && !l.geral) painel.appendChild(escolhaTurmas(l)); // a conferência geral agrupa por turma, mas não filtra turmas
 
     var acoes = el("div", "painel-acoes");
     var todos = l.mostrar === "todos"; // separar só faz sentido mostrando as duas situações
@@ -568,24 +568,16 @@
     return caixa;
   }
 
-  /** Botão único "Baixar": abre uma escolha entre PDF e DOCX (em vez de um botão para cada). */
+  /** Botão "Baixar PDF" (o app gera só PDF). aoEscolher recebe o formato e o próprio botão. */
   function menuBaixar(rotulo, classe, aoEscolher) {
-    var menu = el("details", "menu-baixar");
-    var resumo = el("summary", "botao " + classe, rotulo);
-    menu.appendChild(resumo);
-    var lista = el("div", "menu-baixar-lista");
-    [["pdf", "PDF"], ["docx", "DOCX"]].forEach(function (f) {
-      var item = el("button", "menu-baixar-item", f[1]);
-      item.type = "button";
-      item.setAttribute("data-baixar", f[0]);
-      item.addEventListener("click", function () { menu.open = false; aoEscolher(f[0], resumo); });
-      lista.appendChild(item);
-    });
-    menu.appendChild(lista);
-    return menu;
+    var b = el("button", "botao " + classe, rotulo === "Baixar" ? "Baixar PDF" : rotulo + " (PDF)");
+    b.type = "button";
+    b.setAttribute("data-baixar", "pdf");
+    b.addEventListener("click", function () { aoEscolher("pdf", b); });
+    return b;
   }
   function fecharMenus(ev) {
-    Array.prototype.forEach.call(document.querySelectorAll("details.menu-baixar[open], details.menu-suspenso[open]"), function (m) {
+    Array.prototype.forEach.call(document.querySelectorAll("details.menu-suspenso[open]"), function (m) {
       if (!ev || !m.contains(ev.target)) m.open = false;
     });
   }
@@ -651,7 +643,7 @@
     return M.semAcento(partes.join("_")).toLowerCase().replace(/\s+/g, "-");
   }
 
-  /** Gera o PDF ou o DOCX das folhas (cada folha numa página nova, com o brasão de fundo) e baixa o arquivo.
+  /** Gera o PDF das folhas (cada folha numa página nova, com o brasão de fundo) e baixa o arquivo.
       comCaixas: a lista para marcar à mão, com [   ] ao lado de cada nome. */
   async function baixar(b, folhas, comCaixas, nome, formato) {
     erro("");
@@ -659,9 +651,8 @@
     await deixarPintar();
     try {
       await M.garantirBibliotecas();
-      var bytes = formato === "docx" ? await M.gerarRelaDocx(folhas, comCaixas) : M.gerarRelaPdf(folhas, comCaixas);
-      var tipo = formato === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "application/pdf";
-      var url = URL.createObjectURL(new Blob([bytes], { type: tipo }));
+      var bytes = M.gerarRelaPdf(folhas, comCaixas);
+      var url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
       var a = el("a");
       a.href = url;
       a.download = nome + "." + formato;
@@ -995,12 +986,9 @@
     $("rela-copiar").addEventListener("click", function () {
       copiarTexto(folhasDeTodas().map(M.textoFolha).join("\n\n\n"), $("rela-status"));
     });
-    Array.prototype.forEach.call(document.querySelectorAll("#rela-baixar [data-baixar]"), function (item) {
-      item.addEventListener("click", function () {
-        $("rela-baixar").open = false;
-        var nome = "rela_todas-as-listas" + (estado.sexta ? "_" + estado.sexta : "");
-        baixar($("rela-baixar").querySelector("summary"), folhasDeTodas(), false, nome, item.getAttribute("data-baixar"));
-      });
+    $("rela-baixar").addEventListener("click", function () {
+      var nome = "rela_todas-as-listas" + (estado.sexta ? "_" + estado.sexta : "");
+      baixar($("rela-baixar"), folhasDeTodas(), false, nome, "pdf");
     });
     document.addEventListener("click", fecharMenus);
     document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") fecharMenus(null); });

@@ -1176,3 +1176,35 @@ test("limite de tentativas erradas: 8 erros por dia por IP; no 8º bloqueia 15 m
     assert.equal(seg.bloqueado(ip), true);
   } finally { Date.now = real; }
 });
+
+test("número interno exibido: login completa quem não tem e conserta o que não abre (chave errada na carga)", async () => {
+  zerar();
+  await p.carregarLista(LISTA);
+  const reg = require("../api/_lib/registro.js");
+  const login = require("../api/login.js");
+  const admin = require("../api/admin.js");
+  process.env.ACCESS_CODE = "Aluno-Qualquer-1"; process.env.ACCESS_CODE_ADMIN = "Admin-Qualquer-1";
+  let n = 0;
+  const entrar = async (modo) => {
+    const r = res();
+    await login({ method: "POST", headers: { "sec-fetch-site": "same-origin", host: "x", "x-forwarded-for": "5.5.5." + ++n },
+      body: { usuario: "gordilho", senha: "B1901", acesso: modo === "admin" ? "Admin-Qualquer-1" : "Aluno-Qualquer-1", modo } }, r);
+    return r.headers.Location;
+  };
+  const painel = async () => { const r = res(); await admin({ headers: { cookie: sessao("gordilho", 2) }, url: "/admin" }, r); return String(r.body); };
+  const gravar = async (k) => {
+    const v = { ...(await p.estado()).pessoas.get("gordilho") };
+    if (k === undefined) delete v.k; else v.k = k;
+    await reg.chamar([["HSET", "usuarios", "gordilho", JSON.stringify(v)]]);
+  };
+  for (const [rotulo, k] of [["sem código guardado", undefined], ["código cifrado com outra chave", "v1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"]]) {
+    await gravar(k);
+    assert.ok(!(await painel()).includes(">B1901<"), rotulo);
+    assert.equal(await entrar("admin"), "/app", rotulo);
+    assert.ok((await painel()).includes(">B1901<"), rotulo + ": o painel passa a mostrar o número");
+  }
+  await gravar(undefined);
+  assert.equal(await entrar("aluno"), "/app"); // entrando como aluno também completa
+  assert.ok((await painel()).includes(">B1901<"));
+  delete process.env.ACCESS_CODE; delete process.env.ACCESS_CODE_ADMIN;
+});

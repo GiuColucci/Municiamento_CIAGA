@@ -65,10 +65,26 @@
         i += seguintes.length;
       }
     });
+    // nomes de guerra soltos dentro da tabela (o número interno não foi lido, comum em foto): servem para achar o aluno pelo nome na planilha
+    var soltos = [], naTabela = false, usados = {};
+    itens.forEach(function (i) { usados[M.normalizar(i.n)] = true; });
+    var CABECALHO = /^(nome|de|do|da|guerra|pelot[aã]o|cia|interno|ano|total|alunos|ass?inatura|setor|posto|gradua[cç][aã]o|respons[aá]vel|marinha|brasil|centro)$/i;
+    linhas.forEach(function (cel) {
+      var txt = cel.join(" ");
+      if (/nome\s+de\s+guerra/i.test(txt)) { naTabela = true; return; }
+      if (/total\s+de\s+alunos/i.test(txt)) { naTabela = false; return; }
+      if (!naTabela) return;
+      cel.forEach(function (c) {
+        var w = String(c).replace(/^[^A-Za-zÀ-ÿ]+|[^A-Za-zÀ-ÿ]+$/g, "").trim();
+        if (w.length < 4 || /\d/.test(w) || !/^[A-ZÀ-Ý][A-ZÀ-Ý'’ .-]+$/.test(w) || CABECALHO.test(w) || usados[M.normalizar(w)]) return;
+        usados[M.normalizar(w)] = true;
+        soltos.push(w);
+      });
+    });
     if (!data) data = dataDoTexto(linhas.map(function (c) { return c.join(" "); }).join(" ")); // sem "Data:" legível: a primeira data do arquivo
     if (!motivo) avisos.push("A autorização não traz o motivo escrito: o aviso vai dizer só “Rancho corrido autorizado”.");
-    itens.forEach(function (i) { if (!i.m) i.m = "Rancho corrido autorizado"; });
-    return { data: data, refeicoes: refeicoes, motivo: motivo, itens: itens };
+    itens.forEach(function (i) { if (!i.m) i.m = "Rancho corrido autorizado"; i.n = i.n.replace(/^[^A-Za-zÀ-ÿ]+|[^A-Za-zÀ-ÿ'’.-]+$/g, ""); });
+    return { data: data, refeicoes: refeicoes, motivo: motivo, itens: itens, nomesSoltos: soltos };
   }
 
   /** Corrige letras que a leitura de foto troca por número dentro de um número interno (3O25 -> 3025). */
@@ -145,6 +161,26 @@
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
+
+  /** Foto/leitura em que o número interno de alguns alunos não saiu: acha o aluno pelo nome de guerra (só se for único na planilha). */
+  M.completarPorNome = function (r, alunos) {
+    if (!r || !r.nomesSoltos || !r.nomesSoltos.length) return;
+    var jaTem = {};
+    r.itens.forEach(function (i) { jaTem[i.c.replace(/\D/g, "")] = true; });
+    var achados = [];
+    r.nomesSoltos.forEach(function (w) {
+      var alvo = M.normalizar(w), cands = alunos.filter(function (a) {
+        var n = M.normalizar(a.nome);
+        return n === alvo || (alvo.indexOf(" ") < 0 && alvo.length >= 5 && n.split(" ").indexOf(alvo) >= 0);
+      });
+      if (cands.length !== 1 || jaTem[cands[0].codigo.replace(/\D/g, "")]) return;
+      jaTem[cands[0].codigo.replace(/\D/g, "")] = true;
+      r.itens.push({ c: cands[0].codigo, n: cands[0].nome, m: r.motivo || "Rancho corrido autorizado", r: r.refeicoes, p: "", d: undefined });
+      achados.push(w);
+    });
+    if (achados.length) r.avisos.push("O número interno não saiu na leitura destes alunos; achei pelo nome de guerra na planilha, confira: " + achados.join(", ") + ".");
+    r.avisos = r.avisos.filter(function (a) { return !(r.itens.length && /Não encontrei nenhum aluno/.test(a)); });
+  };
 
   /** Um aluno que aparece mais de uma vez no arquivo vira um só, com os motivos juntos. */
   function consolidar(itens) {

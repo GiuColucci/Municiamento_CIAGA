@@ -1072,9 +1072,11 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
+          var lida = await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
             statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
-          }));
+          });
+          if (lida.tipo === "autorizacao") M.completarPorNome(lida, estado.res.alunos);
+          rancho.leituras.push(lida);
         } catch (e) {
           rancho.leituras.push({ nome: f.name, tipo: null, itens: [], data: null, avisos: [e && e.message ? e.message : "Não consegui ler esse arquivo."] });
         }
@@ -1137,9 +1139,24 @@
     });
     var b = botao("principal", publicaveis ? "Publicar rancho corrido" : "Nada para publicar", publicarRancho);
     b.disabled = !publicaveis;
-    c.appendChild(b);
+    var acoes = el("div", "rancho-botoes");
+    acoes.appendChild(b);
+    acoes.appendChild(botao("secundario", "Não publicar", naoPublicarRancho)); // descarta a leitura sem publicar nada
+    c.appendChild(acoes);
     mostrar(c, true);
     statusRancho(publicaveis ? "Confira os alunos e o dia; depois publique." : "Nenhum arquivo estava pronto para publicar. Veja os avisos acima.");
+  }
+
+  /** Descarta o que foi lido (arquivos e digitação): nada vai para o servidor. */
+  function naoPublicarRancho() {
+    rancho.leituras = [];
+    mostrar($("rancho-previa"), false);
+    $("rancho-previa").textContent = "";
+    $("rancho-arquivos").value = "";
+    reiniciarDigitacao();
+    mostrarArquivosRancho();
+    statusRancho("Nada foi publicado.");
+    window.scrollTo(0, 0);
   }
 
   async function publicarRancho() {
@@ -1209,26 +1226,72 @@
     mostrar(c, true);
   }
 
+  /** Uma linha de aluno (nome de guerra + número interno) no cartão "Digitar na tela". */
+  function novaLinhaAluno(foco) {
+    var box = $("dig-alunos");
+    var linha = el("div", "dig-aluno");
+    var cab = el("div", "dig-aluno-cab");
+    cab.appendChild(el("span", "dig-aluno-titulo", ""));
+    var rm = el("button", "dig-remover", "Remover");
+    rm.type = "button";
+    rm.addEventListener("click", function () {
+      if (box.children.length > 1) { box.removeChild(linha); renumerarLinhas(); } else { linha.querySelector(".dig-nome").value = ""; linha.querySelector(".dig-numero").value = ""; }
+    });
+    cab.appendChild(rm);
+    linha.appendChild(cab);
+    var campos = el("div", "dig-aluno-campos");
+    var l1 = el("label", "campo", "Nome de guerra"), nome = el("input", "dig-nome");
+    nome.type = "text"; nome.maxLength = 60; nome.autocomplete = "off"; nome.placeholder = "Ex.: Alana Reis";
+    l1.appendChild(nome);
+    var l2 = el("label", "campo", "Número interno"), num = el("input", "dig-numero");
+    num.type = "text"; num.maxLength = 5; num.autocomplete = "off"; num.autocapitalize = "characters"; num.spellcheck = false; num.placeholder = "Ex.: N3001";
+    l2.appendChild(num);
+    campos.appendChild(l1); campos.appendChild(l2);
+    linha.appendChild(campos);
+    box.appendChild(linha);
+    renumerarLinhas();
+    if (foco) nome.focus();
+  }
+  function renumerarLinhas() {
+    Array.prototype.forEach.call($("dig-alunos").children, function (l, i) {
+      l.querySelector(".dig-aluno-titulo").textContent = "Aluno " + (i + 1);
+      l.querySelector(".dig-remover").setAttribute("aria-label", "Remover o aluno " + (i + 1));
+    });
+  }
+  function reiniciarDigitacao() {
+    $("dig-alunos").textContent = "";
+    novaLinhaAluno(false);
+  }
+
   /** Autorização escrita à mão: a pessoa digita dia, refeição, motivo e os números internos; vira a mesma leitura de um arquivo (prévia e publicação iguais). */
   function conferirDigitado() {
     var dia = $("dig-dia").value, refeicao = $("dig-refeicao").value, motivo = $("dig-motivo").value.replace(/\s+/g, " ").trim();
     var st = $("dig-status");
     if (!dia) return (st.textContent = "Escolha o dia.");
     if (dia < hojeIso()) return (st.textContent = "Esse dia já passou: o rancho corrido só vale no próprio dia.");
-    var vistos = {}, itens = [], ignorados = [];
-    ($("dig-numeros").value.toUpperCase().match(/[^\s,;]+/g) || []).forEach(function (tok) {
+    var vistos = {}, itens = [], ignorados = [], semNumero = [];
+    var porNome = {}; // nome de guerra -> alunos da planilha (para quem veio só com o nome)
+    estado.res.alunos.forEach(function (al) { (porNome[M.normalizar(al.nome)] = porNome[M.normalizar(al.nome)] || []).push(al); });
+    Array.prototype.forEach.call($("dig-alunos").querySelectorAll(".dig-aluno"), function (linha) {
+      var nome = linha.querySelector(".dig-nome").value.replace(/\s+/g, " ").trim(), tok = linha.querySelector(".dig-numero").value.toUpperCase().replace(/\s+/g, "");
+      if (!nome && !tok) return; // linha vazia
       var m = /^([BMN])?(\d{4})$/.exec(tok);
-      if (!m) return ignorados.push(tok);
+      if (!m && tok) return ignorados.push(tok);
+      if (!m) { // só o nome: vale se for um único aluno da planilha
+        var c = porNome[M.normalizar(nome)];
+        if (c && c.length === 1) tok = c[0].codigo; else return semNumero.push(nome);
+      }
       if (vistos[tok]) return;
       vistos[tok] = true;
-      itens.push({ c: tok, n: "", m: motivo, r: [refeicao], p: "" });
+      itens.push({ c: tok, n: nome, m: motivo, r: [refeicao], p: "" });
     });
-    if (!itens.length) return (st.textContent = "Digite pelo menos um número interno (ex.: N3001).");
+    if (!itens.length) return (st.textContent = "Preencha pelo menos um aluno com o número interno (ex.: N3001).");
     M.casarRancho(itens, estado.res.alunos).forEach(function (x) { // nome e turma vêm da planilha da semana
-      x.item.n = x.aluno ? x.aluno.nome : "Fora da planilha";
-      if (x.aluno) x.item.c = x.aluno.codigo;
+      if (x.aluno) { x.item.n = x.aluno.nome; x.item.c = x.aluno.codigo; } else if (!x.item.n) x.item.n = "Fora da planilha";
     });
-    var avisos = ignorados.length ? ["Não entendi e ignorei: " + ignorados.join(", ") + "."] : [];
+    var avisos = [];
+    if (ignorados.length) avisos.push("Número interno que não entendi (ignorei): " + ignorados.join(", ") + ".");
+    if (semNumero.length) avisos.push("Sem número interno e sem um nome único na planilha (ignorei): " + semNumero.join(", ") + ".");
     rancho.leituras = [{ nome: "Digitado na tela", tipo: "autorizacao", data: dia, dias: [dia], refeicoes: [refeicao], motivo: motivo, itens: itens, avisos: avisos }];
     st.textContent = "";
     desenharPreviaRancho();
@@ -1238,6 +1301,8 @@
     var ler = $("rancho-ler");
     if (!ler) return;
     $("dig-conferir").addEventListener("click", conferirDigitado);
+    $("dig-mais").addEventListener("click", function () { novaLinhaAluno(true); });
+    reiniciarDigitacao();
     ler.addEventListener("click", lerArquivosRancho);
     $("rancho-arquivos").addEventListener("change", mostrarArquivosRancho);
     var area = $("area-rancho");

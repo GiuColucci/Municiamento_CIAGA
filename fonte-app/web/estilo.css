@@ -580,3 +580,19 @@ tbody tr:last-child td { border-bottom: 0; }
 .rancho-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--e2, 1rem); }
 .rancho-form .rancho-form-largo { grid-column: 1 / -1; }
 .rancho-form input, .rancho-form select, .rancho-form textarea { width: 100%; box-sizing: border-box; font: inherit; }
+
+/* rancho corrido: Publicar e Não publicar lado a lado, quebrando linha no celular sem encostar */
+.rancho-botoes { display: flex; flex-wrap: wrap; gap: .75rem; }
+.rancho-botoes .botao { flex: 1 1 12rem; }
+
+/* rancho corrido: digitar na tela (nome de guerra + número interno por aluno) */
+.rancho-form .rotulo-campo { font-weight: 700; }
+.dig-alunos { display: grid; gap: var(--e2, 1rem); }
+.dig-aluno { display: grid; gap: var(--e1); padding: .8rem 1rem; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); }
+.dig-aluno-cab { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.dig-aluno-titulo { font-weight: 700; }
+.dig-remover { font: inherit; color: var(--link); background: transparent; border: 0; text-decoration: underline; cursor: pointer; min-height: 40px; padding: 0 .4rem; }
+.dig-remover:focus-visible { outline: 3px solid var(--destaque); outline-offset: 2px; }
+.dig-aluno-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--e2, 1rem); }
+.dig-aluno-campos .campo { font-weight: 400; }
+.rancho-form #dig-mais { justify-self: start; }

@@ -1213,7 +1213,7 @@
         caixa.appendChild(el("p", "rancho-dia-titulo", dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
         var nomes = [], ul = el("ul", "rancho-dia-lista");
         dias[d].forEach(function (p) { // o que foi subido neste dia: a tabela de serviço e cada autorização (pelo motivo escrito nela)
-          var rotulo = p.origem === "s" ? "Tabela de serviço" : ((p.itens[0] && p.itens[0].m) || "Autorização de rancho corrido");
+          var rotulo = p.origem === "s" ? "Tabela de Serviço da Semana" : ((p.itens[0] && p.itens[0].m) || "Autorização de rancho corrido");
           if (nomes.indexOf(rotulo) < 0) { nomes.push(rotulo); ul.appendChild(el("li", null, rotulo)); }
         });
         caixa.appendChild(ul);

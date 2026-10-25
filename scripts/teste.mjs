@@ -214,7 +214,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
     assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
-    assert.ok(saida.includes("worker-src 'none'") && !saida.includes("unsafe-eval")); // a regra do app continua fechada (não há mais leitor de fotos)
+    assert.ok(saida.includes("worker-src 'self' blob:") && saida.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:") && !saida.includes("worker-src 'none'")); // e o leitor de fotos (OCR) do rancho corrido
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -1311,7 +1311,7 @@ test("Como usar: tem a Conferência geral (para todos) e o painel atual (só adm
   const ajuda = require("../api/ajuda.js");
   const ver = async (quem, papel) => { const r = res(); await ajuda({ headers: { cookie: sessao(quem, papel) } }, r); return String(r.body); };
   const aluno = await ver("mike", 0);
-  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("Foto não é lida") && aluno.includes("aviso laranja") && aluno.includes("apagado à meia-noite") && !aluno.includes("JPEG"));
+  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("foto</strong> (JPEG ou PNG)") && aluno.includes("aviso laranja") && aluno.includes("apagado à meia-noite"));
   assert.ok(aluno.includes("7. Conferência geral") && aluno.includes("só existe naquele dia") && aluno.includes("sempre por antiguidade"));
   assert.ok(!aluno.includes("Só tentativas recusadas") && !aluno.includes("Ver a planilha"));
   const adm = await ver("romeo", 1);

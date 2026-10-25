@@ -1072,7 +1072,9 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }));
+          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
+            statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
+          }));
         } catch (e) {
           rancho.leituras.push({ nome: f.name, tipo: null, itens: [], data: null, avisos: [e && e.message ? e.message : "Não consegui ler esse arquivo."] });
         }

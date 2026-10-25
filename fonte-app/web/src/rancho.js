@@ -105,12 +105,12 @@
       return !!m && lista.indexOf(m[1] + "-" + m[2]) >= 0;
     });
   }
-  /** Rancho corrido de quem está de serviço: Café = turnos 0400-0800 e 0800-1200; Almoço = todos do dia; Janta = turno 1800-2100.
+  /** Rancho corrido de quem está de serviço: Café = turno 0800-1200 (menos RETÉM); Almoço = todos do dia; Janta = turno 1800-2100.
       Sem turno (serviço diário), só o almoço. */
   function refeicoesDoServico(turnos) {
     if (!turnos || !turnos.length) return ["Almoço"]; // serviço diário (sem turno): só o almoço
     var r = [];
-    if (temTurno(turnos, ["0400-0800", "0800-1200"])) r.push("Café");
+    if (temTurno(turnos, ["0800-1200"])) r.push("Café");
     r.push("Almoço");
     if (temTurno(turnos, ["1800-2100"])) r.push("Janta");
     return r;

@@ -700,7 +700,7 @@ test("rancho: serviço vira aviso por refeição (café 0400-1200, almoço todos
   const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
   assert.deepEqual(por.ALFA, ["Café", "Almoço"]); // 0800-1200 (2000-0000 não é o turno 1800-2100)
   assert.deepEqual(por.BRAVO, ["Almoço"]); // 1200-1600 e 0000-0400
-  assert.deepEqual(por.CHARLIE, ["Café", "Almoço"]); // 0400-0800; 1600-2000 não conta para a janta
+  assert.deepEqual(por.CHARLIE, ["Almoço"]); // 0400-0800 e 1600-2000 não contam: o café é só o turno 0800-1200
   assert.equal(M.fimDeSemana("2026-10-24"), true); // sábado
   assert.equal(M.fimDeSemana("2026-10-25"), true); // domingo
   assert.equal(M.fimDeSemana("2026-10-26"), false);
@@ -715,7 +715,7 @@ test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avis
   const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
   assert.deepEqual(por.DIARIO, ["Almoço"]);
   assert.deepEqual(por.UM, ["Almoço"]);
-  assert.deepEqual(por.DOIS, ["Café", "Almoço", "Janta"]);
+  assert.deepEqual(por.DOIS, ["Almoço", "Janta"]); // 0400-0800 não é café; 1800-2100 é janta
 });
 
 test("rancho: autorização com o traço do formulário e a data escrita no cabeçalho (Data: ____/____/_____26/10/2026)", () => {

@@ -568,3 +568,10 @@ tbody tr:last-child td { border-bottom: 0; }
 .rancho-dia-titulo { margin: 0; font-weight: 700; }
 .rancho-dia-lista { margin: .35rem 0 0; padding-left: 1.3rem; overflow-wrap: anywhere; }
 .rancho-dia-lista li { margin: .15rem 0; }
+
+/* lista de marcação: cartões separados entre si, e o selo sempre numa linha própria (igual em todos) */
+.aluno { margin: 0 0 .45rem; }
+.aluno.rancho-corrido label, .aluno.nao-municiado label { padding: .55rem .7rem; border-radius: 10px; row-gap: .4rem; }
+.aluno.rancho-corrido label::after { content: ""; flex-basis: 100%; order: 4; height: 0; }
+.aluno.rancho-corrido .selo-rancho { order: 5; margin-left: 1.6rem; }
+.aluno .rancho-motivo { margin-top: .3rem; }

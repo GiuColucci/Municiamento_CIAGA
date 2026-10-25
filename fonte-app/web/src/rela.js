@@ -1012,7 +1012,7 @@
 
   var NOME_TIPO = { autorizacao: "Autorização para rancho corrido", servico: "Tabela de serviço" };
   var dataBr = function (iso) { return iso.split("-").reverse().join("/"); };
-  var hojeIso = function () { return new Date().toLocaleDateString("sv-SE"); };
+  var hojeIso = function () { return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }); }; // hoje em Brasília
 
   /** Busca no servidor quem está de rancho corrido nos dias da semana da planilha. */
   async function carregarRancho() {
@@ -1104,18 +1104,29 @@
       caixa.appendChild(el("p", null, resumo.join(" · ")));
       (r.avisos || []).forEach(function (a) { caixa.appendChild(el("p", "aviso-rancho", a)); });
       if (r.itens.length) {
-        var casados = M.casarRancho(r.itens, alunos), ol = el("ol", "rancho-alunos");
-        casados.forEach(function (x) {
-          var li = el("li", x.aluno ? null : "fora");
-          li.textContent = x.item.c + " · " + x.item.n + " — " + x.item.m + (x.aluno ? " (" + x.aluno.turma + (x.porNome ? "; número lido " + x.item.c + ", será usado o da planilha: " + x.aluno.codigo : "") + ")" : " (não está na planilha da semana)");
-          ol.appendChild(li);
+        var casados = M.casarRancho(r.itens, alunos), porDia = {};
+        casados.forEach(function (x) { var d = diaDoItem(x.item, r) || "sem-data"; (porDia[d] = porDia[d] || []).push(x); });
+        var dias = Object.keys(porDia).sort();
+        dias.forEach(function (d) {
+          var passou = d !== "sem-data" && d < hojeIso();
+          var sec = el("details", "rancho-dia-previa");
+          sec.open = dias.length === 1;
+          sec.appendChild(el("summary", null, (d === "sem-data" ? "Sem data" : dataBr(d) + (d === hojeIso() ? " (hoje)" : "")) + " · " + plural(porDia[d].length, "aluno") +
+            (passou ? " · já passou: não será publicado" : "")));
+          var ol = el("ol", "rancho-alunos");
+          porDia[d].forEach(function (x) {
+            var li = el("li", x.aluno ? null : "fora");
+            li.textContent = x.item.c + " · " + x.item.n + " — " + x.item.m + (x.aluno ? " (" + x.aluno.turma + (x.porNome ? "; número lido " + x.item.c + ", será usado o da planilha: " + x.aluno.codigo : "") + ")" : " (não está na planilha da semana)");
+            ol.appendChild(li);
+          });
+          sec.appendChild(ol);
+          caixa.appendChild(sec);
         });
-        caixa.appendChild(ol);
         if (casados.some(function (x) { return !x.aluno; })) {
           caixa.appendChild(el("p", "dica", "Quem não está na planilha da semana também é publicado, mas só aparece o aviso se o número interno existir nela. Confira os números."));
         }
       }
-      if (r.tipo && r.itens.length && r.itens.every(function (i) { return diaDoItem(i, r); })) publicaveis++;
+      if (r.tipo && r.itens.some(function (i) { var d = diaDoItem(i, r); return d && d >= hojeIso(); })) publicaveis++;
       c.appendChild(caixa);
     });
     var b = botao("principal", publicaveis ? "Publicar rancho corrido" : "Nada para publicar", publicarRancho);
@@ -1126,19 +1137,20 @@
   }
 
   async function publicarRancho() {
-    var porDia = {};
+    var porDia = {}, passados = {};
     rancho.leituras.forEach(function (r) {
       if (!r.tipo || !r.itens.length) return;
       M.casarRancho(r.itens, estado.res.alunos).forEach(function (x) {
         var dia = diaDoItem(x.item, r);
         if (!dia) return;
+        if (dia < hojeIso()) { passados[dia] = true; return; } // o rancho corrido só vale no próprio dia: dia que passou não entra
         var d = porDia[dia] = porDia[dia] || { itens: [], origens: {} };
         d.origens[r.tipo === "servico" ? "s" : "a"] = true;
         d.itens.push({ c: x.aluno ? x.aluno.codigo : x.item.c, n: x.item.n, m: x.item.m, r: x.item.r, p: x.item.p || "" }); // com o número da planilha quando o do arquivo veio errado
       });
     });
     var dias = Object.keys(porDia).sort();
-    if (!dias.length) return;
+    if (!dias.length) return statusRancho("Esses dias já passaram: o rancho corrido só vale no próprio dia.");
     var b = $("rancho-previa").querySelector("button");
     ocupado(b, true, "Publicando…");
     var ok = [], falhas = [];
@@ -1158,7 +1170,9 @@
       if (estado.listas.length) desenharAbas(); // as listas abertas já mostram os avisos
       desenharPublicadosRancho();
     }
-    statusRancho((ok.length ? "Publicado: " + ok.join("; ") + ". " : "") + (falhas.length ? "Não deu certo: " + falhas.join("; ") + "." : ""));
+    var ignorados = Object.keys(passados).sort().map(dataBr);
+    statusRancho((ok.length ? "Publicado: " + ok.join("; ") + ". " : "") + (ignorados.length ? "Dias que já passaram, não publicados: " + ignorados.join(", ") + ". " : "") +
+      (falhas.length ? "Não deu certo: " + falhas.join("; ") + "." : ""));
   }
 
   /** O que já está publicado para os dias da semana da planilha. */

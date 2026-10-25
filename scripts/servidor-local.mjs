@@ -129,6 +129,12 @@ const servidor = http.createServer(async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${url.pathname.slice(1)}"`);
     return res.end(Buffer.from(exemploRancho(url.pathname.includes("servico"))));
   }
+  // arquivo de teste seu (a escala real, por exemplo): ARQUIVO_TESTE=C:\\caminho\\arquivo.pdf npm run local  ->  /_arquivo-teste (fica só no seu computador)
+  if (url.pathname === "/_arquivo-teste" && process.env.ARQUIVO_TESTE && fs.existsSync(process.env.ARQUIVO_TESTE)) {
+    const ext = path.extname(process.env.ARQUIVO_TESTE).toLowerCase();
+    res.setHeader("Content-Type", ext === ".pdf" ? "application/pdf" : ext === ".csv" ? "text/csv" : "application/octet-stream");
+    return res.end(fs.readFileSync(process.env.ARQUIVO_TESTE));
+  }
   // auditoria de layout (só desenvolvimento): http://localhost:4174/_auditoria.js
   if (url.pathname === "/_auditoria.js") {
     res.setHeader("Content-Type", "application/javascript; charset=utf-8");

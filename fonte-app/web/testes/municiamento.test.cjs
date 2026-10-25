@@ -678,3 +678,15 @@ test("rancho: foto não é lida (JPEG ou PNG recebem um aviso claro)", async () 
     await assert.rejects(M.lerRanchoArquivo({ nome: "tabela.jpg", bytes }), /foto.*(PDF, XLSX ou CSV)/);
   }
 });
+
+test("rancho: escala semanal com mais de 300 alunos não é cortada (cada dia fica inteiro)", () => {
+  const linhas = [["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"]];
+  for (let d = 23; d <= 29; d++) {
+    linhas.push(["SERVIÇO: " + d + " OUT 2026"]);
+    for (let k = 0; k < 60; k++) linhas.push(["PAV", String(1000 + (d - 23) * 100 + k), "N", "ALUNO" + String.fromCharCode(65 + (d - 23)) + String.fromCharCode(65 + Math.floor(k / 26)) + String.fromCharCode(65 + k % 26)]);
+  }
+  const r = M.interpretarRancho(linhas);
+  assert.equal(r.itens.length, 420);
+  assert.ok(!r.avisos.some((a) => /demais/.test(a)));
+  assert.equal(new Set(r.itens.map((i) => i.d)).size, 7);
+});

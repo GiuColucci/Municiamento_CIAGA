@@ -617,7 +617,7 @@ flowchart LR
 
 | Ponto | Comportamento |
 |---|---|
-| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha; foto JPEG/PNG por OCR no navegador (Tesseract.js em `/ocr/`), com aviso para conferir |
+| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha; foto não é lida |
 | Armazenamento | Uma lista Redis por dia (`rancho:AAAA-MM-DD`); cada publicação é um item cifrado no contexto do dia; **expira à meia-noite de Brasília do próprio dia** (`EXPIREAT`); dia que passou nem é aceito nem devolvido |
 | Concorrência | Publicar usa `RPUSH` (só acrescenta): publicações simultâneas não se perdem |
 | Quem publica | Qualquer sessão válida; limites: 300 alunos, 120 KB, 20 publicações por pessoa por hora, 40 por dia |

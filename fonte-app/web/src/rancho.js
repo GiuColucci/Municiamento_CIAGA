@@ -16,7 +16,7 @@
   var REFEICOES = ["Café", "Almoço", "Janta", "Ceia"];
   var MESES = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12 };
   var LIMITE_PAGINAS = 10;
-  var LIMITE_ITENS = 300;
+  var LIMITE_ITENS = 2000; // uma escala semanal inteira (7 dias, ~60 alunos por dia) cabe com folga; o servidor limita cada dia a 300
 
   function limpar(s) { return String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim(); }
   /** Tira os traços do formulário em branco ("Motivo: ______") e sobra só o que foi escrito. */

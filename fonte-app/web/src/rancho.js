@@ -137,7 +137,7 @@
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
         var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
-        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: refeicoesDoServico(turnos), p: "" }); // no motivo, o rancho corrido da tabela de serviço é "Serviço"
+        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; }) ? ["Almoço"] : refeicoesDoServico(turnos), p: "" }); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }

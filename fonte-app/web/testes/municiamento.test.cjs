@@ -723,3 +723,14 @@ test("rancho: autorização com o traço do formulário e a data escrita no cabe
   assert.equal(r.data, "2026-10-26");
   assert.ok(!r.avisos.some((a) => /data/i.test(a)));
 });
+
+test("rancho: quem está na função RETÉM só avisa no almoço (não vale como serviço corrido no café nem na janta)", () => {
+  const r = M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 26 OUT 2026"], ["SERVIÇO DE QUARTO"],
+    ["0800-1200P / 1800-2100P"],
+    ["RETÉM", "3001", "N", "ALFA"], ["PAV", "3002", "N", "BRAVO"],
+  ]);
+  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
+  assert.deepEqual(por.ALFA, ["Almoço"]);
+  assert.deepEqual(por.BRAVO, ["Café", "Almoço", "Janta"]);
+});

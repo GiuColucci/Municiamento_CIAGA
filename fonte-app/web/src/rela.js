@@ -324,28 +324,10 @@
     alerta.setAttribute("role", "alert");
     var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
     function piscar(e) { mostrar(e, true); e.classList.remove("piscar"); void e.offsetWidth; e.classList.add("piscar"); } // reinicia a animação a cada alerta
-    // aviso laranja do rancho corrido: toque nele para ver o motivo
-    var alertaRancho = el("button", "alerta-rancho oculto");
-    alertaRancho.type = "button";
-    alertaRancho.setAttribute("role", "alert");
-    var ranchoMostrado = null;
-    function textoRancho(a, rancho, aberto) {
-      alertaRancho.textContent = "";
-      alertaRancho.appendChild(document.createTextNode("Atenção: " + a.nome + " (" + a.turma + ") está de RANCHO CORRIDO." + (aberto ? " Motivo: " + rancho.motivo + "." : "")));
-      if (!aberto) alertaRancho.appendChild(el("span", "dica-toque", "Toque aqui para ver o motivo"));
-    }
-    alertaRancho.addEventListener("click", function () { if (ranchoMostrado) textoRancho(ranchoMostrado.a, ranchoMostrado.r, true); });
     function avisar(a, municiado, rancho) {
       if (!municiado) {
         alerta.textContent = "Atenção: " + a.nome + " (" + a.turma + ") NÃO está municiado na " + rotuloRefeicao + ".";
         piscar(alerta);
-      }
-      if (rancho) {
-        ranchoMostrado = { a: a, r: rancho };
-        textoRancho(a, rancho, false);
-        piscar(alertaRancho);
-      } else {
-        mostrar(alertaRancho, false);
       }
     }
     var busca = el("div", "busca");
@@ -360,7 +342,6 @@
     busca.appendChild(campo);
     painel.appendChild(busca);
     painel.appendChild(alerta);
-    painel.appendChild(alertaRancho);
     var nRancho = l.alunos.filter(function (a) { return M.ranchoDoAluno(idxRancho, a); }).length;
     if (nRancho) {
       painel.appendChild(el("p", "aviso-rancho", plural(nRancho, "aluno") + (nRancho === 1 ? " desta lista está" : " desta lista estão") +

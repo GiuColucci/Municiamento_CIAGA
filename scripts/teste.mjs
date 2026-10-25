@@ -1347,6 +1347,11 @@ test("rancho corrido: qualquer pessoa publica e lê; só acrescenta; cifrado; um
     assert.equal(r.json.dias["2026-10-24"].length, 2);
     assert.deepEqual(r.json.dias["2026-10-24"].map((x) => [x.por, x.itens.length]), [["Mike", 1], ["Tango", 2]]);
     assert.deepEqual(r.json.dias["2026-10-25"], []);
+    // publicar a tabela de serviço de novo substitui a anterior do mesmo dia (não soma), e a autorização fica
+    assert.equal((await chamar("tango", 0, "POST", base, { origem: "s", itens: [item("N3025", "CAIO", "Serviço", ["Almoço"])] })).status, 200);
+    r = await chamar("ana lima", 0, "GET", base);
+    assert.deepEqual(r.json.dias["2026-10-24"].map((x) => [x.origem, x.itens.length]), [["a", 1], ["s", 1]]);
+    assert.equal((await chamar("tango", 0, "POST", base, { origem: "s", itens: [item("N3025", "CAIO", "Serviço: Chefe de dia (0800-1200P)"), item("3042", "BRENO", "Serviço: Retém")] })).status, 200);
     // cifrado no banco: nem nomes nem motivos legíveis
     const tudo = JSON.stringify([...db.k]);
     assert.ok(tudo.includes("v1.") && !tudo.includes("ALVES") && !tudo.includes("Prova") && !tudo.includes("CAIO"));

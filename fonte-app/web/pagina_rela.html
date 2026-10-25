@@ -218,10 +218,10 @@
     </div>
     <section class="cartao" aria-labelledby="t-rancho-enviar">
       <h2 id="t-rancho-enviar">Arquivos do dia</h2>
-      <p class="dica">PDF, XLSX, CSV ou <strong>foto</strong> (JPEG ou PNG). Pode escolher os dois modelos de uma vez: a autorização e a tabela de serviço. Cada aluno entra no dia que está no arquivo.</p>
+      <p class="dica">PDF, XLSX ou CSV. Pode escolher os dois modelos de uma vez: a autorização e a tabela de serviço. Cada aluno entra no dia que está no arquivo.</p>
       <div class="envio" id="area-rancho">
         <input id="rancho-arquivos" type="file" multiple aria-label="Arquivos do rancho corrido"
-               accept=".pdf,.xlsx,.csv,.jpg,.jpeg,.png,application/pdf,text/csv,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+               accept=".pdf,.xlsx,.csv,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><path d="M12 16V4m0 0l-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="envio-titulo">Arraste os arquivos aqui ou clique para escolher</span>
         <span class="envio-legenda">Até 10 MB por arquivo</span>
@@ -229,6 +229,18 @@
       </div>
       <button type="button" class="botao principal" id="rancho-ler">Ler arquivos</button>
       <p class="dica" id="rancho-status" role="status" aria-live="polite"></p>
+    </section>
+    <section class="cartao" aria-labelledby="t-rancho-digitar">
+      <h2 id="t-rancho-digitar">Digitar na tela</h2>
+      <p class="dica">Para autorização escrita à mão: escolha o dia, a refeição e o motivo e digite os números internos. O nome e a turma vêm da planilha.</p>
+      <div class="rancho-form">
+        <label class="campo">Dia <input id="dig-dia" type="date"></label>
+        <label class="campo">Refeição <select id="dig-refeicao"><option>Café</option><option selected>Almoço</option><option>Janta</option></select></label>
+        <label class="campo rancho-form-largo">Motivo <input id="dig-motivo" type="text" maxlength="100" placeholder="Ex.: Faina camarote" autocomplete="off"></label>
+        <label class="campo rancho-form-largo">Números internos <textarea id="dig-numeros" rows="4" placeholder="Um por linha ou separados por espaço. Ex.: N3001 M2123 B1004" autocapitalize="characters" autocomplete="off" spellcheck="false"></textarea></label>
+      </div>
+      <button type="button" class="botao principal" id="dig-conferir">Conferir</button>
+      <p class="dica" id="dig-status" role="status" aria-live="polite"></p>
     </section>
     <section class="cartao oculto" id="rancho-previa" aria-labelledby="t-rancho-previa"></section>
     <section class="cartao oculto" id="rancho-publicados" aria-labelledby="t-rancho-publicados"></section>

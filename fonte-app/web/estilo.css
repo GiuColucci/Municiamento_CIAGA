@@ -575,3 +575,8 @@ tbody tr:last-child td { border-bottom: 0; }
 .aluno.rancho-corrido label::after { content: ""; flex-basis: 100%; order: 4; height: 0; }
 .aluno.rancho-corrido .selo-rancho { order: 5; margin-left: 1.6rem; }
 .aluno .rancho-motivo { margin-top: .3rem; }
+
+/* rancho corrido: digitar na tela */
+.rancho-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--e2, 1rem); }
+.rancho-form .rancho-form-largo { grid-column: 1 / -1; }
+.rancho-form input, .rancho-form select, .rancho-form textarea { width: 100%; box-sizing: border-box; font: inherit; }

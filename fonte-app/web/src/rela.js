@@ -1038,6 +1038,8 @@
     }
     mostrar($("tela-envio"), false);
     irParaTela("rancho");
+    $("dig-dia").min = hojeIso();
+    if (!$("dig-dia").value) $("dig-dia").value = hojeIso();
     window.scrollTo(0, 0);
     await carregarRancho();
     desenharPublicadosRancho();
@@ -1070,9 +1072,7 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
-            statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
-          }));
+          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }));
         } catch (e) {
           rancho.leituras.push({ nome: f.name, tipo: null, itens: [], data: null, avisos: [e && e.message ? e.message : "Não consegui ler esse arquivo."] });
         }
@@ -1207,9 +1207,35 @@
     mostrar(c, true);
   }
 
+  /** Autorização escrita à mão: a pessoa digita dia, refeição, motivo e os números internos; vira a mesma leitura de um arquivo (prévia e publicação iguais). */
+  function conferirDigitado() {
+    var dia = $("dig-dia").value, refeicao = $("dig-refeicao").value, motivo = $("dig-motivo").value.replace(/\s+/g, " ").trim();
+    var st = $("dig-status");
+    if (!dia) return (st.textContent = "Escolha o dia.");
+    if (dia < hojeIso()) return (st.textContent = "Esse dia já passou: o rancho corrido só vale no próprio dia.");
+    var vistos = {}, itens = [], ignorados = [];
+    ($("dig-numeros").value.toUpperCase().match(/[^\s,;]+/g) || []).forEach(function (tok) {
+      var m = /^([BMN])?(\d{4})$/.exec(tok);
+      if (!m) return ignorados.push(tok);
+      if (vistos[tok]) return;
+      vistos[tok] = true;
+      itens.push({ c: tok, n: "", m: motivo, r: [refeicao], p: "" });
+    });
+    if (!itens.length) return (st.textContent = "Digite pelo menos um número interno (ex.: N3001).");
+    M.casarRancho(itens, estado.res.alunos).forEach(function (x) { // nome e turma vêm da planilha da semana
+      x.item.n = x.aluno ? x.aluno.nome : "Fora da planilha";
+      if (x.aluno) x.item.c = x.aluno.codigo;
+    });
+    var avisos = ignorados.length ? ["Não entendi e ignorei: " + ignorados.join(", ") + "."] : [];
+    rancho.leituras = [{ nome: "Digitado na tela", tipo: "autorizacao", data: dia, dias: [dia], refeicoes: [refeicao], motivo: motivo, itens: itens, avisos: avisos }];
+    st.textContent = "";
+    desenharPreviaRancho();
+  }
+
   function iniciarRancho() {
     var ler = $("rancho-ler");
     if (!ler) return;
+    $("dig-conferir").addEventListener("click", conferirDigitado);
     ler.addEventListener("click", lerArquivosRancho);
     $("rancho-arquivos").addEventListener("change", mostrarArquivosRancho);
     var area = $("area-rancho");

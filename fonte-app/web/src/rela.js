@@ -364,7 +364,7 @@
     var nRancho = l.alunos.filter(function (a) { return M.ranchoDoAluno(idxRancho, a); }).length;
     if (nRancho) {
       painel.appendChild(el("p", "aviso-rancho", plural(nRancho, "aluno") + (nRancho === 1 ? " desta lista está" : " desta lista estão") +
-        " de RANCHO CORRIDO neste dia (aparece o selo e o motivo ao lado do nome)."));
+        " de RANCHO CORRIDO neste dia."));
     }
     var status = el("p", "dica busca-status");
     status.setAttribute("aria-live", "polite");
@@ -458,7 +458,7 @@
       }
       li.appendChild(lab);
       if (rancho) {
-        motivo = el("p", "rancho-motivo oculto", "Motivo do rancho corrido: " + rancho.motivo + " (publicado por " + rancho.por + ")");
+        motivo = el("p", "rancho-motivo oculto", "Motivo do rancho corrido: " + rancho.motivo);
         li.appendChild(motivo);
       }
       ol.appendChild(li);

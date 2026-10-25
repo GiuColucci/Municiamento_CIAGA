@@ -717,3 +717,9 @@ test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avis
   assert.deepEqual(por.UM, ["Almoço"]);
   assert.deepEqual(por.DOIS, ["Café", "Almoço", "Janta"]);
 });
+
+test("rancho: autorização com o traço do formulário e a data escrita no cabeçalho (Data: ____/____/_____26/10/2026)", () => {
+  const r = M.interpretarRancho([["AUTORIZAÇÃO PARA RANCHO CORRIDO"], ["Data: ____/____/_____26/10/2026"], ["Refeição: ____ Almoço"], ["N3001", "ALFA", "N36.1"]]);
+  assert.equal(r.data, "2026-10-26");
+  assert.ok(!r.avisos.some((a) => /data/i.test(a)));
+});

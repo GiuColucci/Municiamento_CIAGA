@@ -563,3 +563,8 @@ tbody tr:last-child td { border-bottom: 0; }
 .rancho-dia-previa > summary { cursor: pointer; padding: .55rem .8rem; font-weight: 700; min-height: 40px; display: flex; align-items: center; }
 .rancho-dia-previa > .rancho-alunos { padding: .2rem .8rem .8rem 2.2rem; }
 .rancho-arquivo > .rancho-dia-previa + .rancho-dia-previa { margin-top: .5rem; }
+
+/* rancho corrido: o que já foi subido em cada dia */
+.rancho-dia-titulo { margin: 0; font-weight: 700; }
+.rancho-dia-lista { margin: .35rem 0 0; padding-left: 1.3rem; overflow-wrap: anywhere; }
+.rancho-dia-lista li { margin: .15rem 0; }

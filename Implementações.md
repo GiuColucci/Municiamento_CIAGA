@@ -148,4 +148,4 @@ Quem está na função **RETÉM** não conta como serviço corrido: avisa **só 
 
 ### Digitar na tela (autorização escrita à mão)
 
-A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de foto foi retirada). No lugar, o cartão **Digitar na tela** pede **dia, refeição, motivo e os números internos**; o nome e a turma vêm da planilha da semana. Vira uma autorização como as de arquivo (mesma prévia, mesma publicação, apagada à meia-noite do dia). Número que não existe na planilha entra como "Fora da planilha" e é marcado em vermelho na prévia.
+A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de foto foi retirada). No lugar, o cartão **Digitar na tela** pede **dia, refeição, motivo** e, para cada aluno, **nome de guerra + número interno** (botão **+ Adicionar aluno** abre outra linha); a turma vem da planilha da semana. Só com o nome vale se ele for único na planilha. Na prévia há o botão **Não publicar**, que descarta tudo. Vira uma autorização como as de arquivo (mesma prévia, mesma publicação, apagada à meia-noite do dia). Número que não existe na planilha entra como "Fora da planilha" e é marcado em vermelho na prévia.

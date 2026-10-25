@@ -745,3 +745,22 @@ test("rancho: quem está de serviço é marcado como serviço no índice (munici
   assert.equal(idx.N3002.servico, false);
   assert.equal(M.indiceRancho(pubs, "Café").N3001, undefined); // Alfa não está de serviço no café
 });
+
+test("rancho: leitura sem o número interno de alguns alunos acha o aluno pelo nome de guerra (só se único na planilha)", () => {
+  const linhas = [
+    ["AUTORIZAÇÃO PARA RANCHO CORRIDO"], ["Data: 26/10/2026"], ["Refeição: Almoço"], ["Motivo: Faina"],
+    ["3º ANO"], ["Nº Interno", "Nome de Guerra", "Pelotão/"],
+    ["N3001", "ALANA REIS", "N36.1", "XXXX", "| BORGES"],
+    ["Total de alunos do 3º ano: 2"],
+  ];
+  const r = M.interpretarRancho(linhas);
+  assert.deepEqual(r.itens.map((i) => i.c), ["N3001"]);
+  assert.ok(r.nomesSoltos.includes("BORGES"));
+  const alunos = [{ codigo: "N3001", nome: "ALANA REIS", turma: "N36.1" }, { codigo: "N3004", nome: "JULIA BORGES", turma: "N36.1" }, { codigo: "M2001", nome: "ANA BORGES", turma: "M24.1" }];
+  M.completarPorNome(r, alunos);
+  assert.equal(r.itens.length, 1); // BORGES não é único: não chuta
+  alunos.pop();
+  M.completarPorNome(r, alunos);
+  assert.deepEqual(r.itens.map((i) => i.c), ["N3001", "N3004"]);
+  assert.ok(r.avisos.some((a) => /pelo nome de guerra/.test(a)));
+});

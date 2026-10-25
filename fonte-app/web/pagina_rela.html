@@ -232,12 +232,16 @@
     </section>
     <section class="cartao" aria-labelledby="t-rancho-digitar">
       <h2 id="t-rancho-digitar">Digitar na tela</h2>
-      <p class="dica">Para autorização escrita à mão: escolha o dia, a refeição e o motivo e digite os números internos. O nome e a turma vêm da planilha.</p>
+      <p class="dica">Para autorização escrita à mão: escolha o dia, a refeição e o motivo e preencha cada aluno com o nome de guerra e o número interno. A turma vem da planilha.</p>
       <div class="rancho-form">
         <label class="campo">Dia <input id="dig-dia" type="date"></label>
         <label class="campo">Refeição <select id="dig-refeicao"><option>Café</option><option selected>Almoço</option><option>Janta</option></select></label>
         <label class="campo rancho-form-largo">Motivo <input id="dig-motivo" type="text" maxlength="100" placeholder="Ex.: Faina camarote" autocomplete="off"></label>
-        <label class="campo rancho-form-largo">Números internos <textarea id="dig-numeros" rows="4" placeholder="Um por linha ou separados por espaço. Ex.: N3001 M2123 B1004" autocapitalize="characters" autocomplete="off" spellcheck="false"></textarea></label>
+        <div class="campo rancho-form-largo" role="group" aria-labelledby="dig-alunos-t">
+          <span id="dig-alunos-t" class="rotulo-campo">Alunos</span>
+          <div class="dig-alunos" id="dig-alunos"></div>
+          <button type="button" class="botao secundario" id="dig-mais">+ Adicionar aluno</button>
+        </div>
       </div>
       <button type="button" class="botao principal" id="dig-conferir">Conferir</button>
       <p class="dica" id="dig-status" role="status" aria-live="polite"></p>

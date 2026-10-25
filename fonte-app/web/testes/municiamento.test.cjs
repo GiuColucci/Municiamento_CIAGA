@@ -734,3 +734,11 @@ test("rancho: quem está na função RETÉM só avisa no almoço (não vale como
   assert.deepEqual(por.ALFA, ["Almoço"]);
   assert.deepEqual(por.BRAVO, ["Café", "Almoço", "Janta"]);
 });
+
+test("rancho: quem está de serviço é marcado como serviço no índice (municiado automático); autorização não", () => {
+  const pubs = [{ por: "X", itens: [{ c: "N3001", n: "ALFA", m: "Serviço", r: ["Almoço"] }, { c: "N3002", n: "BRAVO", m: "Prova de recuperação", r: ["Almoço"] }] }];
+  const idx = M.indiceRancho(pubs, "Almoço");
+  assert.equal(idx.N3001.servico, true);
+  assert.equal(idx.N3002.servico, false);
+  assert.equal(M.indiceRancho(pubs, "Café").N3001, undefined); // Alfa não está de serviço no café
+});

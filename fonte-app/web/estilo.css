@@ -521,6 +521,15 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 .rancho-motivo { margin: 0; padding: .3rem .8rem .5rem 2.2rem; color: var(--texto); font-size: .92rem; border-left: 4px solid var(--laranja); margin-left: .4rem; }
 .aviso-rancho { margin: 0; padding: .7rem 1rem; border-radius: 8px; border-left: 5px solid var(--laranja); background: var(--laranja-fundo); color: var(--texto); }
+/* aviso ao marcar quem está de rancho corrido: toca para ver o motivo */
+.alerta-rancho {
+  display: block; width: 100%; margin: 0; padding: .7rem 1rem; border-radius: 8px; border: 0; border-left: 5px solid var(--laranja);
+  background: var(--laranja-fundo); color: var(--texto); font: 700 1rem var(--sistema); text-align: left; cursor: pointer;
+}
+.alerta-rancho:focus-visible { outline: 3px solid var(--laranja); outline-offset: 2px; }
+.alerta-rancho .dica-toque { display: block; margin-top: .25rem; font-weight: 400; font-size: .9rem; color: var(--laranja); text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) { .alerta-rancho.piscar { animation: alerta-rancho-piscar .9s ease-out 2; } }
+@keyframes alerta-rancho-piscar { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 40% { box-shadow: 0 0 0 4px var(--laranja); } }
 #tela-rancho > .cartao + .cartao { margin-top: 1.2rem; }
 #tela-rancho .cartao { display: grid; gap: var(--e1); }
 #tela-rancho .cartao > h2, #tela-rancho .cartao > p { margin: 0; }

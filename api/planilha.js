@@ -66,6 +66,13 @@ async function rancho(req, res, sess, q) {
     return json(res, 400, { erro: "Rancho corrido inválido. Leia o arquivo de novo." });
   }
   const limpos = itens.map((i) => ({ c: i.c, n: i.n.trim(), m: (i.m || "").trim(), r: i.r || null, p: i.p ? String(i.p).trim() : "" }));
+  if (corpo.origem === "s") { // a tabela de serviço nova substitui a anterior do mesmo dia (publicar de novo corrige, não soma)
+    const antigas = await cofre.lerRancho(data);
+    if (antigas.some((p) => p.origem === "s")) {
+      await cofre.apagarRancho(data);
+      for (const p of antigas.filter((x) => x.origem !== "s")) await cofre.gravarRancho(data, p);
+    }
+  }
   await cofre.gravarRancho(data, { por: await pessoas.nomeExibido(sess.u), em: Date.now(), origem: corpo.origem, itens: limpos });
   await reg.registrar(req, sess.u, "publicou_rancho", { alvo: data }); // só o evento: nenhum nome vai para o registro
   return json(res, 200, { ok: true, data, qtd: limpos.length });

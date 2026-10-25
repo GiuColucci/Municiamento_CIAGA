@@ -48,7 +48,7 @@
     var data = null, refeicoes = null, motivo = "", itens = [], m;
     linhas.forEach(function (cel) {
       var txt = cel.join(" ");
-      if (!data && (m = /data\s*:?\s*(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{2,4})/i.exec(txt))) data = iso(+m[3], +m[2], +m[1]);
+      if (!data && /^\s*data/i.test(txt)) data = dataDoTexto(txt.replace(/_+/g, " ")); // "Data: ____/____/_____26/10/2026": o traço do formulário vem antes da data escrita
       if (!refeicoes && (m = /refei[cç][aã]o\s*:?\s*(.*)$/i.exec(txt))) refeicoes = M.refeicoesDoTexto(escrito(m[1]));
       if (!motivo && (m = /motivo\s*:?\s*(.*)$/i.exec(txt))) motivo = escrito(m[1]);
     });
@@ -168,7 +168,7 @@
     r.dias = r.itens.map(function (i) { return i.d; }).filter(function (d, k, v) { return d && v.indexOf(d) === k; }).sort();
     if (!r.itens.length) avisos.push("Não encontrei nenhum aluno nesse arquivo. Confira se ele está preenchido.");
     if (r.itens.length > LIMITE_ITENS) { avisos.push("O arquivo tem alunos demais (mais de " + LIMITE_ITENS + "): só os primeiros entram."); r.itens = r.itens.slice(0, LIMITE_ITENS); }
-    if (!r.data) avisos.push("O arquivo não traz a data: escolha o dia abaixo.");
+    if (!r.data) avisos.push("Não achei a data no cabeçalho desse arquivo, então ele não pode ser publicado.");
     r.tipo = tipo;
     r.avisos = avisos;
     return r;

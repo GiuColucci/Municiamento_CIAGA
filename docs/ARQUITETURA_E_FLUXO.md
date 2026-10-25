@@ -609,7 +609,7 @@ sequenceDiagram
 flowchart LR
   A["Autorização<br/>(lista): refeição + motivo escrito"] --> I
   S["Detalhe de serviço<br/>(tabela): função + turno"] --> I
-  I["Itens: número interno, nome, motivo,<br/>refeições (ou todas), pelotão"] --> D{"Dia do arquivo<br/>(ou escolhido na tela)"}
+  I["Itens: número interno, nome, motivo,<br/>refeições (ou todas), pelotão"] --> D{"Dia do arquivo<br/>(lido do cabeçalho)"}
   D --> P1["rancho:2026-10-24 (lista cifrada)"]
   P1 --> M["Marcação da lista: selo laranja (toque mostra o motivo)<br/>e aviso laranja ao marcar, se o dia e a refeição combinam"]
   P1 --> X["Painel: quem publicou e quantos alunos,<br/>com Remover o dia"]

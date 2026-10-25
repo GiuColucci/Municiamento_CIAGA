@@ -82,7 +82,7 @@ const SECOES = [
     html: `<p>Quem está de <strong>rancho corrido</strong> no dia aparece na marcação, com o <strong>motivo</strong>. Qualquer pessoa pode publicar o arquivo do dia: <strong>Menu → Rancho corrido</strong>.</p>
 <ol class="passos">
 <li>Escolha o arquivo: a <strong>tabela de serviço</strong> e/ou a <strong>autorização para rancho corrido</strong> (lista), em <strong>PDF, XLSX ou CSV</strong>, arrastando para a área ou tocando nela. Dá para escolher os dois de uma vez. <strong>Foto não é lida.</strong></li>
-<li>Toque em <strong>Ler arquivos</strong>. Cada aluno entra no <strong>dia que está no arquivo</strong> (a tabela de serviço traz "SERVIÇO: dia mês ano"; se o arquivo não trouxer a data, escolha o dia na tela).</li>
+<li>Toque em <strong>Ler arquivos</strong>. Cada aluno entra no <strong>dia que está no arquivo</strong> (a data é lida do cabeçalho: "Data" na autorização e "SERVIÇO: dia mês ano" na tabela de serviço). Se o arquivo não tiver a data, ele não é publicado.</li>
 <li>Veja o que foi lido: tipo, dia, refeição, motivo e cada aluno (<strong>nome de guerra e número interno</strong>). Quem não está na planilha da semana aparece em vermelho; se o número não existir, mas o nome de guerra existir uma só vez na planilha, o sistema usa o número certo.</li>
 <li>Toque em <strong>Publicar rancho corrido</strong>. Quem publicou mais de um arquivo no mesmo dia não apaga o do outro: as publicações se somam.</li>
 </ol>
@@ -90,7 +90,7 @@ const SECOES = [
 <li>Na lista da refeição, o aluno aparece em <strong>laranja</strong> com o selo <strong>RANCHO CORRIDO</strong>. Toque no selo para ver o <strong>motivo</strong> embaixo do nome.</li>
 <li>Ao marcar o aluno, aparece um <strong>aviso laranja</strong> ("está de RANCHO CORRIDO"). <strong>Toque no aviso</strong> para ver o motivo. O aviso vermelho continua sendo só para quem NÃO está municiado.</li>
 <li>O motivo da <strong>tabela de serviço</strong> é <strong>"Serviço"</strong> e o aviso segue o turno de cada um: <strong>Café da manhã</strong> avisa quem está nos turnos 0400-0800 e 0800-1200; <strong>Almoço</strong> avisa todos os que estão de serviço no dia; <strong>Janta</strong> avisa só quem está no turno 1800-2100 (serviço diário, sem turno, avisa só no almoço). <strong>Sábado e domingo não têm aviso.</strong> A <strong>autorização</strong> traz o motivo escrito nela e vale só para a refeição indicada.</li>
-<li>O rancho corrido <strong>vale só no dia</strong> do arquivo e é <strong>apagado à meia-noite</strong> desse dia. O cartão <strong>Já publicado nesta semana</strong> mostra os dias com rancho corrido e quantos alunos.</li>
+<li>O rancho corrido <strong>vale só no dia</strong> do arquivo e é <strong>apagado à meia-noite</strong> desse dia. O cartão <strong>Já publicado nesta semana</strong> mostra, dia a dia, o que já foi enviado (a tabela de serviço e cada autorização, pelo motivo) e quantos alunos; o dia some da lista quando passa.</li>
 <li>Se alguém publicar algo errado, um administrador remove o dia pelo painel.</li>
 </ul>`,
   },

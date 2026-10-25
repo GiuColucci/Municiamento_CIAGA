@@ -1036,7 +1036,6 @@
     }
     mostrar($("tela-envio"), false);
     irParaTela("rancho");
-    if (!$("rancho-data").value) $("rancho-data").value = hojeIso();
     window.scrollTo(0, 0);
     await carregarRancho();
     desenharPublicadosRancho();
@@ -1081,7 +1080,7 @@
   }
 
   /** Dia de uma leitura: o do arquivo ou, se faltar, o escolhido na tela. */
-  function diaDaLeitura(r) { return r.data || $("rancho-data").value || null; }
+  function diaDaLeitura(r) { return r.data || null; } // o dia vem sempre do cabeçalho do arquivo
   /** Dia de um aluno: o do próprio item (tabela de serviço com mais de um dia) ou o da leitura. */
   function diaDoItem(i, r) { return i.d || diaDaLeitura(r); }
 
@@ -1139,14 +1138,13 @@
 
   async function publicarRancho() {
     var porDia = {}, passados = {};
-    rancho.leituras.forEach(function (r) {
+    rancho.leituras.forEach(function (r, ri) {
       if (!r.tipo || !r.itens.length) return;
       M.casarRancho(r.itens, estado.res.alunos).forEach(function (x) {
         var dia = diaDoItem(x.item, r);
         if (!dia) return;
         if (dia < hojeIso()) { passados[dia] = true; return; } // o rancho corrido só vale no próprio dia: dia que passou não entra
-        var d = porDia[dia] = porDia[dia] || { itens: [], origens: {} };
-        d.origens[r.tipo === "servico" ? "s" : "a"] = true;
+        var d = porDia[dia + "|" + ri] = porDia[dia + "|" + ri] || { dia: dia, itens: [], origem: r.tipo === "servico" ? "s" : "a" }; // uma publicação por arquivo e por dia (a lista mostra o que cada arquivo trouxe)
         d.itens.push({ c: x.aluno ? x.aluno.codigo : x.item.c, n: x.item.n, m: x.item.m, r: x.item.r, p: x.item.p || "" }); // com o número da planilha quando o do arquivo veio errado
       });
     });
@@ -1156,10 +1154,10 @@
     ocupado(b, true, "Publicando…");
     var ok = [], falhas = [];
     for (var i = 0; i < dias.length; i++) {
-      var d = porDia[dias[i]], origem = d.origens.a && d.origens.s ? "x" : d.origens.s ? "s" : "a";
-      var r = await M.api("POST", "/api/planilha?rancho=" + dias[i], { origem: origem, itens: d.itens });
-      if (r.status === 200 && r.json && r.json.ok) ok.push(dataBr(dias[i]) + " (" + plural(r.json.qtd, "aluno") + ")");
-      else falhas.push(dataBr(dias[i]) + ": " + ((r.json && r.json.erro) || (r.status === 0 ? "sem conexão" : "não consegui publicar")));
+      var d = porDia[dias[i]], dia = d.dia;
+      var r = await M.api("POST", "/api/planilha?rancho=" + dia, { origem: d.origem, itens: d.itens });
+      if (r.status === 200 && r.json && r.json.ok) ok.push(dataBr(dia) + " (" + plural(r.json.qtd, "aluno") + ")");
+      else falhas.push(dataBr(dia) + ": " + ((r.json && r.json.erro) || (r.status === 0 ? "sem conexão" : "não consegui publicar")));
     }
     ocupado(b, false);
     if (ok.length) {
@@ -1183,7 +1181,7 @@
     var h = el("h2", null, "Já publicado nesta semana");
     h.id = "t-rancho-publicados";
     c.appendChild(h);
-    var dias = estado.rancho || {}, datas = Object.keys(dias).filter(function (d) { return dias[d] && dias[d].length; }).sort();
+    var dias = estado.rancho || {}, datas = Object.keys(dias).filter(function (d) { return dias[d] && dias[d].length && d >= hojeIso(); }).sort(); // dia que passou some da lista
     if (!datas.length) {
       c.appendChild(el("p", "dica", "Ninguém publicou rancho corrido para os dias desta semana ainda."));
     } else {
@@ -1191,7 +1189,13 @@
         var caixa = el("div", "rancho-dia");
         var total = {};
         dias[d].forEach(function (p) { p.itens.forEach(function (i) { total[i.c] = true; }); });
-        caixa.appendChild(el("p", null, dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
+        caixa.appendChild(el("p", "rancho-dia-titulo", dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
+        var nomes = [], ul = el("ul", "rancho-dia-lista");
+        dias[d].forEach(function (p) { // o que foi subido neste dia: a tabela de serviço e cada autorização (pelo motivo escrito nela)
+          var rotulo = p.origem === "s" ? "Tabela de serviço" : ((p.itens[0] && p.itens[0].m) || "Autorização de rancho corrido");
+          if (nomes.indexOf(rotulo) < 0) { nomes.push(rotulo); ul.appendChild(el("li", null, rotulo)); }
+        });
+        caixa.appendChild(ul);
         c.appendChild(caixa);
       });
       c.appendChild(el("p", "dica", "Cada dia some sozinho à meia-noite do próprio dia. Se algo estiver errado, um administrador pode remover o dia pelo painel."));
@@ -1207,7 +1211,6 @@
     var area = $("area-rancho");
     ["dragenter", "dragover"].forEach(function (t) { area.addEventListener(t, function () { area.classList.add("arrastando"); }); });
     ["dragleave", "drop"].forEach(function (t) { area.addEventListener(t, function () { area.classList.remove("arrastando"); }); });
-    $("rancho-data").addEventListener("change", function () { if (rancho.leituras.length) desenharPreviaRancho(); });
   }
 
   // ---------------------------------------------------------------- início

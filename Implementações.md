@@ -103,7 +103,7 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 |---|---|
 | Café da manhã | quem está nos turnos 0400-0800 ou 0800-1200 |
 | Almoço | todos os que estão de serviço naquele dia |
-| Janta | quem está no turno 1800-2100 (turno que toca esse horário) |
+| Janta | só quem está no turno 1800-2100 (turno escrito igual; quem está de serviço diário, sem turno, só avisa no almoço) |
 | Sábado e domingo | sem aviso de rancho corrido |
 
-O aluno é ligado à coluna de turnos da sua linha; sem turno legível, vale para as três refeições. A autorização continua valendo só para a refeição escrita nela.
+O aluno é ligado à coluna de turnos da sua linha; sem turno (serviço diário), só no almoço. A autorização continua valendo só para a refeição escrita nela.

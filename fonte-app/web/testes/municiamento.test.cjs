@@ -698,10 +698,22 @@ test("rancho: serviço vira aviso por refeição (café 0400-1200, almoço todos
     ["PAV", "1001", "N", "ALFA", "1002", "N", "BRAVO", "1003", "N", "CHARLIE"],
   ]);
   const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
-  assert.deepEqual(por.ALFA, ["Café", "Almoço", "Janta"]); // 0800-1200 e 2000-0000
+  assert.deepEqual(por.ALFA, ["Café", "Almoço"]); // 0800-1200 (2000-0000 não é o turno 1800-2100)
   assert.deepEqual(por.BRAVO, ["Almoço"]); // 1200-1600 e 0000-0400
-  assert.deepEqual(por.CHARLIE, ["Café", "Almoço", "Janta"]); // 1600-2000 e 0400-0800
+  assert.deepEqual(por.CHARLIE, ["Café", "Almoço"]); // 0400-0800; 1600-2000 não conta para a janta
   assert.equal(M.fimDeSemana("2026-10-24"), true); // sábado
   assert.equal(M.fimDeSemana("2026-10-25"), true); // domingo
   assert.equal(M.fimDeSemana("2026-10-26"), false);
+});
+
+test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avisa só no almoço", () => {
+  const r = M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 26 OUT 2026"], ["SERVIÇO DIÁRIO"], ["AJOSCA", "3001", "N", "DIARIO"],
+    ["SERVIÇO DE QUARTO"], ["1500-1800P / 0200-0400P", "1800-2100P / 0400-0800P"],
+    ["PAV", "1001", "N", "UM", "1002", "N", "DOIS"],
+  ]);
+  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
+  assert.deepEqual(por.DIARIO, ["Almoço"]);
+  assert.deepEqual(por.UM, ["Almoço"]);
+  assert.deepEqual(por.DOIS, ["Café", "Almoço", "Janta"]);
 });

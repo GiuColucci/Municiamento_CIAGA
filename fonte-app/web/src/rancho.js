@@ -98,6 +98,27 @@
 
   /** Tabela de serviço. Em cada linha: [função] e, para cada aluno, 4 dígitos + letra do curso (N, B ou M) + nome de guerra.
       Lê a linha inteira por palavras (não depende de onde a leitura separou as células) e ignora o ruído de bordas da foto. */
+  /** Os turnos ("1200-1600P / 0000-0400P") que tocam o intervalo [ini, fim] em minutos do dia. */
+  function tocaIntervalo(turnos, ini, fim) {
+    return turnos.some(function (t) {
+      var m = /(\d{2})(\d{2})\s*-\s*(\d{2})(\d{2})/.exec(t);
+      if (!m) return false;
+      var a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4];
+      if (b <= a) b += 1440; // 2000-0000 termina à meia-noite
+      return a < fim && b > ini;
+    });
+  }
+  /** Rancho corrido de quem está de serviço: Café = turnos 0400-0800 e 0800-1200; Almoço = todos do dia; Janta = turno 1800-2100.
+      Sem turno legível, o aluno vale para as três refeições (melhor avisar a mais do que esquecer alguém). */
+  function refeicoesDoServico(turnos) {
+    if (!turnos || !turnos.length) return null;
+    var r = [];
+    if (tocaIntervalo(turnos, 240, 720)) r.push("Café");
+    r.push("Almoço");
+    if (tocaIntervalo(turnos, 1080, 1260)) r.push("Janta");
+    return r;
+  }
+
   function interpretarServico(linhas, avisos) {
     var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null;
     linhas.forEach(function (cel) {
@@ -109,7 +130,7 @@
       var js = txt.match(JANELAS);
       if (js && !/\b\d{4}\s+[A-Za-z]?\s*[A-Za-zÀ-ÿ]{3,}/.test(txt.replace(JANELAS, " "))) { janelas = js.map(function (x) { return x.replace(/\s+/g, " ").replace(/\s*-\s*/g, "-").replace(/\s*\/\s*/g, " / ").trim(); }); return; }
       var t = txt.replace(/[|¦\[\]{}_~—–"“”]+/g, " ").split(/\s+/).filter(function (x) { return x && !/^[^A-Za-zÀ-ÿ0-9]$/.test(x); });
-      var funcao = [], k = 0;
+      var funcao = [], k = 0, col = 0;
       for (var i = 0; i < t.length; i++) {
         var dig = corrigirDigitos(t[i]);
         if (!/^\d{4}$/.test(dig)) { if (!k) funcao.push(t[i]); continue; }
@@ -118,7 +139,8 @@
         var nome = [];
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
-        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: null, p: "" }); // no motivo, o rancho corrido da tabela de serviço é "Serviço"
+        var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
+        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: refeicoesDoServico(turnos), p: "" }); // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }
@@ -262,6 +284,14 @@
   };
 
   /** O aluno (da planilha) está no índice? Devolve {motivo, por} ou null. */
+  /** Sábado e domingo não têm aviso de rancho corrido. data: "AAAA-MM-DD". */
+  M.fimDeSemana = function (data) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data || "");
+    if (!m) return false;
+    var s = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay();
+    return s === 0 || s === 6;
+  };
+
   M.ranchoDoAluno = function (indice, aluno) {
     return indice[aluno.codigo] || indice[soDigitos(aluno.codigo)] || null;
   };

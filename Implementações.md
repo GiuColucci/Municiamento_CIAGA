@@ -95,3 +95,15 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 - Mostrar o rancho corrido também na **rela** impressa/PDF (hoje só na marcação).
 - Registrar a **refeição** de cada função do serviço, se o detalhe de serviço passar a trazê-la.
 - Ajustar a leitura aos formulários reais **preenchidos** (os modelos recebidos estavam em branco ou como imagem): se algum arquivo não for lido direito, a prévia mostra o que foi entendido e a regra pode ser refinada.
+
+
+### Regra do aviso por refeição (tabela de serviço)
+
+| Refeição | Quem é avisado |
+|---|---|
+| Café da manhã | quem está nos turnos 0400-0800 ou 0800-1200 |
+| Almoço | todos os que estão de serviço naquele dia |
+| Janta | quem está no turno 1800-2100 (turno que toca esse horário) |
+| Sábado e domingo | sem aviso de rancho corrido |
+
+O aluno é ligado à coluna de turnos da sua linha; sem turno legível, vale para as três refeições. A autorização continua valendo só para a refeição escrita nela.

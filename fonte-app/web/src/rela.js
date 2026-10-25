@@ -1025,6 +1025,7 @@
   /** O índice (por número interno) de quem está de rancho corrido no dia e na refeição da lista. */
   function ranchoDaLista(l) {
     var dia = estado && estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : null;
+    if (M.fimDeSemana(dia)) return {}; // sábado e domingo: sem aviso de rancho corrido
     return M.indiceRancho(dia && estado.rancho ? estado.rancho[dia] : [], l.refeicao);
   }
 

@@ -89,7 +89,7 @@ const SECOES = [
 <ul class="lista">
 <li>Na lista da refeição, o aluno aparece em <strong>laranja</strong> com o selo <strong>RANCHO CORRIDO</strong>. Toque no selo para ver o <strong>motivo</strong> embaixo do nome.</li>
 <li>Ao marcar o aluno, aparece um <strong>aviso laranja</strong> ("está de RANCHO CORRIDO"). <strong>Toque no aviso</strong> para ver o motivo. O aviso vermelho continua sendo só para quem NÃO está municiado.</li>
-<li>O motivo da <strong>tabela de serviço</strong> é <strong>"Serviço"</strong> e vale para o dia todo. A <strong>autorização</strong> traz o motivo escrito nela e vale só para a refeição indicada.</li>
+<li>O motivo da <strong>tabela de serviço</strong> é <strong>"Serviço"</strong> e o aviso segue o turno de cada um: <strong>Café da manhã</strong> avisa quem está nos turnos 0400-0800 e 0800-1200; <strong>Almoço</strong> avisa todos os que estão de serviço no dia; <strong>Janta</strong> avisa quem está no turno 1800-2100. <strong>Sábado e domingo não têm aviso.</strong> A <strong>autorização</strong> traz o motivo escrito nela e vale só para a refeição indicada.</li>
 <li>O rancho corrido <strong>vale só no dia</strong> do arquivo e é <strong>apagado à meia-noite</strong> desse dia. O cartão <strong>Já publicado nesta semana</strong> mostra os dias com rancho corrido e quantos alunos.</li>
 <li>Se alguém publicar algo errado, um administrador remove o dia pelo painel.</li>
 </ul>`,

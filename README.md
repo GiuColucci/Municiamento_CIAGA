@@ -49,7 +49,7 @@ Os alunos "se municiam" (registram presença nas refeições) numa planilha. Alg
 4. A pessoa marca na tela quem está presente, filtra (**Todos / Municiados / NÃO municiados**) e **baixa** (PDF) ou **copia** a lista.
 5. O trabalho é salvo automaticamente num **rascunho individual cifrado**, para continuar depois.
 6. A **Conferência Geral** (todos os usuários) junta o que todas as pessoas que conferiram o mesmo dia e a mesma refeição marcaram, numa listagem única, sempre por antiguidade e por turma, com o filtro Todos / Municiados / NÃO municiados.
-7. **Rancho corrido:** qualquer pessoa lê a autorização de rancho corrido e/ou o detalhe de serviço do dia (PDF, XLSX, CSV ou **foto**, com OCR no navegador) e publica; quem está nos arquivos aparece na marcação em **laranja**, com o selo **RANCHO CORRIDO**, e o motivo aparece ao tocar.
+7. **Rancho corrido:** qualquer pessoa lê a autorização de rancho corrido e/ou o detalhe de serviço do dia (PDF, XLSX ou CSV) e publica; quem está nos arquivos aparece na marcação em **laranja**, com o selo **RANCHO CORRIDO**, e o motivo aparece ao tocar.
 8. Os administradores acompanham o **registro de acessos** e gerenciam quem entra, tudo pelo painel `/admin`, **sem novo deploy**.
 
 ### Princípios de projeto
@@ -121,7 +121,7 @@ Detalhes e diagramas de cada fluxo: [docs/ARQUITETURA_E_FLUXO.md](docs/ARQUITETU
 │   ├── login.js  sair.js  app.js  ajuda.js
 │   ├── admin.js  admin-acao.js  admin-baixar.js
 │   ├── planilha.js  planilha-ver.js  rascunho.js  evento.js  conferencia-geral.js
-├── public/                      Páginas estáticas: login, tema claro/escuro, brasão, menu.css e ocr/ (Tesseract.js e português, para ler fotos)
+├── public/                      Páginas estáticas: login, tema claro/escuro, brasão e menu.css
 ├── scripts/
 │   ├── cifrar.mjs               cifra o app (gera dados/app.enc)
 │   ├── carregar-lista.mjs       carrega/restaura a lista de pessoas no banco
@@ -263,8 +263,6 @@ npm run local        # abre http://localhost:4174
 ```
 
 Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis falso em memória**, chaves aleatórias e **pessoas fictícias** (Alfa/ranchef `B1901`, Bravo/administrador `B1902`, Charlie `B1903` e Delta `B1904`). As senhas de teste aparecem no terminal. Nada é gravado em disco e tudo some ao fechar. Para ver a Conferência Geral: entre como **Alfa** em modo Administrador, carregue a planilha de exemplo (`fonte-app/tests/fixtures/ficticio.xlsx`, também em `http://localhost:4174/_exemplo.xlsx`), publique e abra `http://localhost:4174/_demo`. Para regerar o app depois de mudar o código-fonte: `npm run local -- --build`.
-
-**Testar a leitura de uma foto sua (sem enviar a lugar nenhum):** `FOTO_TESTE=C:\caminho\foto.jpg npm run local` (no PowerShell: `$env:FOTO_TESTE="C:\caminhooto.jpg"; npm run local`) serve a foto só no seu computador em `/_foto-teste`. No navegador, `Municiamento.linhasDaFoto(bytes, "jpeg")` mostra o que o OCR enxergou, linha a linha.
 
 **Auditoria de layout (celular e computador, tema claro e escuro):** com o servidor local aberto e a página em qualquer tela, carregue `/_auditoria.js` e rode `await auditarNosDoisTemas()` no console. Ela procura rolagem horizontal, caixas coladas, texto sobre texto, texto que escapa de botões, texto cortado, alvos de toque pequenos e letras pequenas. Em uma página logada como administrador, `await percorrerApp()` percorre as telas do app (lista, marcação, rela, Conferência Geral, Rancho corrido) e audita cada uma. O resultado esperado é uma lista vazia.
 

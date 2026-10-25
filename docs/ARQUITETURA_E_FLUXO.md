@@ -596,7 +596,7 @@ sequenceDiagram
   APP->>API: POST ?rancho=AAAA-MM-DD {origem, itens}
   API->>API: sessão, mesma origem, data na semana, limites, validação dos itens
   API->>COF: gravarRancho(dia, publicação)
-  COF->>R: RPUSH rancho:dia (cifrado), LTRIM 40, EXPIRE 4 dias
+  COF->>R: RPUSH rancho:dia (cifrado), LTRIM 40, EXPIREAT meia-noite do dia
   API->>R: LPUSH log publicou_rancho (só a data, nenhum nome)
   Note over APP,R: na abertura do app e ao criar uma lista
   APP->>API: GET ?rancho=d1,...,d7 (os dias da semana da planilha)
@@ -607,9 +607,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  F["Foto JPEG/PNG<br/>OCR no navegador"] --> L["linhas de células"]
   A["Autorização<br/>(lista): refeição + motivo escrito"] --> I
-  L --> I
   S["Detalhe de serviço<br/>(tabela): função + turno"] --> I
   I["Itens: número interno, nome, motivo,<br/>refeições (ou todas), pelotão"] --> D{"Dia do arquivo<br/>(ou escolhido na tela)"}
   D --> P1["rancho:2026-10-24 (lista cifrada)"]
@@ -619,8 +617,8 @@ flowchart LR
 
 | Ponto | Comportamento |
 |---|---|
-| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha; **foto JPEG/PNG por OCR** (Tesseract.js em português, carregado de `/ocr/` só quando há foto; as palavras com posição viram linhas e células como no PDF) |
-| Armazenamento | Uma lista Redis por dia (`rancho:AAAA-MM-DD`); cada publicação é um item cifrado no contexto do dia; validade de 4 dias |
+| Leitura | No navegador (nada é enviado ao ler): PDF pela posição dos textos; XLSX e CSV pela planilha; foto não é lida |
+| Armazenamento | Uma lista Redis por dia (`rancho:AAAA-MM-DD`); cada publicação é um item cifrado no contexto do dia; **expira à meia-noite de Brasília do próprio dia** (`EXPIREAT`); dia que passou nem é aceito nem devolvido |
 | Concorrência | Publicar usa `RPUSH` (só acrescenta): publicações simultâneas não se perdem |
 | Quem publica | Qualquer sessão válida; limites: 300 alunos, 120 KB, 20 publicações por pessoa por hora, 40 por dia |
 | Quem remove | Administradores, pelo painel (`limpar_rancho`) |

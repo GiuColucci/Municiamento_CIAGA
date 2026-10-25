@@ -95,7 +95,7 @@ Três fronteiras importam: (1) **internet → borda** (TLS, limites, validação
 | T13 | Exfiltração pelo próprio app | Divulgação | CSP `connect-src 'self'` (o app não fala com outros domínios) | Usuário autorizado pode copiar o que vê |
 | T14 | Negar autoria de uma ação | Repúdio | Registro com quem, ação, hora, aparelho e IP parcial | Sem login individual forte (nome + número interno) |
 | T15 | Vazamento de segredos pelo repositório | Divulgação | `.gitignore` e `.vercelignore` bloqueiam arquivos sensíveis; dados reais fora dos testes; segredos só no ambiente | Depende de disciplina (ver §13) |
-| T17 | Pessoa publicar rancho corrido falso (qualquer pessoa pode publicar) | Adulteração | Cada publicação mostra quem enviou e quando; só acrescenta (não apaga a dos outros); validação e limites por pessoa; registro do evento; administradores removem o dia; o dia expira sozinho | Um aviso falso pode aparecer até alguém remover (decisão da operação) |
+| T17 | Pessoa publicar rancho corrido falso (qualquer pessoa pode publicar) | Adulteração | Cada publicação mostra quem enviou e quando; só acrescenta (não apaga a dos outros); validação e limites por pessoa; registro do evento; administradores removem o dia; o dia é apagado à meia-noite | Um aviso falso pode aparecer até alguém remover (decisão da operação) |
 | T16 | Pessoa não autorizada lendo o que as conferentes marcaram | Divulgação | `/api/conferencia-geral` exige sessão válida e pessoa ainda na lista; devolve só o agregado (nunca o rascunho bruto); rascunhos continuam cifrados e individuais; consulta registrada | Todo usuário autenticado vê as marcações agregadas e quem conferiu (decisão da operação) |
 
 ### 3.3 Caminhos de ataque considerados
@@ -245,7 +245,7 @@ stateDiagram-v2
 | Páginas do servidor (painel, ajuda, visualizador) | `default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'` — **sem scripts ou estilos inline** |
 | O app (`/app`) | `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' data: blob:; frame-ancestors 'none'; form-action 'self'` |
 
-A regra do app dentro do HTML (`<meta>`) é ajustada pelo servidor para o que o app precisa: `connect-src 'self'` (eventos), `style-src 'self'` (menu.css) e, para o leitor de fotos do rancho corrido, `script-src 'self' … 'unsafe-eval' blob:` e `worker-src 'self' blob:` (Tesseract.js e WebAssembly, só de `/ocr/` do próprio site). O app precisa de `'unsafe-inline'`/`'unsafe-eval'` porque é **um HTML único** com `pdf.js`, `xlsx` e `jspdf` embutidos. O risco é contido porque: não há conteúdo de terceiros, o HTML vem cifrado do próprio servidor, e `connect-src 'self'` impede o envio de dados a outros domínios.
+A regra do app dentro do HTML (`<meta>`) é ajustada pelo servidor só para o que o app precisa: `connect-src 'self'` (eventos) e `style-src 'self'` (menu.css). O app precisa de `'unsafe-inline'`/`'unsafe-eval'` porque é **um HTML único** com `pdf.js`, `xlsx` e `jspdf` embutidos. O risco é contido porque: não há conteúdo de terceiros, o HTML vem cifrado do próprio servidor, e `connect-src 'self'` impede o envio de dados a outros domínios.
 
 ### 8.3 CSRF
 

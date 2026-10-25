@@ -1068,9 +1068,7 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
-            statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
-          }));
+          rancho.leituras.push(await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }));
         } catch (e) {
           rancho.leituras.push({ nome: f.name, tipo: null, itens: [], data: null, avisos: [e && e.message ? e.message : "Não consegui ler esse arquivo."] });
         }
@@ -1083,6 +1081,8 @@
 
   /** Dia de uma leitura: o do arquivo ou, se faltar, o escolhido na tela. */
   function diaDaLeitura(r) { return r.data || $("rancho-data").value || null; }
+  /** Dia de um aluno: o do próprio item (tabela de serviço com mais de um dia) ou o da leitura. */
+  function diaDoItem(i, r) { return i.d || diaDaLeitura(r); }
 
   function desenharPreviaRancho() {
     var c = $("rancho-previa");
@@ -1097,7 +1097,7 @@
       caixa.appendChild(el("h3", null, r.nome));
       var dia = diaDaLeitura(r);
       var resumo = [r.tipo ? NOME_TIPO[r.tipo] : "Arquivo não reconhecido"];
-      if (r.tipo) resumo.push(dia ? "dia " + dataBr(dia) : "sem data");
+      if (r.tipo) resumo.push(r.dias && r.dias.length > 1 ? "dias " + r.dias.map(dataBr).join(", ") : dia ? "dia " + dataBr(dia) : "sem data");
       if (r.refeicoes) resumo.push("refeição: " + r.refeicoes.join(" e "));
       if (r.motivo) resumo.push("motivo: " + r.motivo);
       resumo.push(plural(r.itens.length, "aluno"));
@@ -1115,7 +1115,7 @@
           caixa.appendChild(el("p", "dica", "Quem não está na planilha da semana também é publicado, mas só aparece o aviso se o número interno existir nela. Confira os números."));
         }
       }
-      if (r.tipo && r.itens.length && dia) publicaveis++;
+      if (r.tipo && r.itens.length && r.itens.every(function (i) { return diaDoItem(i, r); })) publicaveis++;
       c.appendChild(caixa);
     });
     var b = botao("principal", publicaveis ? "Publicar rancho corrido" : "Nada para publicar", publicarRancho);
@@ -1128,11 +1128,14 @@
   async function publicarRancho() {
     var porDia = {};
     rancho.leituras.forEach(function (r) {
-      var dia = diaDaLeitura(r);
-      if (!r.tipo || !r.itens.length || !dia) return;
-      var d = porDia[dia] = porDia[dia] || { itens: [], origens: {} };
-      d.origens[r.tipo === "servico" ? "s" : "a"] = true;
-      M.casarRancho(r.itens, estado.res.alunos).forEach(function (x) { d.itens.push({ c: x.aluno ? x.aluno.codigo : x.item.c, n: x.item.n, m: x.item.m, r: x.item.r, p: x.item.p || "" }); }); // com o número da planilha quando o do arquivo veio errado
+      if (!r.tipo || !r.itens.length) return;
+      M.casarRancho(r.itens, estado.res.alunos).forEach(function (x) {
+        var dia = diaDoItem(x.item, r);
+        if (!dia) return;
+        var d = porDia[dia] = porDia[dia] || { itens: [], origens: {} };
+        d.origens[r.tipo === "servico" ? "s" : "a"] = true;
+        d.itens.push({ c: x.aluno ? x.aluno.codigo : x.item.c, n: x.item.n, m: x.item.m, r: x.item.r, p: x.item.p || "" }); // com o número da planilha quando o do arquivo veio errado
+      });
     });
     var dias = Object.keys(porDia).sort();
     if (!dias.length) return;
@@ -1174,13 +1177,9 @@
         var total = {};
         dias[d].forEach(function (p) { p.itens.forEach(function (i) { total[i.c] = true; }); });
         caixa.appendChild(el("p", null, dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
-        caixa.appendChild(el("p", "dica", dias[d].map(function (p) {
-          return (p.origem === "s" ? "tabela de serviço" : p.origem === "x" ? "autorização e tabela de serviço" : "autorização") + " por " + p.por + " às " +
-            new Date(p.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-        }).join("; ")));
         c.appendChild(caixa);
       });
-      c.appendChild(el("p", "dica", "Cada dia some sozinho depois de passar. Se algo estiver errado, um administrador pode remover o dia pelo painel."));
+      c.appendChild(el("p", "dica", "Cada dia some sozinho à meia-noite do próprio dia. Se algo estiver errado, um administrador pode remover o dia pelo painel."));
     }
     mostrar(c, true);
   }

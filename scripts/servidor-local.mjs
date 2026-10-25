@@ -129,6 +129,11 @@ const servidor = http.createServer(async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${url.pathname.slice(1)}"`);
     return res.end(Buffer.from(exemploRancho(url.pathname.includes("servico"))));
   }
+  // foto de teste do rancho corrido: FOTO_TESTE=caminho\da\foto.jpg npm run local  ->  /_foto-teste (a foto fica só no seu computador)
+  if (url.pathname === "/_foto-teste" && process.env.FOTO_TESTE && fs.existsSync(process.env.FOTO_TESTE)) {
+    res.setHeader("Content-Type", /\.png$/i.test(process.env.FOTO_TESTE) ? "image/png" : "image/jpeg");
+    return res.end(fs.readFileSync(process.env.FOTO_TESTE));
+  }
   // auditoria de layout (só desenvolvimento): http://localhost:4174/_auditoria.js
   if (url.pathname === "/_auditoria.js") {
     res.setHeader("Content-Type", "application/javascript; charset=utf-8");

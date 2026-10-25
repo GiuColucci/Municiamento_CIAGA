@@ -551,7 +551,7 @@ test("rancho: tabela de serviço vira alunos com o motivo \"Serviço\"", () => {
   assert.equal(por.M3134.m, "Serviço");
   assert.equal(por.M2166.m, "Serviço");
   assert.equal(por.B1011.m, "Serviço");
-  assert.ok(r.itens.every((i) => i.r === null && /^[BMN]\d{4}$/.test(i.c)));
+  assert.ok(r.itens.every((i) => /^[BMN]\d{4}$/.test(i.c)));
   assert.equal(r.itens.length, 7);
 });
 
@@ -689,4 +689,19 @@ test("rancho: escala semanal com mais de 300 alunos não é cortada (cada dia fi
   assert.equal(r.itens.length, 420);
   assert.ok(!r.avisos.some((a) => /demais/.test(a)));
   assert.equal(new Set(r.itens.map((i) => i.d)).size, 7);
+});
+
+test("rancho: serviço vira aviso por refeição (café 0400-1200, almoço todos, janta 1800-2100) e fim de semana não avisa", () => {
+  const r = M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 26 OUT 2026"], ["SERVIÇO DE QUARTO"],
+    ["0800-1200P / 2000-0000P", "1200-1600P / 0000-0400P", "1600-2000P / 0400-0800P"],
+    ["PAV", "1001", "N", "ALFA", "1002", "N", "BRAVO", "1003", "N", "CHARLIE"],
+  ]);
+  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
+  assert.deepEqual(por.ALFA, ["Café", "Almoço", "Janta"]); // 0800-1200 e 2000-0000
+  assert.deepEqual(por.BRAVO, ["Almoço"]); // 1200-1600 e 0000-0400
+  assert.deepEqual(por.CHARLIE, ["Café", "Almoço", "Janta"]); // 1600-2000 e 0400-0800
+  assert.equal(M.fimDeSemana("2026-10-24"), true); // sábado
+  assert.equal(M.fimDeSemana("2026-10-25"), true); // domingo
+  assert.equal(M.fimDeSemana("2026-10-26"), false);
 });

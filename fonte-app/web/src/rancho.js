@@ -98,24 +98,21 @@
 
   /** Tabela de serviço. Em cada linha: [função] e, para cada aluno, 4 dígitos + letra do curso (N, B ou M) + nome de guerra.
       Lê a linha inteira por palavras (não depende de onde a leitura separou as células) e ignora o ruído de bordas da foto. */
-  /** Os turnos ("1200-1600P / 0000-0400P") que tocam o intervalo [ini, fim] em minutos do dia. */
-  function tocaIntervalo(turnos, ini, fim) {
+  /** O aluno está num dos turnos pedidos? Vale o turno escrito igual ("1800-2100"), não um que só encosta no horário. */
+  function temTurno(turnos, lista) {
     return turnos.some(function (t) {
-      var m = /(\d{2})(\d{2})\s*-\s*(\d{2})(\d{2})/.exec(t);
-      if (!m) return false;
-      var a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4];
-      if (b <= a) b += 1440; // 2000-0000 termina à meia-noite
-      return a < fim && b > ini;
+      var m = /(\d{4})\s*-\s*(\d{4})/.exec(t);
+      return !!m && lista.indexOf(m[1] + "-" + m[2]) >= 0;
     });
   }
   /** Rancho corrido de quem está de serviço: Café = turnos 0400-0800 e 0800-1200; Almoço = todos do dia; Janta = turno 1800-2100.
-      Sem turno legível, o aluno vale para as três refeições (melhor avisar a mais do que esquecer alguém). */
+      Sem turno (serviço diário), só o almoço. */
   function refeicoesDoServico(turnos) {
-    if (!turnos || !turnos.length) return null;
+    if (!turnos || !turnos.length) return ["Almoço"]; // serviço diário (sem turno): só o almoço
     var r = [];
-    if (tocaIntervalo(turnos, 240, 720)) r.push("Café");
+    if (temTurno(turnos, ["0400-0800", "0800-1200"])) r.push("Café");
     r.push("Almoço");
-    if (tocaIntervalo(turnos, 1080, 1260)) r.push("Janta");
+    if (temTurno(turnos, ["1800-2100"])) r.push("Janta");
     return r;
   }
 

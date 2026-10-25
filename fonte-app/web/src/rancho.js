@@ -1,6 +1,6 @@
 /* Rancho corrido: lê os arquivos de quem está de rancho corrido num dia e avisa na marcação.
 
-   Dois modelos de arquivo (PDF, XLSX, CSV ou FOTO em JPEG/PNG), reconhecidos pelo conteúdo:
+   Dois modelos de arquivo (PDF, XLSX ou CSV), reconhecidos pelo conteúdo:
    - "Autorização para rancho corrido" (lista): Data, Refeição, Motivo e, por ano, os alunos
      (Nº Interno, Nome de Guerra, Pelotão/CIA, dois por linha);
    - "Detalhe de serviço do Corpo de Alunos" (tabela de serviço): "SERVIÇO: 24 OUT 2026" e, por função
@@ -99,10 +99,11 @@
   /** Tabela de serviço. Em cada linha: [função] e, para cada aluno, 4 dígitos + letra do curso (N, B ou M) + nome de guerra.
       Lê a linha inteira por palavras (não depende de onde a leitura separou as células) e ignora o ruído de bordas da foto. */
   function interpretarServico(linhas, avisos) {
-    var data = null, itens = [], janelas = [], m, todo = [];
+    var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null;
     linhas.forEach(function (cel) {
       var txt = cel.map(limpar).filter(Boolean).join(" ");
-      if (!data) data = dataDoTexto(txt);
+      var dia = dataDoTexto(txt);
+      if (dia) { diaAtual = dia; if (!data) data = dia; janelas = []; } // cada "SERVIÇO: dd MMM aaaa" abre um dia (um arquivo pode trazer vários)
       todo.push(txt);
       if (/servi[cç]o\s+(di[aá]rio|de\s+quarto)/i.test(txt)) { janelas = []; return; }
       var js = txt.match(JANELAS);
@@ -117,15 +118,12 @@
         var nome = [];
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
-        var quando = janelas.length ? janelas[Math.min(k, janelas.length - 1)] : "";
-        // função: só palavras em MAIÚSCULAS (a leitura de foto deixa letras soltas minúsculas no lugar de um rótulo apagado)
-        var funcaoTxt = funcao.filter(function (w) { return /^[A-ZÀ-Ý0-9][A-ZÀ-Ý0-9'’.-]*$/.test(w) && (w.length >= 2 || /\d/.test(w)); }).join(" ");
-        itens.push({ c: letra + dig, n: nome.join(" "), m: "Serviço" + (funcaoTxt ? ": " + funcaoTxt : "") + (quando ? " (" + quando + ")" : ""), r: null, p: "" });
+        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: null, p: "" }); // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }
     });
-    if (!data) data = dataDoTexto(todo.join(" ")); // a data pode ter sido lida em pedaços (foto)
+    if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
 
@@ -133,8 +131,8 @@
   function consolidar(itens) {
     var por = {}, ordem = [];
     itens.forEach(function (i) {
-      var k = i.c;
-      if (!por[k]) { por[k] = { c: i.c, n: i.n, m: i.m, r: i.r, p: i.p }; ordem.push(k); return; }
+      var k = (i.d || "") + "|" + i.c;
+      if (!por[k]) { por[k] = { d: i.d, c: i.c, n: i.n, m: i.m, r: i.r, p: i.p }; ordem.push(k); return; }
       var a = por[k];
       if (i.m && a.m.split("; ").indexOf(i.m) < 0) a.m += "; " + i.m;
       a.r = a.r && i.r ? a.r.concat(i.r.filter(function (x) { return a.r.indexOf(x) < 0; })) : null;
@@ -148,6 +146,7 @@
     if (!tipo) return { tipo: null, data: null, refeicoes: null, motivo: "", itens: [], avisos: ["Não reconheci esse arquivo: não parece uma autorização de rancho corrido nem um detalhe de serviço."] };
     r = tipo === "servico" ? interpretarServico(linhas, avisos) : interpretarAutorizacao(linhas, avisos);
     r.itens = consolidar(r.itens);
+    r.dias = r.itens.map(function (i) { return i.d; }).filter(function (d, k, v) { return d && v.indexOf(d) === k; }).sort();
     if (!r.itens.length) avisos.push("Não encontrei nenhum aluno nesse arquivo. Confira se ele está preenchido.");
     if (r.itens.length > LIMITE_ITENS) { avisos.push("O arquivo tem alunos demais (mais de " + LIMITE_ITENS + "): só os primeiros entram."); r.itens = r.itens.slice(0, LIMITE_ITENS); }
     if (!r.data) avisos.push("O arquivo não traz a data: escolha o dia abaixo.");
@@ -161,7 +160,7 @@
   /** Textos do PDF (com posição) -> linhas de células: junta os textos colados e separa os que têm espaço grande entre si. */
   M.linhasDeItensPdf = function (itens, opcoes) {
     opcoes = opcoes || {};
-    var tolY = opcoes.tolY || 3.5, gap = opcoes.gap || 2.5; // PDF: em pontos; foto: proporcional à altura das letras
+    var tolY = opcoes.tolY || 3.5, gap = opcoes.gap || 2.5; // em pontos do PDF
     var ordenados = itens.slice().sort(function (a, b) { return b.y - a.y || a.x - b.x; }), linhas = [];
     ordenados.forEach(function (it) {
       var l = linhas[linhas.length - 1];
@@ -209,133 +208,20 @@
     return linhas;
   }
 
-  // ---------------------------------------------------------------- foto (JPEG/PNG) -> OCR no navegador
-
-  var LIMITE_BYTES_FOTO = 10 * 1024 * 1024;
-  var LADO_ALVO_FOTO = 3200; // texto pequeno de tabela só é lido bem com letras grandes: fotos pequenas são AUMENTADAS (até 3x) e as enormes reduzidas
-  var CAMINHO_OCR = "/ocr/"; // Tesseract.js, o motor e o idioma português ficam no próprio site (a regra de segurança não deixa sair)
-
-  /** 'png', 'jpeg' ou null, pelos primeiros bytes (nunca pela extensão). */
-  M.tipoDeImagem = function (b) {
-    if (b && b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
-    if (b && b.length > 4 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpeg";
-    return null;
-  };
-
-  function carregarScript(url) {
-    return new Promise(function (ok, falha) {
-      if (globalThis.Tesseract) return ok();
-      var s = document.createElement("script");
-      s.src = url;
-      s.onload = function () { ok(); };
-      s.onerror = function () { falha(new M.ArquivoInvalido("Não consegui carregar o leitor de fotos. Confira a conexão e tente de novo.")); };
-      document.head.appendChild(s);
-    });
+  /** 'png', 'jpeg' ou null, pelos primeiros bytes (nunca pela extensão): só para avisar que foto não é lida. */
+  function ehFoto(b) {
+    return !!b && ((b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) || (b.length > 4 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff));
   }
 
-  /** Foto -> tela (canvas) reduzida e com a orientação certa (o celular grava fotos "de lado" com um aviso no arquivo). */
-  async function fotoParaCanvas(bytes, tipo) {
-    var blob = new Blob([bytes], { type: tipo === "png" ? "image/png" : "image/jpeg" }), bmp;
-    try { bmp = await createImageBitmap(blob, { imageOrientation: "from-image" }); }
-    catch (e) { throw new M.ArquivoInvalido("Não consegui abrir essa foto. Tire de novo ou escolha outro arquivo."); }
-    var escala = Math.min(3, LADO_ALVO_FOTO / Math.max(bmp.width, bmp.height));
-    var c = document.createElement("canvas");
-    c.width = Math.max(1, Math.round(bmp.width * escala));
-    c.height = Math.max(1, Math.round(bmp.height * escala));
-    var g = c.getContext("2d");
-    g.fillStyle = "#fff";
-    g.fillRect(0, 0, c.width, c.height); // PNG com fundo transparente vira fundo branco
-    g.imageSmoothingQuality = "high";
-    g.drawImage(bmp, 0, 0, c.width, c.height);
-    if (bmp.close) bmp.close();
-    try { apagarLinhasDaTabela(c, g); } catch (e) { /* sem a limpeza, a leitura segue com a foto como está */ }
-    return c;
-  }
-
-  /** As linhas da tabela (finas, escuras, compridas, com branco dos dois lados) atrapalham a leitura: viram "|", "]" e números colados.
-      Apaga só o que é linha comprida e fina; letras (curtas) e as caixas cinza dos títulos (largas) ficam. */
-  function apagarLinhasDaTabela(c, g) {
-    var w = c.width, h = c.height, img = g.getImageData(0, 0, w, h), d = img.data, n = w * h, Y = new Uint8Array(n), i, x, y;
-    for (i = 0; i < n; i++) Y[i] = (d[4 * i] * 299 + d[4 * i + 1] * 587 + d[4 * i + 2] * 114) / 1000;
-    var ESCURO = 150, CLARO = 175, LADO = Math.max(4, Math.round(w / 640)), MIN = Math.max(40, Math.round(w / 55)); // espessura e comprimento em proporção ao tamanho
-    var marca = new Uint8Array(n);
-    function varrer(horizontal) {
-      var fora = horizontal ? h : w, dentro = horizontal ? w : h;
-      for (var a = LADO; a < fora - LADO; a++) {
-        var corrida = 0;
-        for (var b = 0; b <= dentro; b++) {
-          var ok = false;
-          if (b < dentro) {
-            var p = horizontal ? a * w + b : b * w + a, s1 = horizontal ? p - LADO * w : p - LADO, s2 = horizontal ? p + LADO * w : p + LADO;
-            ok = Y[p] < ESCURO && Y[s1] > CLARO && Y[s2] > CLARO;
-          }
-          if (ok) corrida++;
-          else { if (corrida >= MIN) for (var k = b - corrida; k < b; k++) marca[horizontal ? a * w + k : k * w + a] = 1; corrida = 0; }
-        }
-      }
+  /** arquivo: {nome, bytes}. Devolve a leitura do arquivo (ver interpretarRancho) com o nome. Só PDF, XLSX e CSV: a leitura de foto
+      não era confiável e foi retirada (o arquivo da tabela de serviço traz tudo certo). */
+  M.lerRanchoArquivo = async function (arquivo) {
+    if (ehFoto(arquivo.bytes)) {
+      throw new M.ArquivoInvalido("Esse arquivo é uma foto, e o sistema não lê fotos. Envie o arquivo da tabela de serviço ou da autorização (PDF, XLSX ou CSV).");
     }
-    varrer(true);
-    varrer(false);
-    for (y = 1; y < h - 1; y++) for (x = 1; x < w - 1; x++) {
-      i = y * w + x;
-      if (marca[i] || marca[i - 1] || marca[i + 1] || marca[i - w] || marca[i + w]) { if (marca[i] || Y[i] < ESCURO + 40) { d[4 * i] = d[4 * i + 1] = d[4 * i + 2] = 255; } }
-    }
-    g.putImageData(img, 0, 0);
-  }
-
-  /** Palavras reconhecidas, com a caixa de cada uma. A forma da resposta mudou entre versões do Tesseract.js: aceita as duas. */
-  function palavrasDoOcr(dados) {
-    var ps = dados.words;
-    if (!ps && dados.blocks) {
-      ps = [];
-      dados.blocks.forEach(function (b) { (b.paragraphs || []).forEach(function (p) { (p.lines || []).forEach(function (l) { (l.words || []).forEach(function (w) { ps.push(w); }); }); }); });
-    }
-    return (ps || []).filter(function (w) { return w.text && w.text.trim() && w.bbox; });
-  }
-
-  /** Linhas de células a partir das palavras da foto: o espaço entre colunas é bem maior que o entre palavras de um mesmo nome. */
-  M.linhasDePalavrasOcr = function (palavras) {
-    var alturas = palavras.map(function (w) { return w.bbox.y1 - w.bbox.y0; }).sort(function (a, b) { return a - b; });
-    var h = alturas.length ? alturas[Math.floor(alturas.length / 2)] : 12;
-    var itens = palavras.map(function (w) {
-      return { str: w.text, x: w.bbox.x0, y: -(w.bbox.y0 + w.bbox.y1) / 2, w: w.bbox.x1 - w.bbox.x0 };
-    });
-    return M.linhasDeItensPdf(itens, { tolY: h * 0.6, gap: h * 1.1, espaco: true }); // cada item já é uma palavra: sempre com espaço entre elas
-  };
-
-  async function linhasDaFoto(bytes, tipo, aoProgresso) {
-    if (bytes.length > LIMITE_BYTES_FOTO) throw new M.ArquivoInvalido("A foto passa de 10 MB. Tire de novo em resolução menor.");
-    var canvas = await fotoParaCanvas(bytes, tipo);
-    await carregarScript(CAMINHO_OCR + "tesseract.min.js");
-    var worker;
-    try {
-      worker = await globalThis.Tesseract.createWorker("por", 1, {
-        workerPath: CAMINHO_OCR + "worker.min.js", corePath: CAMINHO_OCR, langPath: CAMINHO_OCR,
-        workerBlobURL: false, cacheMethod: "none", gzip: true,
-        logger: function (m) { if (aoProgresso && m && typeof m.progress === "number") aoProgresso(m.status, m.progress); }
-      });
-    } catch (e) { throw new M.ArquivoInvalido("Não consegui iniciar o leitor de fotos neste aparelho. Tente enviar o PDF."); }
-    try {
-      await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" }); // bloco de texto em linhas: o que melhor lê tabelas e formulários
-      var res = await worker.recognize(canvas, {}, { blocks: true, text: true });
-      return M.linhasDePalavrasOcr(palavrasDoOcr(res.data).filter(function (w) { return w.confidence == null || w.confidence >= 25; }));
-    } finally {
-      try { await worker.terminate(); } catch (e) { /* já encerrado */ }
-    }
-  }
-
-  M.linhasDaFoto = linhasDaFoto; // também para diagnóstico: mostra o que o OCR enxergou, linha a linha
-
-  /** arquivo: {nome, bytes}. Devolve a leitura do arquivo (ver interpretarRancho) com o nome.
-      aoProgresso(etapa, 0..1): só a foto demora (a leitura por OCR). */
-  M.lerRanchoArquivo = async function (arquivo, aoProgresso) {
-    var foto = M.tipoDeImagem(arquivo.bytes), tipo = foto ? "foto" : await M.detectar(arquivo.nome, arquivo.bytes); // valida tamanho e formato (nunca confia só na extensão)
-    var linhas = tipo === "foto" ? await linhasDaFoto(arquivo.bytes, foto, aoProgresso) : tipo === "pdf" ? await linhasDoPdf(arquivo.bytes) : linhasDaPlanilha(arquivo.bytes);
+    var tipo = await M.detectar(arquivo.nome, arquivo.bytes); // valida tamanho e formato (nunca confia só na extensão)
+    var linhas = tipo === "pdf" ? await linhasDoPdf(arquivo.bytes) : linhasDaPlanilha(arquivo.bytes);
     var r = M.interpretarRancho(linhas);
-    if (tipo === "foto") {
-      r.origemFoto = true;
-      r.avisos.unshift("Lido de uma foto: confira com atenção os números e os nomes. Foto reta, bem iluminada e de perto lê melhor.");
-    }
     r.nome = arquivo.nome;
     return r;
   };
@@ -352,7 +238,7 @@
       var cands = (porDigitos[soDigitos(i.c)] || []).filter(function (a) { return !/^[BMN]/.test(i.c) || a.codigo === i.c; });
       var nome = M.normalizar(i.n);
       var a = cands.length > 1 ? (cands.filter(function (x) { var n = M.normalizar(x.nome); return n.indexOf(nome) >= 0 || nome.indexOf(n) >= 0; })[0] || cands[0]) : cands[0];
-      // número que não existe na planilha (erro de digitação ou de leitura da foto): o nome de guerra, se for único, resolve
+      // número que não existe na planilha (erro de digitação no arquivo): o nome de guerra, se for único, resolve
       if (!a && nome.length >= 4) {
         var porNome = alunos.filter(function (x) { return M.normalizar(x.nome) === nome; });
         if (porNome.length === 1) a = porNome[0];

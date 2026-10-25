@@ -10,7 +10,6 @@ const reg = require("./registro");
 const PREFIXO = "v1.";
 const TTL_PLANILHA_S = 14 * 24 * 60 * 60; // a planilha publicada some sozinha em 14 dias
 const TTL_RASCUNHO_S = 7 * 24 * 60 * 60; // o rascunho de cada pessoa, em 7 dias (renovado a cada salvamento)
-const TTL_RANCHO_S = 4 * 24 * 60 * 60; // o rancho corrido de um dia some sozinho (vale só naquele dia; sobra margem)
 const MAX_PUBLICACOES_RANCHO = 40; // por dia
 
 function chaveMestra() {
@@ -71,10 +70,12 @@ async function lerRascunhos(nomes) {
 
 // Rancho corrido: uma lista no Redis por dia ("rancho:AAAA-MM-DD"); cada publicação é um item cifrado, no contexto do dia.
 // Publicar só ACRESCENTA (RPUSH): duas pessoas publicando ao mesmo tempo não se atropelam.
+// A lista APAGA A SI MESMA quando o dia passa: expira à meia-noite de Brasília (00h do dia seguinte = 03h UTC; o Brasil não tem horário de verão).
+const fimDoDia = (data) => { const [a, m, d] = data.split("-").map(Number); return Math.floor(Date.UTC(a, m - 1, d + 1, 3, 0, 0) / 1000); };
 const chaveRancho = (data) => "rancho:" + data;
 async function gravarRancho(data, obj) {
   const chave = chaveRancho(data);
-  await reg.chamar([["RPUSH", chave, cifrar(obj, chave)], ["LTRIM", chave, -MAX_PUBLICACOES_RANCHO, -1], ["EXPIRE", chave, TTL_RANCHO_S]]);
+  await reg.chamar([["RPUSH", chave, cifrar(obj, chave)], ["LTRIM", chave, -MAX_PUBLICACOES_RANCHO, -1], ["EXPIREAT", chave, fimDoDia(data)]]);
 }
 async function lerRancho(data) {
   const chave = chaveRancho(data);
@@ -84,7 +85,7 @@ async function lerRancho(data) {
 const apagarRancho = (data) => apagar(chaveRancho(data));
 
 module.exports = {
-  cifrar, abrir, chaveRascunho, ler, gravar, apagar, lerRascunhos, gravarRancho, lerRancho, apagarRancho, TTL_RANCHO_S,
+  cifrar, abrir, chaveRascunho, ler, gravar, apagar, lerRascunhos, gravarRancho, lerRancho, apagarRancho, fimDoDia,
   TTL_PLANILHA_S, TTL_RASCUNHO_S,
   lerPlanilha: () => ler("planilha", "planilha"),
   gravarPlanilha: (obj) => gravar("planilha", "planilha", obj, TTL_PLANILHA_S),

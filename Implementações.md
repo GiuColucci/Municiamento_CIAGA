@@ -66,28 +66,27 @@ Com a Conferência Geral, o cabeçalho passou a ter botões demais. Os links fic
 ### Objetivo
 Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação** que o aluno está de rancho corrido, dizendo o **motivo** que vem no arquivo.
 
-### Os dois modelos de arquivo (PDF, XLSX, CSV ou **foto** JPEG/PNG; um por vez ou os dois juntos)
+### Os dois modelos de arquivo (PDF, XLSX ou CSV; um por vez ou os dois juntos; **foto não é lida**)
 | Modelo | O que traz | O que vira |
 |---|---|---|
 | **Autorização para rancho corrido** (lista) | Data, **Refeição**, **Motivo** e, por ano (3º, 2º, 1º), os alunos: Nº Interno, Nome de Guerra e Pelotão/CIA | O motivo é o escrito no arquivo; vale **só para a(s) refeição(ões)** indicada(s) (sem refeição escrita, vale para todas) |
-| **Detalhe de serviço do Corpo de Alunos** (tabela) | "SERVIÇO: 24 OUT 2026" e, por função (Chefe de dia, Polícia, Retém, Pav...), número, letra do curso e nome de quem está de serviço, com o turno de cada coluna | O motivo é **"Serviço: <função> (<turno>)"**; vale para **qualquer refeição** do dia |
+| **Tabela de serviço** ("Detalhe de serviço do Corpo de Alunos") | "SERVIÇO: 24 OUT 2026" e, por função, **4 dígitos + letra do curso (N, B ou M) + nome de guerra** de quem está de serviço. Um arquivo pode trazer **mais de um dia** | O motivo é **"Serviço"**; vale para **qualquer refeição** do dia, e cada aluno entra no **dia do arquivo** |
 
 ### Regras
-1. **Por dia:** o rancho corrido vale **só no dia do arquivo** (a data vem do arquivo; se não vier, a pessoa escolhe o dia). A publicação de um dia fica guardada por pouco tempo e some sozinha.
+1. **Por dia, e só até o dia acabar:** cada aluno vale **só no dia do arquivo** (a data vem do arquivo; se não vier, a pessoa escolhe o dia). O servidor **apaga** a publicação de um dia **à meia-noite de Brasília desse dia** (o próprio banco expira o registro), e dias que já passaram nem são aceitos nem devolvidos.
 2. **Qualquer pessoa autenticada pode publicar** (aluno ou administrador), pelo **Menu → Rancho corrido**. Antes de publicar, a tela **mostra o que foi lido** (tipo, dia, refeição, motivo e cada aluno, com a turma quando ele está na planilha da semana) para conferir.
 3. **Publicar só acrescenta:** duas pessoas publicando o mesmo dia (por exemplo, a autorização e o detalhe de serviço) ficam **somadas**; nenhuma apaga a outra. Cada publicação guarda **quem enviou e quando**.
 4. **Aviso na marcação (tudo em laranja):** na lista (dia × refeição) o aluno aparece com o selo **RANCHO CORRIDO**; **tocar no selo mostra o motivo** embaixo do nome. Um aviso no alto diz quantos da lista estão nessa situação. Ao **marcar** o aluno, aparece um **aviso laranja** ("Atenção: NOME (turma) está de RANCHO CORRIDO") e **tocar no aviso mostra o motivo**. O aviso vermelho continua sendo só para quem NÃO está municiado (os dois podem aparecer juntos).
 5. **Quem é o aluno:** o número interno do arquivo é casado com o da planilha da semana (com a letra do curso, quando o arquivo traz; sem a letra, os quatro dígitos, e o nome desempata).
 6. **Administração:** o painel mostra o rancho corrido publicado em cada dia da semana (quem publicou e quantos alunos) e permite **remover um dia** errado.
-7. **Segurança e privacidade:** tudo é lido no navegador; só o resultado é enviado ao publicar. No servidor fica **cifrado** (AES-256-GCM), por dia, e expira sozinho (4 dias). Limites: 300 alunos por publicação, 40 publicações por dia, 20 publicações por pessoa por hora. Uma pessoa mal-intencionada poderia publicar um aviso falso: por isso cada publicação mostra **quem enviou**, e a administração pode remover o dia.
+7. **Segurança e privacidade:** tudo é lido no navegador; só o resultado é enviado ao publicar. No servidor fica **cifrado** (AES-256-GCM), por dia, e é **apagado à meia-noite do próprio dia**. Limites: 300 alunos por publicação, 40 publicações por dia, 20 publicações por pessoa por hora. Uma pessoa mal-intencionada poderia publicar um aviso falso: por isso a administração vê **quem enviou** (no painel) e pode remover o dia.
 
 ### Decisões
 | Ponto | Decisão |
 |---|---|
 | Funções do servidor | **Nenhuma nova** (12 de 12): o rancho corrido usa a rota `/api/planilha` (parâmetro `?rancho=`) e a `/api/admin-acao` |
 | Leitura do PDF | Pela **posição dos textos** (pdf.js), agrupados em linhas e células; XLSX e CSV pela planilha |
-| Leitura de **foto** | **OCR no navegador** (Tesseract.js, português), com os arquivos hospedados no próprio site (`public/ocr/`, ~9,5 MB, baixados só quando alguém lê uma foto). A foto é reduzida (lado maior 2.200 px), lida palavra por palavra com a posição, e vira linhas e células como no PDF; nada da foto sai do aparelho |
-| Tabela de serviço em foto | A foto é **ampliada** (texto pequeno só é lido bem com letras grandes), as **linhas da tabela são apagadas** e a leitura é por linhas. Em cada linha o sistema procura **4 dígitos + letra do curso (N, B ou M) + nome de guerra**, tolerando ruído de borda, letra do curso mal lida (vale o número) e número com letra no lugar de algarismo. A **data** ("SERVIÇO: 24 OUT 2026") também é lida da foto, em várias formas |
+| Leitura sem foto | A leitura de **foto** (OCR) foi **retirada**: não era confiável. Só PDF, XLSX e CSV. (Ela está no histórico do Git, pull requests 9 e 12, se algum dia voltar a valer a pena.) |
 | Número lido errado | Se o número interno não existe na planilha e o nome de guerra existe **uma única vez**, o sistema usa o aluno pelo nome e publica o número da planilha |
 | Arquivo não reconhecido ou sem alunos | Aviso claro, sem publicar; nunca bloqueia o resto |
 | Sem a data da sexta na planilha da semana | Não há como saber o dia de cada lista: os avisos não aparecem |
@@ -96,4 +95,3 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 - Mostrar o rancho corrido também na **rela** impressa/PDF (hoje só na marcação).
 - Registrar a **refeição** de cada função do serviço, se o detalhe de serviço passar a trazê-la.
 - Ajustar a leitura aos formulários reais **preenchidos** (os modelos recebidos estavam em branco ou como imagem): se algum arquivo não for lido direito, a prévia mostra o que foi entendido e a regra pode ser refinada.
-- A leitura de **foto** foi validada com imagens de teste limpas; fotos reais (inclinadas, com sombra ou desfocadas) podem exigir ajustes (pré-processamento) ou ser enviadas como PDF.

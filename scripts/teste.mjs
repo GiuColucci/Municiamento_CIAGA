@@ -27,6 +27,7 @@ function cmd([c, k, ...a]) {
     case "LRANGE": return k !== "log" ? fatia(db.k.get(k) || [], Number(a[0]), Number(a[1])) : fatia(db.l, Number(a[0]), Number(a[1]));
     case "RPUSH": db.k.set(k, (db.k.get(k) || []).concat(a[0])); return 1;
     case "EXPIRE": db.ttl.set(k, a[0]); return 1;
+    case "EXPIREAT": db.ttl.set(k, a[0]); return 1;
     case "SET": db.s.set(k, a[0]); db.ttl.set(k, a[1] === "EX" ? a[2] : null); return "OK";
     case "GET": return db.s.get(k) ?? null;
     case "MGET": return [k, ...a].map((x) => db.s.get(x) ?? null);
@@ -213,7 +214,7 @@ test("app: Administrador no cabeçalho só em modo administrador; Sair ao final 
     assert.ok(!saida.includes("position:fixed")); // Sair não é flutuante
     assert.ok(saida.includes("connect-src 'self'") && !saida.includes("connect-src 'none'")); // só o próprio site pode receber o aviso
     assert.ok(saida.includes("style-src 'self' 'unsafe-inline'")); // e carregar o menu.css
-    assert.ok(saida.includes("worker-src 'self' blob:") && saida.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:") && !saida.includes("worker-src 'none'")); // e o leitor de fotos (OCR) do rancho corrido
+    assert.ok(saida.includes("worker-src 'none'") && !saida.includes("unsafe-eval")); // a regra do app continua fechada (não há mais leitor de fotos)
     assert.ok(saida.includes("default-src 'none'") && saida.includes("form-action 'none'")); // o resto da regra do app continua
 
     // administrador em modo administrador: botão no cabeçalho; Sair continua no fim
@@ -1310,7 +1311,7 @@ test("Como usar: tem a Conferência geral (para todos) e o painel atual (só adm
   const ajuda = require("../api/ajuda.js");
   const ver = async (quem, papel) => { const r = res(); await ajuda({ headers: { cookie: sessao(quem, papel) } }, r); return String(r.body); };
   const aluno = await ver("mike", 0);
-  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("foto</strong> (JPEG ou PNG)") && aluno.includes("aviso laranja"));
+  assert.ok(aluno.includes("8. Rancho corrido") && aluno.includes("Publicar rancho corrido") && aluno.includes("vale só no dia") && aluno.includes("Foto não é lida") && aluno.includes("aviso laranja") && aluno.includes("apagado à meia-noite") && !aluno.includes("JPEG"));
   assert.ok(aluno.includes("7. Conferência geral") && aluno.includes("só existe naquele dia") && aluno.includes("sempre por antiguidade"));
   assert.ok(!aluno.includes("Só tentativas recusadas") && !aluno.includes("Ver a planilha"));
   const adm = await ver("romeo", 1);
@@ -1349,12 +1350,15 @@ test("rancho corrido: qualquer pessoa publica e lê; só acrescenta; cifrado; um
     // cifrado no banco: nem nomes nem motivos legíveis
     const tudo = JSON.stringify([...db.k]);
     assert.ok(tudo.includes("v1.") && !tudo.includes("ALVES") && !tudo.includes("Prova") && !tudo.includes("CAIO"));
-    assert.ok(db.ttl.get("rancho:2026-10-24") > 0);
+    assert.equal(db.ttl.get("rancho:2026-10-24"), Date.UTC(2026, 9, 25, 3, 0, 0) / 1000); // some sozinho à meia-noite de Brasília do próprio dia
     // validações
     assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [] })).status, 400);
     assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [item("12", "X", "m")] })).status, 400); // número interno inválido
     assert.equal((await chamar("mike", 0, "POST", base, { origem: "a", itens: [item("1037", "ALVES", "m", ["Lanche"])] })).status, 400);
     assert.equal((await chamar("mike", 0, "POST", "/api/planilha?rancho=2026-12-31", { origem: "a", itens: [item("1037", "ALVES", "m")] })).status, 400); // fora da semana
+    assert.equal((await chamar("mike", 0, "POST", "/api/planilha?rancho=2026-10-23", { origem: "a", itens: [item("1037", "ALVES", "m")] })).status, 400); // dia que já passou
+    await require("../api/_lib/cofre.js").gravarRancho("2026-10-23", { por: "X", em: 1, origem: "a", itens: [{ c: "1037", n: "ALVES", m: "m", r: null, p: "" }] }); // sobra de ontem (o banco apagaria)
+    assert.deepEqual((await chamar("mike", 0, "GET", "/api/planilha?rancho=2026-10-23")).json.dias["2026-10-23"], []); // dia que passou não é devolvido
     assert.equal((await chamar("mike", 0, "POST", "/api/planilha?rancho=amanha", { origem: "a", itens: [item("1037", "ALVES", "m")] })).status, 400);
     const cross = res();
     await api({ method: "POST", url: base, headers: { cookie: sessao("mike"), "sec-fetch-site": "cross-site" }, body: { origem: "a", itens: [item("1037", "ALVES", "m")] } }, cross);

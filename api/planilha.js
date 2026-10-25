@@ -47,7 +47,8 @@ async function rancho(req, res, sess, q) {
   if (req.method === "GET") {
     const datas = [...new Set(String(q.get("rancho") || "").split(",").filter((d) => DATA.test(d)))].slice(0, 8);
     const dias = {};
-    for (const d of datas) dias[d] = await cofre.lerRancho(d);
+    const hoje = hojeBrasilia();
+    for (const d of datas) dias[d] = d < hoje ? [] : await cofre.lerRancho(d); // dia que passou não tem mais nada (e já foi apagado do banco)
     return json(res, 200, { dias });
   }
   if (req.method !== "POST") return json(res, 405, { erro: "Método não permitido." });
@@ -55,7 +56,8 @@ async function rancho(req, res, sess, q) {
   const data = q.get("rancho");
   if (!DATA.test(data || "") || isNaN(Date.parse(data))) return json(res, 400, { erro: "Data inválida." });
   const dif = diasEntre(data, hojeBrasilia());
-  if (dif < -1 || dif > 8) return json(res, 400, { erro: "Essa data está fora da semana: confira o dia." });
+  if (dif < 0) return json(res, 400, { erro: "Esse dia já passou: o rancho corrido só vale no próprio dia." });
+  if (dif > 8) return json(res, 400, { erro: "Essa data está fora da semana: confira o dia." });
   if (s.limitar("rancho:" + sess.u, 20, 60 * 60 * 1000)) return json(res, 429, { erro: "Muitas publicações seguidas. Aguarde alguns minutos." });
   const corpo = req.body || {};
   const itens = corpo.itens;

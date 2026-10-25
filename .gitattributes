@@ -2,5 +2,3 @@
 *.xlsx binary
 *.png binary
 *.enc binary
-*.gz binary
-public/ocr/*.js -text

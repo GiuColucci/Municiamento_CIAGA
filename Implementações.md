@@ -66,7 +66,7 @@ Com a Conferência Geral, o cabeçalho passou a ter botões demais. Os links fic
 ### Objetivo
 Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação** que o aluno está de rancho corrido, dizendo o **motivo** que vem no arquivo.
 
-### Os dois modelos de arquivo (PDF, XLSX, CSV ou **foto** JPEG/PNG; um por vez ou os dois juntos)
+### Os dois modelos de arquivo (PDF, XLSX ou CSV; um por vez ou os dois juntos; **foto não é lida**)
 | Modelo | O que traz | O que vira |
 |---|---|---|
 | **Autorização para rancho corrido** (lista) | Data, **Refeição**, **Motivo** e, por ano (3º, 2º, 1º), os alunos: Nº Interno, Nome de Guerra e Pelotão/CIA | O motivo é o escrito no arquivo; vale **só para a(s) refeição(ões)** indicada(s) (sem refeição escrita, vale para todas) |
@@ -86,7 +86,7 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 |---|---|
 | Funções do servidor | **Nenhuma nova** (12 de 12): o rancho corrido usa a rota `/api/planilha` (parâmetro `?rancho=`) e a `/api/admin-acao` |
 | Leitura do PDF | Pela **posição dos textos** (pdf.js), agrupados em linhas e células; XLSX e CSV pela planilha |
-| Leitura de foto | A leitura de **foto** (JPEG ou PNG) roda no navegador (OCR com Tesseract.js, arquivos em `public/ocr/`, nada sai do site). Demora alguns segundos e **pode errar números e nomes**: a prévia avisa para conferir. PDF e planilha são mais confiáveis. |
+| Leitura sem foto | A leitura de **foto** (OCR) foi **retirada**: não era confiável. Só PDF, XLSX e CSV. (Ela está no histórico do Git, pull requests 9 e 12, se algum dia voltar a valer a pena.) |
 | Número lido errado | Se o número interno não existe na planilha e o nome de guerra existe **uma única vez**, o sistema usa o aluno pelo nome e publica o número da planilha |
 | Arquivo não reconhecido ou sem alunos | Aviso claro, sem publicar; nunca bloqueia o resto |
 | Sem a data da sexta na planilha da semana | Não há como saber o dia de cada lista: os avisos não aparecem |

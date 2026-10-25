@@ -105,12 +105,12 @@
       return !!m && lista.indexOf(m[1] + "-" + m[2]) >= 0;
     });
   }
-  /** Rancho corrido de quem está de serviço: Café = turnos 0400-0800 e 0800-1200; Almoço = todos do dia; Janta = turno 1800-2100.
+  /** Rancho corrido de quem está de serviço: Café = turno 0800-1200 (menos RETÉM); Almoço = todos do dia; Janta = turno 1800-2100.
       Sem turno (serviço diário), só o almoço. */
   function refeicoesDoServico(turnos) {
     if (!turnos || !turnos.length) return ["Almoço"]; // serviço diário (sem turno): só o almoço
     var r = [];
-    if (temTurno(turnos, ["0400-0800", "0800-1200"])) r.push("Café");
+    if (temTurno(turnos, ["0800-1200"])) r.push("Café");
     r.push("Almoço");
     if (temTurno(turnos, ["1800-2100"])) r.push("Janta");
     return r;
@@ -137,7 +137,7 @@
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
         var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
-        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: refeicoesDoServico(turnos), p: "" }); // no motivo, o rancho corrido da tabela de serviço é "Serviço"
+        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; }) ? ["Almoço"] : refeicoesDoServico(turnos), p: "" }); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }

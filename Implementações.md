@@ -101,9 +101,46 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 
 | Refeição | Quem é avisado |
 |---|---|
-| Café da manhã | quem está nos turnos 0400-0800 ou 0800-1200 |
+| Café da manhã | só quem está no turno 0800-1200 e não é RETÉM |
 | Almoço | todos os que estão de serviço naquele dia |
 | Janta | só quem está no turno 1800-2100 (turno escrito igual; quem está de serviço diário, sem turno, só avisa no almoço) |
 | Sábado e domingo | sem aviso de rancho corrido |
 
 O aluno é ligado à coluna de turnos da sua linha; sem turno (serviço diário), só no almoço. A autorização continua valendo só para a refeição escrita nela.
+
+---
+
+## 4. Otimização do código
+
+**Estado:** planejada.
+
+### Objetivo
+Deixar o código mais enxuto e rápido, sem mudar o comportamento que a operação já usa.
+
+### Escopo previsto
+- Remover código repetido e funções sem uso (app, servidor e geração dos documentos).
+- Reduzir o peso do que o navegador baixa (CSS e JS menores, imagens e fontes só quando necessárias).
+- Evitar consultas repetidas ao banco e decifragens desnecessárias no servidor.
+- Manter o limite de **12 de 12 funções** do servidor e todas as regras de segurança e LGPD.
+
+### Regra
+Cada otimização deve ser conferida contra o resultado atual (mesmas listas, mesmos totais, mesmos DOCX/PDF) antes de ser publicada.
+
+---
+
+## 5. Entrada ao clicar no brasão
+
+**Estado:** planejada.
+
+### Objetivo
+Ao clicar no **brasão do canto superior direito** do cabeçalho, a **tela de entrada** (login) volta a aparecer.
+
+### Regras
+- O brasão passa a ser um botão (foco visível, `aria-label` descrevendo a ação e acessível pelo teclado).
+- Se a pessoa já está autenticada, o clique mostra a tela de entrada para **trocar de usuário**, sem apagar o rascunho que ainda não foi salvo (pedir confirmação antes de sair).
+- Funciona nos dois temas e no celular.
+
+### Em aberto
+- Confirmar o que "entrada" significa: **tela de login** (trocar de usuário) ou **tela inicial** (início, com a escolha de dia e refeição).
+
+Quem está na função **RETÉM** não conta como serviço corrido: avisa **só no almoço**, nunca no café nem na janta.

@@ -1072,9 +1072,7 @@
         var f = escolhidos[i];
         try {
           var bytes = new Uint8Array(await f.arrayBuffer());
-          var lida = await M.lerRanchoArquivo({ nome: f.name, bytes: bytes }, function (etapa, p) {
-            statusRancho(f.name + ": " + (/recogniz/i.test(etapa) ? "lendo a foto… " + Math.round(p * 100) + "%" : "preparando o leitor de fotos…"));
-          });
+          var lida = await M.lerRanchoArquivo({ nome: f.name, bytes: bytes });
           if (lida.tipo === "autorizacao") M.completarPorNome(lida, estado.res.alunos);
           rancho.leituras.push(lida);
         } catch (e) {
@@ -1215,7 +1213,7 @@
         caixa.appendChild(el("p", "rancho-dia-titulo", dataBr(d) + " · " + plural(Object.keys(total).length, "aluno") + (d === hojeIso() ? " · hoje" : "")));
         var nomes = [], ul = el("ul", "rancho-dia-lista");
         dias[d].forEach(function (p) { // o que foi subido neste dia: a tabela de serviço e cada autorização (pelo motivo escrito nela)
-          var rotulo = p.origem === "s" ? "Tabela de serviço" : ((p.itens[0] && p.itens[0].m) || "Autorização de rancho corrido");
+          var rotulo = p.origem === "s" ? "Tabela de Serviço da Semana" : ((p.itens[0] && p.itens[0].m) || "Autorização de rancho corrido");
           if (nomes.indexOf(rotulo) < 0) { nomes.push(rotulo); ul.appendChild(el("li", null, rotulo)); }
         });
         caixa.appendChild(ul);

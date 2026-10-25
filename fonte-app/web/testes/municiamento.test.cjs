@@ -671,11 +671,14 @@ test("rancho: tabela de serviço com mais de um dia separa cada aluno no seu dia
   assert.ok(r.itens.every((i) => i.m === "Serviço"));
 });
 
-test("rancho: foto não é lida (JPEG ou PNG recebem um aviso claro)", async () => {
+test("rancho: foto JPEG/PNG é reconhecida pelos bytes e, sem navegador, avisa que não conseguiu abrir", async () => {
+  assert.equal(M.tipoDeImagem(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16])), "jpeg");
+  assert.equal(M.tipoDeImagem(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0])), "png");
+  assert.equal(M.tipoDeImagem(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])), null);
   const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70]);
   const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
   for (const bytes of [jpeg, png]) {
-    await assert.rejects(M.lerRanchoArquivo({ nome: "tabela.jpg", bytes }), /foto.*(PDF, XLSX ou CSV)/);
+    await assert.rejects(M.lerRanchoArquivo({ nome: "tabela.jpg", bytes }), /Não consegui abrir essa foto/);
   }
 });
 

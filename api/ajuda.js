@@ -81,7 +81,7 @@ const SECOES = [
     id: "rancho", titulo: "8. Rancho corrido",
     html: `<p>Quem está de <strong>rancho corrido</strong> no dia aparece na marcação, com o <strong>motivo</strong>. Qualquer pessoa pode publicar o arquivo do dia: <strong>Menu → Rancho corrido</strong>.</p>
 <ol class="passos">
-<li>Escolha o arquivo: a <strong>tabela de serviço</strong> e/ou a <strong>autorização para rancho corrido</strong> (lista), em <strong>PDF, XLSX ou CSV</strong>, arrastando para a área ou tocando nela. Dá para escolher os dois de uma vez. <strong>Foto não é lida.</strong></li>
+<li>Escolha o arquivo: a <strong>tabela de serviço</strong> e/ou a <strong>autorização para rancho corrido</strong> (lista), em <strong>PDF, XLSX, CSV ou foto</strong> (JPEG ou PNG), arrastando para a área ou tocando nela. Dá para escolher os dois de uma vez. <strong>Foto</strong>: reta, de perto e bem iluminada; a leitura demora um pouco e <strong>precisa de conferência</strong>, porque pode errar números e nomes. O PDF ou a planilha são sempre mais confiáveis.</li>
 <li>Toque em <strong>Ler arquivos</strong>. Cada aluno entra no <strong>dia que está no arquivo</strong> (a data é lida do cabeçalho: "Data" na autorização e "SERVIÇO: dia mês ano" na tabela de serviço). Se o arquivo não tiver a data, ele não é publicado.</li>
 <li>Veja o que foi lido: tipo, dia, refeição, motivo e cada aluno (<strong>nome de guerra e número interno</strong>). Quem não está na planilha da semana aparece em vermelho; se o número não existir, mas o nome de guerra existir uma só vez na planilha, o sistema usa o número certo.</li>
 <li>Toque em <strong>Publicar rancho corrido</strong>. Quem publicou mais de um arquivo no mesmo dia não apaga o do outro: as publicações se somam.</li>
@@ -124,7 +124,7 @@ const SECOES = [
 <li><strong>"Nome, número interno ou senha incorretos":</strong> confira o nome de guerra (acentos e maiúsculas não importam), o número interno e a senha.</li>
 <li><strong>"Muitas tentativas erradas":</strong> espere 15 minutos. O contador de erros também zera todo dia à meia-noite.</li>
 <li><strong>Não aparece a planilha:</strong> ainda não foi publicada; peça a um administrador.</li>
-<li><strong>O arquivo do rancho corrido não foi lido:</strong> veja os avisos da tela de conferência. Confira se é a tabela de serviço ou a autorização preenchidas (não o formulário em branco) e se o arquivo é PDF, XLSX ou CSV. Foto não é lida: envie o arquivo da tabela.</li>
+<li><strong>O arquivo do rancho corrido não foi lido:</strong> veja os avisos da tela de conferência. Confira se é a tabela de serviço ou a autorização preenchidas (não o formulário em branco) e se o arquivo é PDF, XLSX, CSV ou foto JPEG/PNG. Se a foto não ler direito, envie o PDF ou a planilha da tabela.</li>
 <li><strong>A Conferência geral está vazia:</strong> ninguém marcou presença naquele dia ainda, ou a listagem é de ontem (ela só vale no próprio dia).</li>
 <li><strong>Não baixa o arquivo no iPhone:</strong> toque em <strong>Baixar PDF</strong> de novo; o arquivo vai para o app Arquivos.</li>
 <li><strong>A página pediu para entrar de novo:</strong> a sessão acabou. Entre; seu rascunho está salvo.</li>

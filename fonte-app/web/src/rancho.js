@@ -273,8 +273,10 @@
       (p.itens || []).forEach(function (i) {
         if (i.r && refeicao && i.r.indexOf(refeicao) < 0) return; // vale só para as refeições da autorização
         var k = i.c, a = idx[k];
-        if (!a) idx[k] = { motivo: i.m || "Rancho corrido", por: p.por };
+        var servico = /^servi[cç]o/i.test(i.m || ""); // tabela de serviço: quem está de serviço é municiado automaticamente
+        if (!a) idx[k] = { motivo: i.m || "Rancho corrido", por: p.por, servico: servico };
         else if (a.motivo.split("; ").indexOf(i.m) < 0) a.motivo += "; " + i.m;
+        if (servico) idx[k].servico = true;
       });
     });
     return idx;

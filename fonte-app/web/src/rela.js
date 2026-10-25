@@ -311,9 +311,12 @@
     painel.appendChild(escolhaTurmas(l, "turmasMarcacao"));
     var chaveRefeicao = M.chaveMarca(l.dia, l.refeicao);
     var rotuloRefeicao = l.refeicao + " de " + l.dia;
+    var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
+    // quem está de serviço é municiado automaticamente: vale mesmo que a planilha diga o contrário
+    function estaMunic(a) { var r = M.ranchoDoAluno(idxRancho, a); return !!a.marcas[chaveRefeicao] || !!(r && r.servico); }
     // filtro de situação: mostrar só municiados ou só NÃO municiados (conforme a planilha, naquele dia e refeição)
     var baseFiltro = l.alunos.filter(function (a) { return !l.turmasMarcacao || l.turmasMarcacao.indexOf(a.turma) >= 0; });
-    var nMunic = baseFiltro.filter(function (a) { return !!a.marcas[chaveRefeicao]; }).length;
+    var nMunic = baseFiltro.filter(estaMunic).length;
     painel.appendChild(escolha("Mostrar", "filtro-" + l.id, [
       ["todos", "Todos (" + baseFiltro.length + ")"],
       ["municiados", "Municiados (" + nMunic + ")"],
@@ -322,12 +325,29 @@
     // alerta: quem é marcado sem estar municiado na planilha naquele dia e refeição
     var alerta = el("p", "alerta-marcacao oculto");
     alerta.setAttribute("role", "alert");
-    var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
     function piscar(e) { mostrar(e, true); e.classList.remove("piscar"); void e.offsetWidth; e.classList.add("piscar"); } // reinicia a animação a cada alerta
+    // aviso laranja do rancho corrido: toque nele para ver o motivo
+    var alertaRancho = el("button", "alerta-rancho oculto");
+    alertaRancho.type = "button";
+    alertaRancho.setAttribute("role", "alert");
+    var ranchoMostrado = null;
+    function textoRancho(a, rancho, aberto) {
+      alertaRancho.textContent = "";
+      alertaRancho.appendChild(document.createTextNode(a.nome + " (" + a.turma + ") está de RANCHO CORRIDO." + (aberto ? " Motivo: " + rancho.motivo + "." : "")));
+      if (!aberto) alertaRancho.appendChild(el("span", "dica-toque", "Toque aqui para ver o motivo"));
+    }
+    alertaRancho.addEventListener("click", function () { if (ranchoMostrado) textoRancho(ranchoMostrado.a, ranchoMostrado.r, true); });
     function avisar(a, municiado, rancho) {
       if (!municiado) {
         alerta.textContent = "Atenção: " + a.nome + " (" + a.turma + ") NÃO está municiado na " + rotuloRefeicao + ".";
         piscar(alerta);
+      }
+      if (rancho) {
+        ranchoMostrado = { a: a, r: rancho };
+        textoRancho(a, rancho, false);
+        piscar(alertaRancho);
+      } else {
+        mostrar(alertaRancho, false);
       }
     }
     var busca = el("div", "busca");
@@ -342,6 +362,7 @@
     busca.appendChild(campo);
     painel.appendChild(busca);
     painel.appendChild(alerta);
+    painel.appendChild(alertaRancho);
     var nRancho = l.alunos.filter(function (a) { return M.ranchoDoAluno(idxRancho, a); }).length;
     if (nRancho) {
       painel.appendChild(el("p", "aviso-rancho", plural(nRancho, "aluno") + (nRancho === 1 ? " desta lista está" : " desta lista estão") +
@@ -360,7 +381,7 @@
     }
     function passaFiltro(a) {
       var f = l.filtroMarcacao || "todos";
-      return f === "todos" || (f === "municiados") === !!a.marcas[chaveRefeicao];
+      return f === "todos" || (f === "municiados") === estaMunic(a);
     }
     var acoes = el("div", "painel-acoes");
     acoes.appendChild(botao("principal", "Finalizar marcação", function () {
@@ -404,7 +425,7 @@
     });
 
     function criarItem(a, ol) {
-      var chave = M.chaveAluno(a), municiado = !!a.marcas[chaveRefeicao], rancho = M.ranchoDoAluno(idxRancho, a);
+      var chave = M.chaveAluno(a), municiado = estaMunic(a), rancho = M.ranchoDoAluno(idxRancho, a);
       var li = el("li", "aluno" + (rancho ? " rancho-corrido" : ""));
       var lab = el("label");
       var caixa = el("input");

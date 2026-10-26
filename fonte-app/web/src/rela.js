@@ -317,6 +317,10 @@
     var diaIso = estado && estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : null;
     var auto = M.automaticosDoDia(diaIso && estado.rancho ? estado.rancho[diaIso] : []);
     var conjuntoAuto = l.refeicao === "Café" ? auto.cafe : (["Almoço", "Janta", "Ceia"].indexOf(l.refeicao) >= 0 ? auto.servico : {});
+    if (l.refeicao === "Café" && diaIso && estado.rancho) { // publicação antiga (sem os itens do dia anterior): enquanto o dia anterior ainda existe, quem estava de serviço nele também conta
+      var anterior = M.automaticosDoDia(estado.rancho[M.somarDias(diaIso, -1)] || []).servico;
+      Object.keys(anterior).forEach(function (k) { conjuntoAuto[k] = true; });
+    }
     function estaMunic(a) { return !!a.marcas[chaveRefeicao] || M.noConjunto(conjuntoAuto, a); }
     // filtro de situação: mostrar só municiados ou só NÃO municiados (conforme a planilha, naquele dia e refeição)
     var baseFiltro = l.alunos.filter(function (a) { return !l.turmasMarcacao || l.turmasMarcacao.indexOf(a.turma) >= 0; });

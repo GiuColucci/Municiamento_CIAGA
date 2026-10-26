@@ -298,7 +298,7 @@
 
   /** Para cada item do arquivo, o aluno da planilha com o mesmo número interno (ou null). */
   M.casarRancho = function (itens, alunos) {
-    var porDigitos = {};
+    var porDigitos = {}, nomes = null;
     alunos.forEach(function (a) { (porDigitos[soDigitos(a.codigo)] = porDigitos[soDigitos(a.codigo)] || []).push(a); });
     return itens.map(function (i) {
       var cands = (porDigitos[soDigitos(i.c)] || []).filter(function (a) { return !/^[BMN]/.test(i.c) || a.codigo === i.c; });
@@ -306,7 +306,8 @@
       var a = cands.length > 1 ? (cands.filter(function (x) { var n = M.normalizar(x.nome); return n.indexOf(nome) >= 0 || nome.indexOf(n) >= 0; })[0] || cands[0]) : cands[0];
       // número que não existe na planilha (erro de digitação no arquivo): o nome de guerra, se for único, resolve
       if (!a && nome.length >= 4) {
-        var porNome = alunos.filter(function (x) { return M.normalizar(x.nome) === nome; });
+        if (!nomes) { nomes = {}; alunos.forEach(function (x) { var k = M.normalizar(x.nome); (nomes[k] = nomes[k] || []).push(x); }); } // índice por nome, montado uma vez só
+        var porNome = nomes[nome] || [];
         if (porNome.length === 1) a = porNome[0];
       }
       return { item: i, aluno: a || null, porNome: !!a && cands.length === 0 };

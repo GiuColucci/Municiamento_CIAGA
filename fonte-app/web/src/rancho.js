@@ -121,19 +121,23 @@
       return !!m && lista.indexOf(m[1] + "-" + m[2]) >= 0;
     });
   }
-  /** Rancho corrido de quem está de serviço: Café = turno 0800-1200 (menos RETÉM); Almoço = todos do dia; Janta = turno 1800-2100.
-      Sem turno (serviço diário), só o almoço. */
+  /** Rancho corrido de quem está de serviço, no PRÓPRIO dia: Almoço = todos; Janta = turno 1800-2100. Sem turno (serviço diário), só o almoço.
+      O café da manhã é do DIA SEGUINTE a quem fez o turno 0800-1200 (menos RETÉM): ver cafeDoDiaSeguinte. */
   function refeicoesDoServico(turnos) {
     if (!turnos || !turnos.length) return ["Almoço"]; // serviço diário (sem turno): só o almoço
-    var r = [];
-    if (temTurno(turnos, ["0800-1200"])) r.push("Café");
-    r.push("Almoço");
+    var r = ["Almoço"];
     if (temTurno(turnos, ["1800-2100"])) r.push("Janta");
     return r;
   }
 
+  var MOTIVO_DIA_ANTERIOR = "Serviço do dia anterior"; // item do dia seguinte: marca quem é municiado automático no café
+  function diaSeguinte(d) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1)).toISOString().slice(0, 10) : null;
+  }
+
   function interpretarServico(linhas, avisos) {
-    var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null;
+    var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null, cafes = [];
     linhas.forEach(function (cel) {
       var txt = cel.map(limpar).filter(Boolean).join(" ");
       var dia = dataDoTexto(txt);
@@ -153,12 +157,19 @@
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
         var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
-        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; }) ? ["Almoço"] : refeicoesDoServico(turnos), p: "" }); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
+        var retem = /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; });
+        var item = { d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: retem ? ["Almoço"] : refeicoesDoServico(turnos), p: "" };
+        cafes.push({ item: item, rancho: !retem && !!turnos && temTurno(turnos, ["0800-1200"]) }); // todo mundo de serviço é municiado no café do dia seguinte; o rancho corrido do café é só de quem fez 0800-1200
+        itens.push(item); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }
     });
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
+    cafes.forEach(function (x) { // dia seguinte: café municiado automático (r vazio) e, para 0800-1200 sem RETÉM, também o aviso de rancho corrido do café; sábado e domingo geram o municiado automático, mas nunca o aviso (r vazio)
+      var i = x.item, seguinte = i.d ? diaSeguinte(i.d) : null;
+      if (seguinte) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: x.rancho && !M.fimDeSemana(seguinte) ? ["Café"] : [], p: "" });
+    });
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
 
@@ -287,7 +298,7 @@
 
   /** Para cada item do arquivo, o aluno da planilha com o mesmo número interno (ou null). */
   M.casarRancho = function (itens, alunos) {
-    var porDigitos = {};
+    var porDigitos = {}, nomes = null;
     alunos.forEach(function (a) { (porDigitos[soDigitos(a.codigo)] = porDigitos[soDigitos(a.codigo)] || []).push(a); });
     return itens.map(function (i) {
       var cands = (porDigitos[soDigitos(i.c)] || []).filter(function (a) { return !/^[BMN]/.test(i.c) || a.codigo === i.c; });
@@ -295,7 +306,8 @@
       var a = cands.length > 1 ? (cands.filter(function (x) { var n = M.normalizar(x.nome); return n.indexOf(nome) >= 0 || nome.indexOf(n) >= 0; })[0] || cands[0]) : cands[0];
       // número que não existe na planilha (erro de digitação no arquivo): o nome de guerra, se for único, resolve
       if (!a && nome.length >= 4) {
-        var porNome = alunos.filter(function (x) { return M.normalizar(x.nome) === nome; });
+        if (!nomes) { nomes = {}; alunos.forEach(function (x) { var k = M.normalizar(x.nome); (nomes[k] = nomes[k] || []).push(x); }); } // índice por nome, montado uma vez só
+        var porNome = nomes[nome] || [];
         if (porNome.length === 1) a = porNome[0];
       }
       return { item: i, aluno: a || null, porNome: !!a && cands.length === 0 };
@@ -317,6 +329,23 @@
     });
     return idx;
   };
+
+  /** Quem é municiado automaticamente no dia (publicações do dia): servico = de serviço no dia (almoço, janta e ceia); cafe = esteve de serviço no dia anterior (café).
+      Cada conjunto tem o número interno com e sem a letra do curso. */
+  M.automaticosDoDia = function (publicacoes) {
+    var r = { servico: {}, cafe: {} };
+    (publicacoes || []).forEach(function (p) {
+      (p.itens || []).forEach(function (i) {
+        String(i.m || "").split("; ").forEach(function (m) {
+          var alvo = m === "Serviço" ? r.servico : m === MOTIVO_DIA_ANTERIOR ? r.cafe : null;
+          if (alvo) { alvo[i.c] = true; alvo[soDigitos(i.c)] = true; }
+        });
+      });
+    });
+    return r;
+  };
+  /** O aluno está no conjunto (por número interno)? */
+  M.noConjunto = function (conjunto, aluno) { return !!(conjunto[aluno.codigo] || conjunto[soDigitos(aluno.codigo)]); };
 
   /** O aluno (da planilha) está no índice? Devolve {motivo, por} ou null. */
   /** Sábado e domingo não têm aviso de rancho corrido. data: "AAAA-MM-DD". */

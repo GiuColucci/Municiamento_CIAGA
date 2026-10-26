@@ -264,6 +264,8 @@ npm run local        # abre http://localhost:4174
 
 Sobe o site completo (login, painel, app, Conferência Geral) com um **Redis falso em memória**, chaves aleatórias e **pessoas fictícias** (Alfa/ranchef `B1901`, Bravo/administrador `B1902`, Charlie `B1903` e Delta `B1904`). As senhas de teste aparecem no terminal. Nada é gravado em disco e tudo some ao fechar. Para ver a Conferência Geral: entre como **Alfa** em modo Administrador, carregue a planilha de exemplo (`fonte-app/tests/fixtures/ficticio.xlsx`, também em `http://localhost:4174/_exemplo.xlsx`), publique e abra `http://localhost:4174/_demo`. Para regerar o app depois de mudar o código-fonte: `npm run local -- --build`.
 
+**Tabela de serviço fictícia (7 dias, com RETÉM e turnos 0800-1200 e 1800-2100) para testar o Rancho corrido:** `node scripts/exemplo-servico-semana.cjs caminho\tabela.pdf [AAAA-MM-DD do primeiro dia]`. Os alunos são os da planilha de exemplo (`/_exemplo.xlsx`).
+
 **Auditoria de layout (celular e computador, tema claro e escuro):** com o servidor local aberto e a página em qualquer tela, carregue `/_auditoria.js` e rode `await auditarNosDoisTemas()` no console. Ela procura rolagem horizontal, caixas coladas, texto sobre texto, texto que escapa de botões, texto cortado, alvos de toque pequenos e letras pequenas. Em uma página logada como administrador, `await percorrerApp()` percorre as telas do app (lista, marcação, rela, Conferência Geral, Rancho corrido) e audita cada uma. O resultado esperado é uma lista vazia.
 
 ```bash

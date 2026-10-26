@@ -146,9 +146,9 @@ Ao clicar no **brasão do canto superior direito** do cabeçalho, a **tela de en
 Quem está na função **RETÉM** não conta como serviço corrido: avisa **só no almoço**, nunca no café nem na janta.
 
 
-### Digitar na tela (autorização escrita à mão)
+### Digitar rela (autorização escrita à mão)
 
-A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de foto foi retirada). No lugar, o cartão **Digitar na tela** pede **dia, refeição, motivo** e, para cada aluno, **nome de guerra + número interno** (botão **+ Adicionar aluno** abre outra linha); a turma vem da planilha da semana. Só com o nome vale se ele for único na planilha. Na prévia há o botão **Não publicar**, que descarta tudo. Vira uma autorização como as de arquivo (mesma prévia, mesma publicação, apagada à meia-noite do dia). Número que não existe na planilha entra como "Fora da planilha" e é marcado em vermelho na prévia.
+A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de foto foi retirada). No lugar, o cartão **Digitar rela** pede **dia, refeição, motivo** e, para cada aluno, **nome de guerra + número interno** (botão **+ Adicionar aluno** abre outra linha); a turma vem da planilha da semana. Só com o nome vale se ele for único na planilha. Na prévia há o botão **Não publicar**, que descarta tudo. Vira uma autorização como as de arquivo (mesma prévia, mesma publicação, apagada à meia-noite do dia). Número que não existe na planilha entra como "Fora da planilha" e é marcado em vermelho na prévia.
 
 
 ### Municiado automático (quem está de serviço)

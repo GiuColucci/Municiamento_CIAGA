@@ -770,7 +770,9 @@ test("rancho: café da manhã vale para quem fez o serviço 0800-1200 do dia ant
     ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: " + d + " OUT 2026"], ["SERVIÇO DE QUARTO"], ["0800-1200P"], ["PAV", "3002", "N", "BRAVO"],
   ]).itens;
   assert.deepEqual(dia(25).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-26"]); // domingo -> café de segunda
-  assert.deepEqual(dia(23).filter((i) => i.r.includes("Café")), []); // sexta -> sábado: sem aviso
+  assert.deepEqual(dia(23).filter((i) => i.r.includes("Café")), []); // sexta -> sábado: sem aviso de rancho corrido
+  assert.deepEqual(dia(23).filter((i) => i.m === "Serviço do dia anterior").map((i) => i.d), ["2026-10-24"]); // mas o sábado gera o municiado automático
+  assert.deepEqual(dia(24).filter((i) => i.m === "Serviço do dia anterior").map((i) => i.d), ["2026-10-25"]); // sábado -> domingo também
   assert.deepEqual(dia(29).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-30"]); // quinta -> café de sexta
 });
 

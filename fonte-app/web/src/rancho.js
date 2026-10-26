@@ -166,9 +166,9 @@
       }
     });
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
-    cafes.forEach(function (x) { // dia seguinte (sábado e domingo não têm aviso): café municiado automático (r vazio) e, para 0800-1200 sem RETÉM, também o aviso de rancho corrido do café
+    cafes.forEach(function (x) { // dia seguinte: café municiado automático (r vazio) e, para 0800-1200 sem RETÉM, também o aviso de rancho corrido do café; sábado e domingo geram o municiado automático, mas nunca o aviso (r vazio)
       var i = x.item, seguinte = i.d ? diaSeguinte(i.d) : null;
-      if (seguinte && !M.fimDeSemana(seguinte)) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: x.rancho ? ["Café"] : [], p: "" });
+      if (seguinte) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: x.rancho && !M.fimDeSemana(seguinte) ? ["Café"] : [], p: "" });
     });
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }

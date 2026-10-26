@@ -994,9 +994,8 @@
 
   function iniciarGeral() {
     iniciarRancho();
-    var voltar = $("geral-voltar"), atualizar = $("geral-atualizar");
-    if (!voltar || !atualizar) return;
-    voltar.addEventListener("click", function () { mostrarTelaGeral(false); window.scrollTo(0, 0); });
+    var atualizar = $("geral-atualizar");
+    if (!atualizar) return;
     atualizar.addEventListener("click", function () { if (geral && geral.aberta) carregarOpcoesGeral(); else abrirGeral(); });
     // os itens "Conferência geral" e "Voltar ao app" do menu suspenso (colocados pelo servidor)
     document.addEventListener("click", function (ev) {
@@ -1228,7 +1227,7 @@
     mostrar(c, true);
   }
 
-  /** Uma linha de aluno (nome de guerra + número interno) no cartão "Digitar na tela". */
+  /** Uma linha de aluno (nome de guerra + número interno) no cartão "Digitar rela". */
   function novaLinhaAluno(foco) {
     var box = $("dig-alunos");
     var linha = el("div", "dig-aluno");

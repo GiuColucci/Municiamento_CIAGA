@@ -149,3 +149,8 @@ Quem está na função **RETÉM** não conta como serviço corrido: avisa **só 
 ### Digitar na tela (autorização escrita à mão)
 
 A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de foto foi retirada). No lugar, o cartão **Digitar na tela** pede **dia, refeição, motivo** e, para cada aluno, **nome de guerra + número interno** (botão **+ Adicionar aluno** abre outra linha); a turma vem da planilha da semana. Só com o nome vale se ele for único na planilha. Na prévia há o botão **Não publicar**, que descarta tudo. Vira uma autorização como as de arquivo (mesma prévia, mesma publicação, apagada à meia-noite do dia). Número que não existe na planilha entra como "Fora da planilha" e é marcado em vermelho na prévia.
+
+
+### Municiado automático (quem está de serviço)
+
+Quem está na tabela de serviço do dia D (qualquer função, inclusive RETÉM) é **municiado automaticamente** no **almoço, na janta e na ceia de D** e no **café da manhã de D+1**, mesmo que a planilha do municiamento diga o contrário. No **café de D** vale a planilha. Isso vale para as contagens, o filtro, o selo vermelho e o aviso ao marcar. O café de D+1 vem de itens "Serviço do dia anterior" publicados no dia D+1 (sábado e domingo não geram esses itens), e não depende de o dia D já ter sido apagado. O aviso de **rancho corrido** continua com as regras próprias (café: turno 0800-1200 do dia anterior, sem RETÉM; janta: turno 1800-2100).

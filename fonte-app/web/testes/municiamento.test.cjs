@@ -666,9 +666,9 @@ test("rancho: tabela de serviço com mais de um dia separa cada aluno no seu dia
     ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 24 OUT 2026"], ["RETÉM", "3042", "N", "ROMEO"], ["POLÍCIA", "2166", "M", "DIEGO"],
     ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 25 OUT 2026"], ["RETÉM", "3042", "N", "ROMEO"], ["COPA", "2130", "M", "ZOMER"],
   ]);
-  assert.deepEqual(r.dias, ["2026-10-24", "2026-10-25"]);
-  assert.deepEqual(r.itens.map((i) => [i.d, i.c]), [["2026-10-24", "N3042"], ["2026-10-24", "M2166"], ["2026-10-25", "N3042"], ["2026-10-25", "M2130"]]); // ROMEO aparece nos dois dias
-  assert.ok(r.itens.every((i) => i.m === "Serviço"));
+  assert.deepEqual(r.dias, ["2026-10-24", "2026-10-25", "2026-10-26"]); // 26/10 vem do café municiado automático de quem esteve de serviço no domingo
+  const doDia = r.itens.filter((i) => i.m === "Serviço"); // (os itens "do dia anterior" são o café municiado automático do dia seguinte)
+  assert.deepEqual(doDia.map((i) => [i.d, i.c]), [["2026-10-24", "N3042"], ["2026-10-24", "M2166"], ["2026-10-25", "N3042"], ["2026-10-25", "M2130"]]); // ROMEO aparece nos dois dias
 });
 
 test("rancho: foto não é lida (JPEG ou PNG recebem um aviso claro)", async () => {
@@ -686,9 +686,9 @@ test("rancho: escala semanal com mais de 300 alunos não é cortada (cada dia fi
     for (let k = 0; k < 60; k++) linhas.push(["PAV", String(1000 + (d - 23) * 100 + k), "N", "ALUNO" + String.fromCharCode(65 + (d - 23)) + String.fromCharCode(65 + Math.floor(k / 26)) + String.fromCharCode(65 + k % 26)]);
   }
   const r = M.interpretarRancho(linhas);
-  assert.equal(r.itens.length, 420);
+  assert.equal(r.itens.filter((i) => i.m === "Serviço").length, 420);
   assert.ok(!r.avisos.some((a) => /demais/.test(a)));
-  assert.equal(new Set(r.itens.map((i) => i.d)).size, 7);
+  assert.equal(new Set(r.itens.filter((i) => i.m === "Serviço").map((i) => i.d)).size, 7);
 });
 
 test("rancho: serviço vira aviso por refeição (almoço todos, janta 1800-2100, café do dia seguinte para 0800-1200) e fim de semana não avisa", () => {
@@ -714,7 +714,7 @@ test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avis
     ["SERVIÇO DE QUARTO"], ["1500-1800P / 0200-0400P", "1800-2100P / 0400-0800P"],
     ["PAV", "1001", "N", "UM", "1002", "N", "DOIS"],
   ]);
-  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
+  const por = Object.fromEntries(r.itens.filter((i) => i.m === "Serviço").map((i) => [i.n, i.r]));
   assert.deepEqual(por.DIARIO, ["Almoço"]);
   assert.deepEqual(por.UM, ["Almoço"]);
   assert.deepEqual(por.DOIS, ["Almoço", "Janta"]); // 1800-2100 é janta
@@ -772,4 +772,22 @@ test("rancho: café da manhã vale para quem fez o serviço 0800-1200 do dia ant
   assert.deepEqual(dia(25).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-26"]); // domingo -> café de segunda
   assert.deepEqual(dia(23).filter((i) => i.r.includes("Café")), []); // sexta -> sábado: sem aviso
   assert.deepEqual(dia(29).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-30"]); // quinta -> café de sexta
+});
+
+test("rancho: municiado automático — almoço, janta e ceia do dia do serviço e café do dia seguinte (não o café do próprio dia)", () => {
+  const r = M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 26 OUT 2026"], ["SERVIÇO DE QUARTO"], ["1200-1500P", "1800-2100P"],
+    ["RETÉM", "3001", "N", "ALFA"], ["PAV", "3002", "N", "BRAVO", "3003", "N", "CHARLIE"],
+  ]);
+  const pubs = (dia) => [{ por: "X", itens: r.itens.filter((i) => i.d === dia) }];
+  const seg = M.automaticosDoDia(pubs("2026-10-26")), ter = M.automaticosDoDia(pubs("2026-10-27"));
+  for (const c of ["N3001", "N3002", "N3003"]) { // todos que estão de serviço, inclusive RETÉM
+    assert.ok(seg.servico[c], c + " é municiado no almoço/janta/ceia de 26/10");
+    assert.ok(ter.cafe[c], c + " é municiado no café de 27/10");
+    assert.ok(!seg.cafe[c], c + " não é municiado automático no café de 26/10");
+  }
+  assert.ok(!ter.servico.N3001); // no dia 27 ele não está de serviço
+  assert.deepEqual(r.itens.filter((i) => i.d === "2026-10-27" && i.r.includes("Café")).map((i) => i.n), []); // sem turno 0800-1200: sem aviso de rancho no café
+  const aluno = { codigo: "N3002" };
+  assert.ok(M.noConjunto(seg.servico, aluno));
 });

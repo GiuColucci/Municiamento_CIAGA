@@ -312,8 +312,12 @@
     var chaveRefeicao = M.chaveMarca(l.dia, l.refeicao);
     var rotuloRefeicao = l.refeicao + " de " + l.dia;
     var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
-    // quem está de serviço é municiado automaticamente: vale mesmo que a planilha diga o contrário
-    function estaMunic(a) { var r = M.ranchoDoAluno(idxRancho, a); return !!a.marcas[chaveRefeicao] || !!(r && r.servico); }
+    // quem está de serviço é municiado automaticamente (mesmo que a planilha diga o contrário) no almoço, na janta e na ceia do dia do serviço
+    // e no café da manhã do dia seguinte; no café do próprio dia vale a planilha
+    var diaIso = estado && estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : null;
+    var auto = M.automaticosDoDia(diaIso && estado.rancho ? estado.rancho[diaIso] : []);
+    var conjuntoAuto = l.refeicao === "Café" ? auto.cafe : (["Almoço", "Janta", "Ceia"].indexOf(l.refeicao) >= 0 ? auto.servico : {});
+    function estaMunic(a) { return !!a.marcas[chaveRefeicao] || M.noConjunto(conjuntoAuto, a); }
     // filtro de situação: mostrar só municiados ou só NÃO municiados (conforme a planilha, naquele dia e refeição)
     var baseFiltro = l.alunos.filter(function (a) { return !l.turmasMarcacao || l.turmasMarcacao.indexOf(a.turma) >= 0; });
     var nMunic = baseFiltro.filter(estaMunic).length;

@@ -130,6 +130,7 @@
     return r;
   }
 
+  var MOTIVO_DIA_ANTERIOR = "Serviço do dia anterior"; // item do dia seguinte: marca quem é municiado automático no café
   function diaSeguinte(d) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
     return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1)).toISOString().slice(0, 10) : null;
@@ -158,16 +159,16 @@
         var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
         var retem = /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; });
         var item = { d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: retem ? ["Almoço"] : refeicoesDoServico(turnos), p: "" };
-        if (!retem && turnos && temTurno(turnos, ["0800-1200"])) cafes.push(item); // café do dia seguinte
+        cafes.push({ item: item, rancho: !retem && !!turnos && temTurno(turnos, ["0800-1200"]) }); // todo mundo de serviço é municiado no café do dia seguinte; o rancho corrido do café é só de quem fez 0800-1200
         itens.push(item); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }
     });
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
-    cafes.forEach(function (i) { // Café da manhã: rancho corrido de quem fez o serviço 0800-1200 do dia anterior (sábado e domingo não têm aviso)
-      var seguinte = i.d ? diaSeguinte(i.d) : null;
-      if (seguinte && !M.fimDeSemana(seguinte)) itens.push({ d: seguinte, c: i.c, n: i.n, m: "Serviço", r: ["Café"], p: "" });
+    cafes.forEach(function (x) { // dia seguinte (sábado e domingo não têm aviso): café municiado automático (r vazio) e, para 0800-1200 sem RETÉM, também o aviso de rancho corrido do café
+      var i = x.item, seguinte = i.d ? diaSeguinte(i.d) : null;
+      if (seguinte && !M.fimDeSemana(seguinte)) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: x.rancho ? ["Café"] : [], p: "" });
     });
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
@@ -327,6 +328,23 @@
     });
     return idx;
   };
+
+  /** Quem é municiado automaticamente no dia (publicações do dia): servico = de serviço no dia (almoço, janta e ceia); cafe = esteve de serviço no dia anterior (café).
+      Cada conjunto tem o número interno com e sem a letra do curso. */
+  M.automaticosDoDia = function (publicacoes) {
+    var r = { servico: {}, cafe: {} };
+    (publicacoes || []).forEach(function (p) {
+      (p.itens || []).forEach(function (i) {
+        String(i.m || "").split("; ").forEach(function (m) {
+          var alvo = m === "Serviço" ? r.servico : m === MOTIVO_DIA_ANTERIOR ? r.cafe : null;
+          if (alvo) { alvo[i.c] = true; alvo[soDigitos(i.c)] = true; }
+        });
+      });
+    });
+    return r;
+  };
+  /** O aluno está no conjunto (por número interno)? */
+  M.noConjunto = function (conjunto, aluno) { return !!(conjunto[aluno.codigo] || conjunto[soDigitos(aluno.codigo)]); };
 
   /** O aluno (da planilha) está no índice? Devolve {motivo, por} ou null. */
   /** Sábado e domingo não têm aviso de rancho corrido. data: "AAAA-MM-DD". */

@@ -101,7 +101,7 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 
 | Refeição | Quem é avisado |
 |---|---|
-| Café da manhã | só quem está no turno 0800-1200 e não é RETÉM |
+| Café da manhã | quem fez o serviço do turno **0800-1200 no dia anterior** (o domingo vale para a segunda), exceto RETÉM |
 | Almoço | todos os que estão de serviço naquele dia |
 | Janta | só quem está no turno 1800-2100 (turno escrito igual; quem está de serviço diário, sem turno, só avisa no almoço) |
 | Sábado e domingo | sem aviso de rancho corrido |

@@ -691,16 +691,18 @@ test("rancho: escala semanal com mais de 300 alunos não é cortada (cada dia fi
   assert.equal(new Set(r.itens.map((i) => i.d)).size, 7);
 });
 
-test("rancho: serviço vira aviso por refeição (café 0400-1200, almoço todos, janta 1800-2100) e fim de semana não avisa", () => {
+test("rancho: serviço vira aviso por refeição (almoço todos, janta 1800-2100, café do dia seguinte para 0800-1200) e fim de semana não avisa", () => {
   const r = M.interpretarRancho([
     ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 26 OUT 2026"], ["SERVIÇO DE QUARTO"],
     ["0800-1200P / 2000-0000P", "1200-1600P / 0000-0400P", "1600-2000P / 0400-0800P"],
     ["PAV", "1001", "N", "ALFA", "1002", "N", "BRAVO", "1003", "N", "CHARLIE"],
   ]);
-  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
-  assert.deepEqual(por.ALFA, ["Café", "Almoço"]); // 0800-1200 (2000-0000 não é o turno 1800-2100)
+  const por = Object.fromEntries(r.itens.filter((i) => i.d === "2026-10-26").map((i) => [i.n, i.r]));
+  assert.deepEqual(por.ALFA, ["Almoço"]); // 0800-1200 (2000-0000 não é o turno 1800-2100): o café dele é do dia seguinte
   assert.deepEqual(por.BRAVO, ["Almoço"]); // 1200-1600 e 0000-0400
-  assert.deepEqual(por.CHARLIE, ["Almoço"]); // 0400-0800 e 1600-2000 não contam: o café é só o turno 0800-1200
+  assert.deepEqual(por.CHARLIE, ["Almoço"]); // 0400-0800 e 1600-2000 não contam
+  const cafe = r.itens.filter((i) => i.r.includes("Café")); // quem fez 0800-1200 tem o café no dia seguinte (terça 27/10)
+  assert.deepEqual(cafe.map((i) => [i.d, i.n, i.r]), [["2026-10-27", "ALFA", ["Café"]]]);
   assert.equal(M.fimDeSemana("2026-10-24"), true); // sábado
   assert.equal(M.fimDeSemana("2026-10-25"), true); // domingo
   assert.equal(M.fimDeSemana("2026-10-26"), false);
@@ -715,7 +717,7 @@ test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avis
   const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
   assert.deepEqual(por.DIARIO, ["Almoço"]);
   assert.deepEqual(por.UM, ["Almoço"]);
-  assert.deepEqual(por.DOIS, ["Almoço", "Janta"]); // 0400-0800 não é café; 1800-2100 é janta
+  assert.deepEqual(por.DOIS, ["Almoço", "Janta"]); // 1800-2100 é janta
 });
 
 test("rancho: autorização com o traço do formulário e a data escrita no cabeçalho (Data: ____/____/_____26/10/2026)", () => {
@@ -730,9 +732,10 @@ test("rancho: quem está na função RETÉM só avisa no almoço (não vale como
     ["0800-1200P / 1800-2100P"],
     ["RETÉM", "3001", "N", "ALFA"], ["PAV", "3002", "N", "BRAVO"],
   ]);
-  const por = Object.fromEntries(r.itens.map((i) => [i.n, i.r]));
+  const por = Object.fromEntries(r.itens.filter((i) => i.d === "2026-10-26").map((i) => [i.n, i.r]));
   assert.deepEqual(por.ALFA, ["Almoço"]);
-  assert.deepEqual(por.BRAVO, ["Café", "Almoço", "Janta"]);
+  assert.deepEqual(por.BRAVO, ["Almoço", "Janta"]);
+  assert.deepEqual(r.itens.filter((i) => i.r.includes("Café")).map((i) => [i.d, i.n]), [["2026-10-27", "BRAVO"]]); // RETÉM não tem café no dia seguinte
 });
 
 test("rancho: quem está de serviço é marcado como serviço no índice (municiado automático); autorização não", () => {
@@ -760,4 +763,13 @@ test("rancho: leitura sem o número interno de alguns alunos acha o aluno pelo n
   M.completarPorNome(r, alunos);
   assert.deepEqual(r.itens.map((i) => i.c), ["N3001", "N3004"]);
   assert.ok(r.avisos.some((a) => /pelo nome de guerra/.test(a)));
+});
+
+test("rancho: café da manhã vale para quem fez o serviço 0800-1200 do dia anterior; sexta, sábado e domingo não geram café no fim de semana", () => {
+  const dia = (d) => M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: " + d + " OUT 2026"], ["SERVIÇO DE QUARTO"], ["0800-1200P"], ["PAV", "3002", "N", "BRAVO"],
+  ]).itens;
+  assert.deepEqual(dia(25).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-26"]); // domingo -> café de segunda
+  assert.deepEqual(dia(23).filter((i) => i.r.includes("Café")), []); // sexta -> sábado: sem aviso
+  assert.deepEqual(dia(29).filter((i) => i.r.includes("Café")).map((i) => i.d), ["2026-10-30"]); // quinta -> café de sexta
 });

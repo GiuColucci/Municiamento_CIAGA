@@ -121,19 +121,22 @@
       return !!m && lista.indexOf(m[1] + "-" + m[2]) >= 0;
     });
   }
-  /** Rancho corrido de quem está de serviço: Café = turno 0800-1200 (menos RETÉM); Almoço = todos do dia; Janta = turno 1800-2100.
-      Sem turno (serviço diário), só o almoço. */
+  /** Rancho corrido de quem está de serviço, no PRÓPRIO dia: Almoço = todos; Janta = turno 1800-2100. Sem turno (serviço diário), só o almoço.
+      O café da manhã é do DIA SEGUINTE a quem fez o turno 0800-1200 (menos RETÉM): ver cafeDoDiaSeguinte. */
   function refeicoesDoServico(turnos) {
     if (!turnos || !turnos.length) return ["Almoço"]; // serviço diário (sem turno): só o almoço
-    var r = [];
-    if (temTurno(turnos, ["0800-1200"])) r.push("Café");
-    r.push("Almoço");
+    var r = ["Almoço"];
     if (temTurno(turnos, ["1800-2100"])) r.push("Janta");
     return r;
   }
 
+  function diaSeguinte(d) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1)).toISOString().slice(0, 10) : null;
+  }
+
   function interpretarServico(linhas, avisos) {
-    var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null;
+    var data = null, itens = [], janelas = [], m, todo = [], diaAtual = null, cafes = [];
     linhas.forEach(function (cel) {
       var txt = cel.map(limpar).filter(Boolean).join(" ");
       var dia = dataDoTexto(txt);
@@ -153,12 +156,19 @@
         while (j < t.length && !/^(TR|SE)$/i.test(t[j]) && !/^\d{4}$/.test(corrigirDigitos(t[j])) && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’.-]*$/.test(t[j])) nome.push(t[j++]);
         if (!nome.length) continue; // número solto (horário, total...)
         var turnos = janelas[col] ? janelas[col].split(" / ") : (janelas.length === 1 ? janelas[0].split(" / ") : null); col++; // o k-ésimo aluno da linha é da k-ésima coluna de turnos
-        itens.push({ d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; }) ? ["Almoço"] : refeicoesDoServico(turnos), p: "" }); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
+        var retem = /^ret[eé]m$/i.test(funcao.join(" ").trim()) || funcao.some(function (f) { return M.normalizar(f) === "retem"; });
+        var item = { d: diaAtual, c: letra + dig, n: nome.join(" "), m: "Serviço", r: retem ? ["Almoço"] : refeicoesDoServico(turnos), p: "" };
+        if (!retem && turnos && temTurno(turnos, ["0800-1200"])) cafes.push(item); // café do dia seguinte
+        itens.push(item); // Retém não é serviço corrido: só avisa no almoço // no motivo, o rancho corrido da tabela de serviço é "Serviço"
         k++;
         i = j - 1;
       }
     });
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
+    cafes.forEach(function (i) { // Café da manhã: rancho corrido de quem fez o serviço 0800-1200 do dia anterior (sábado e domingo não têm aviso)
+      var seguinte = i.d ? diaSeguinte(i.d) : null;
+      if (seguinte && !M.fimDeSemana(seguinte)) itens.push({ d: seguinte, c: i.c, n: i.n, m: "Serviço", r: ["Café"], p: "" });
+    });
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }
 

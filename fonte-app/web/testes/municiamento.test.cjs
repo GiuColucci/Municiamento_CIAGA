@@ -527,6 +527,8 @@ test("rancho: formulário em branco não gera alunos nem lixo; sem motivo e sem 
   assert.ok(semMotivo.avisos.some((a) => /motivo/.test(a)));
 });
 
+const doServico = (itens) => itens.filter((i) => i.m.split("; ").includes("Serviço")); // sem os itens "Serviço do dia anterior" (café municiado automático do dia seguinte)
+
 test("rancho: tabela de serviço vira alunos com o motivo \"Serviço\"", () => {
   const linhas = [
     ["CENTRO DE INSTRUÇÃO ALMIRANTE GRAÇA ARANHA"], ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"],
@@ -543,7 +545,7 @@ test("rancho: tabela de serviço vira alunos com o motivo \"Serviço\"", () => {
   const r = M.interpretarRancho(linhas);
   assert.equal(r.tipo, "servico");
   assert.equal(r.data, "2026-10-24");
-  const por = Object.fromEntries(r.itens.map((i) => [i.c, i]));
+  const por = Object.fromEntries(doServico(r.itens).map((i) => [i.c, i]));
   assert.equal(por.N3025.m, "Serviço");
   assert.equal(por.N3048.m, "Serviço");
   assert.equal(por.M3145.m, "Serviço");
@@ -551,8 +553,8 @@ test("rancho: tabela de serviço vira alunos com o motivo \"Serviço\"", () => {
   assert.equal(por.M3134.m, "Serviço");
   assert.equal(por.M2166.m, "Serviço");
   assert.equal(por.B1011.m, "Serviço");
-  assert.ok(r.itens.every((i) => /^[BMN]\d{4}$/.test(i.c)));
-  assert.equal(r.itens.length, 7);
+  assert.ok(doServico(r.itens).every((i) => /^[BMN]\d{4}$/.test(i.c)));
+  assert.equal(doServico(r.itens).length, 7);
 });
 
 test("rancho: arquivo que não é de rancho corrido avisa sem quebrar; mesmo aluno em duas funções vira um só", () => {
@@ -561,8 +563,8 @@ test("rancho: arquivo que não é de rancho corrido avisa sem quebrar; mesmo alu
   assert.equal(r.itens.length, 0);
   assert.match(r.avisos[0], /Não reconheci/);
   const dois = M.interpretarRancho([["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 24 OUT 2026"], ["RETÉM", "3042", "N", "ROMEO"], ["POLÍCIA", "3042", "N", "ROMEO"]]);
-  assert.equal(dois.itens.length, 1);
-  assert.equal(dois.itens[0].m, "Serviço"); // o mesmo aluno em duas funções é um só
+  assert.equal(doServico(dois.itens).length, 1);
+  assert.equal(doServico(dois.itens)[0].m, "Serviço"); // o mesmo aluno em duas funções é um só
 });
 
 test("rancho: PDF de verdade (gerado aqui) é lido pela posição dos textos nos dois modelos", async () => {
@@ -590,7 +592,7 @@ test("rancho: PDF de verdade (gerado aqui) é lido pela posição dos textos nos
   const s = await M.lerRanchoArquivo({ nome: "servico.pdf", bytes: srv });
   assert.equal(s.tipo, "servico");
   assert.equal(s.data, "2026-10-24");
-  assert.deepEqual(s.itens.map((i) => [i.c, i.n, i.m]), [["N3048", "MIKE", "Serviço"], ["M3145", "RIBEIRO", "Serviço"]]);
+  assert.deepEqual(doServico(s.itens).map((i) => [i.c, i.n, i.m]), [["N3048", "MIKE", "Serviço"], ["M3145", "RIBEIRO", "Serviço"]]);
 });
 
 test("rancho: casa o número interno com a planilha e o aviso respeita a refeição", () => {
@@ -636,7 +638,7 @@ test("rancho: tabela de serviço lida de foto — 4 dígitos + letra do curso + 
   const r = M.interpretarRancho(linhas);
   assert.equal(r.tipo, "servico");
   assert.equal(r.data, "2026-10-24");
-  const por = Object.fromEntries(r.itens.map((i) => [i.c, i]));
+  const por = Object.fromEntries(doServico(r.itens).map((i) => [i.c, i]));
   assert.ok(por.N3048 && por.N3048.n === "TANGO"); // "13048" = borda + 3048; "NU" = N
   assert.ok(por.M3145 && por.M3145.n === "MIKE"); // "[3145]" e "rn" = M
   assert.ok(por.M3134 && por.M3134.n === "D'ALMEIDA");
@@ -667,7 +669,7 @@ test("rancho: tabela de serviço com mais de um dia separa cada aluno no seu dia
     ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: 25 OUT 2026"], ["RETÉM", "3042", "N", "ROMEO"], ["COPA", "2130", "M", "ZOMER"],
   ]);
   assert.deepEqual(r.dias, ["2026-10-24", "2026-10-25", "2026-10-26"]); // 26/10 vem do café municiado automático de quem esteve de serviço no domingo
-  const doDia = r.itens.filter((i) => i.m === "Serviço"); // (os itens "do dia anterior" são o café municiado automático do dia seguinte)
+  const doDia = doServico(r.itens); // (os itens "do dia anterior" são o café municiado automático do dia seguinte)
   assert.deepEqual(doDia.map((i) => [i.d, i.c]), [["2026-10-24", "N3042"], ["2026-10-24", "M2166"], ["2026-10-25", "N3042"], ["2026-10-25", "M2130"]]); // ROMEO aparece nos dois dias
 });
 

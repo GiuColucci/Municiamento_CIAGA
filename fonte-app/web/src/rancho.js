@@ -130,7 +130,7 @@
     return r;
   }
 
-  var MOTIVO_DIA_ANTERIOR = "Serviço do dia anterior"; // item do dia seguinte: marca quem é municiado automático no café
+  var MOTIVO_DIA_ANTERIOR = "Serviço do dia anterior"; // item do dia seguinte: marca quem é municiado automático no café e tem rancho corrido no almoço
   function diaSeguinte(d) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
     return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1)).toISOString().slice(0, 10) : null;
@@ -166,9 +166,9 @@
       }
     });
     if (!data) data = dataDoTexto(todo.join(" ")); // a data pode estar quebrada em mais de uma célula
-    cafes.forEach(function (x) { // dia seguinte: café municiado automático (r vazio) e, para 0800-1200 sem RETÉM, também o aviso de rancho corrido do café; sábado e domingo geram o municiado automático, mas nunca o aviso (r vazio)
-      var i = x.item, seguinte = i.d ? diaSeguinte(i.d) : null;
-      if (seguinte) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: x.rancho && !M.fimDeSemana(seguinte) ? ["Café"] : [], p: "" });
+    cafes.forEach(function (x) { // dia seguinte: todos da tabela (RETÉM incluso) são municiados automáticos no café e têm rancho corrido no almoço (sem municiar); quem fez 0800-1200 sem RETÉM também tem rancho corrido no café; sábado e domingo só municiam, nunca avisam (r vazio)
+      var i = x.item, seguinte = i.d ? diaSeguinte(i.d) : null, aviso = !M.fimDeSemana(seguinte);
+      if (seguinte) itens.push({ d: seguinte, c: i.c, n: i.n, m: MOTIVO_DIA_ANTERIOR, r: !aviso ? [] : x.rancho ? ["Café", "Almoço"] : ["Almoço"], p: "" });
     });
     return { data: data, refeicoes: null, motivo: "", itens: itens };
   }

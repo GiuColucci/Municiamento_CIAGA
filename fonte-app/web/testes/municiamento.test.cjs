@@ -703,11 +703,26 @@ test("rancho: serviço vira aviso por refeição (almoço todos, janta 1800-2100
   assert.deepEqual(por.ALFA, ["Almoço"]); // 0800-1200 (2000-0000 não é o turno 1800-2100): o café dele é do dia seguinte
   assert.deepEqual(por.BRAVO, ["Almoço"]); // 1200-1600 e 0000-0400
   assert.deepEqual(por.CHARLIE, ["Almoço"]); // 0400-0800 e 1600-2000 não contam
-  const cafe = r.itens.filter((i) => i.r.includes("Café")); // quem fez 0800-1200 tem o café no dia seguinte (terça 27/10)
-  assert.deepEqual(cafe.map((i) => [i.d, i.n, i.r]), [["2026-10-27", "ALFA", ["Café"]]]);
+  const cafe = r.itens.filter((i) => i.r.includes("Café")); // quem fez 0800-1200 tem o café no dia seguinte (terça 27/10), além do almoço de todos
+  assert.deepEqual(cafe.map((i) => [i.d, i.n, i.r]), [["2026-10-27", "ALFA", ["Café", "Almoço"]]]);
   assert.equal(M.fimDeSemana("2026-10-24"), true); // sábado
   assert.equal(M.fimDeSemana("2026-10-25"), true); // domingo
   assert.equal(M.fimDeSemana("2026-10-26"), false);
+});
+
+test("rancho: o almoço do dia seguinte avisa TODA a tabela do dia anterior (RETÉM incluso), sem municiar; fim de semana não avisa", () => {
+  const dia = (d) => M.interpretarRancho([
+    ["DETALHE DE SERVIÇO DO CORPO DE ALUNOS"], ["SERVIÇO: " + d + " OUT 2026"], ["SERVIÇO DE QUARTO"], ["1200-1600P", "1800-2100P"],
+    ["RETÉM", "3001", "N", "ALFA"], ["PAV", "3002", "N", "BRAVO", "3003", "N", "CHARLIE"],
+  ]).itens.filter((i) => i.m === "Serviço do dia anterior");
+  const qui = dia(22); // quinta -> almoço de sexta 23/10
+  assert.deepEqual(qui.map((i) => [i.d, i.n, i.r]), [["2026-10-23", "ALFA", ["Almoço"]], ["2026-10-23", "BRAVO", ["Almoço"]], ["2026-10-23", "CHARLIE", ["Almoço"]]]);
+  const idx = M.indiceRancho([{ por: "X", itens: qui }], "Almoço"); // aviso no almoço, inclusive o RETÉM
+  assert.ok(idx.N3001 && idx.N3002 && idx.N3003);
+  assert.deepEqual(Object.keys(M.indiceRancho([{ por: "X", itens: qui }], "Janta")), []); // e só no almoço
+  assert.equal(M.automaticosDoDia([{ por: "X", itens: qui }]).servico.N3001, undefined); // sem municiar no almoço
+  assert.ok(M.automaticosDoDia([{ por: "X", itens: qui }]).cafe.N3001); // o café do dia seguinte municia
+  for (const d of [23, 24]) for (const i of dia(d)) assert.deepEqual(i.r, [], "sábado e domingo só municiam, sem aviso"); // sexta -> sábado, sábado -> domingo
 });
 
 test("rancho: janta é só o turno 1800-2100 e serviço diário (sem turno) avisa só no almoço", () => {

@@ -102,7 +102,7 @@ Ler os arquivos de quem está de rancho corrido num dia e **avisar na marcação
 | Refeição | Quem é avisado |
 |---|---|
 | Café da manhã | quem fez o serviço do turno **0800-1200 no dia anterior** (o domingo vale para a segunda), exceto RETÉM |
-| Almoço | todos os que estão de serviço naquele dia |
+| Almoço | todos os que estão de serviço naquele dia **e toda a tabela do dia anterior** (RETÉM incluso; a do dia anterior só avisa, não municia) |
 | Janta | só quem está no turno 1800-2100 (turno escrito igual; quem está de serviço diário, sem turno, só avisa no almoço) |
 | Sábado e domingo | sem aviso de rancho corrido (mas geram o municiado automático, ver abaixo) |
 
@@ -153,4 +153,4 @@ A foto manuscrita não é lida (o leitor só lê texto impresso, e a leitura de 
 
 ### Municiado automático (quem está de serviço)
 
-Quem está na tabela de serviço do dia D (qualquer função, inclusive RETÉM) é **municiado automaticamente** no **almoço, na janta e na ceia de D** e no **café da manhã de D+1**, mesmo que a planilha do municiamento diga o contrário. No **café de D** vale a planilha. Isso vale para as contagens, o filtro, o selo vermelho e o aviso ao marcar. O café de D+1 vem de itens "Serviço do dia anterior" publicados no dia D+1 (sábado e domingo também geram esses itens, só que sem aviso de rancho corrido), e não depende de o dia D já ter sido apagado. O aviso de **rancho corrido** continua com as regras próprias (café: turno 0800-1200 do dia anterior, sem RETÉM; janta: turno 1800-2100).
+Quem está na tabela de serviço do dia D (qualquer função, inclusive RETÉM) é **municiado automaticamente** no **almoço, na janta e na ceia de D** e no **café da manhã de D+1**, mesmo que a planilha do municiamento diga o contrário. No **café de D** vale a planilha. Isso vale para as contagens, o filtro, o selo vermelho e o aviso ao marcar. O café de D+1 vem de itens "Serviço do dia anterior" publicados no dia D+1 (sábado e domingo também geram esses itens, só que sem aviso de rancho corrido), e não depende de o dia D já ter sido apagado. O aviso de **rancho corrido** continua com as regras próprias (café: turno 0800-1200 do dia anterior, sem RETÉM; almoço: tabela do dia e do dia anterior; janta: turno 1800-2100). Sábado e domingo municiam do mesmo jeito, só sem aviso.

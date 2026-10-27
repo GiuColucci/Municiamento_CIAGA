@@ -52,7 +52,16 @@
   // a escolha de turmas só vale no agrupamento por turma
   function opcoesDe(l) {
     return { criterio: l.criterio, agrupar: l.agrupar, separar: l.separar, turmas: l.agrupar === "turma" ? l.turmas : null,
-      mostrar: l.mostrar };
+      mostrar: l.mostrar, automatico: conjuntoAutomatico(l) };
+  }
+
+  /** Quem é municiado automaticamente (mesmo que a planilha diga o contrário) nesta lista (dia e refeição): o conjunto de números internos.
+      Quem está de serviço no dia: almoço, janta e ceia; quem esteve de serviço no dia anterior: café. A marcação, a rela, o PDF e a conferência geral usam este mesmo conjunto. */
+  function conjuntoAutomatico(l) {
+    var diaIso = estado && estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : null;
+    var auto = M.automaticosDoDia(diaIso && estado.rancho ? estado.rancho[diaIso] : []);
+    var conjunto = l.refeicao === "Café" ? auto.cafe : (["Almoço", "Janta", "Ceia"].indexOf(l.refeicao) >= 0 ? auto.servico : {});
+    return conjunto;
   }
 
   /** Redesenha o painel que está na tela: o da lista ativa ou o da conferência geral. */
@@ -312,11 +321,8 @@
     var chaveRefeicao = M.chaveMarca(l.dia, l.refeicao);
     var rotuloRefeicao = l.refeicao + " de " + l.dia;
     var idxRancho = ranchoDaLista(l); // quem está de rancho corrido neste dia e nesta refeição (publicado por qualquer pessoa)
-    // quem está de serviço é municiado automaticamente (mesmo que a planilha diga o contrário) no almoço, na janta e na ceia do dia do serviço
-    // e no café da manhã do dia seguinte; no café do próprio dia vale a planilha
-    var diaIso = estado && estado.sexta ? M.datasDaSemana(estado.sexta)[l.dia] : null;
-    var auto = M.automaticosDoDia(diaIso && estado.rancho ? estado.rancho[diaIso] : []);
-    var conjuntoAuto = l.refeicao === "Café" ? auto.cafe : (["Almoço", "Janta", "Ceia"].indexOf(l.refeicao) >= 0 ? auto.servico : {});
+    // quem está de serviço é municiado automaticamente (mesmo que a planilha diga o contrário): ver conjuntoAutomatico
+    var conjuntoAuto = conjuntoAutomatico(l);
     function estaMunic(a) { return !!a.marcas[chaveRefeicao] || M.noConjunto(conjuntoAuto, a); }
     // filtro de situação: mostrar só municiados ou só NÃO municiados (conforme a planilha, naquele dia e refeição)
     var baseFiltro = l.alunos.filter(function (a) { return !l.turmasMarcacao || l.turmasMarcacao.indexOf(a.turma) >= 0; });

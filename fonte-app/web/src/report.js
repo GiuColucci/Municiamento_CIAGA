@@ -179,10 +179,11 @@
       alunos = alunos.filter(function (a) { return opcoes.turmas.indexOf(a.turma) >= 0; });
       titulo += " · " + (opcoes.turmas.length === 1 ? "Turma " : "Turmas ") + opcoes.turmas.slice().sort(M.comparar).join(", ");
     }
-    // só quem foi marcado (veio); a planilha diz se estava municiado naquele dia e refeição
+    // só quem foi marcado (veio); a planilha (ou o serviço) diz se estava municiado naquele dia e refeição
     var chave = M.chaveMarca(cfg.dia, cfg.refeicao);
     M.ordenarAlunos(alunos, opcoes.criterio).forEach(function (a) {
-      if (marcados.has(M.chaveAluno(a))) (a.marcas[chave] ? sim : nao).push(a);
+      // municiado = a planilha diz que sim ou é municiado automático (quem está de serviço): opcoes.automatico, o mesmo conjunto da tela de marcar
+      if (marcados.has(M.chaveAluno(a))) (a.marcas[chave] || (opcoes.automatico && M.noConjunto(opcoes.automatico, a)) ? sim : nao).push(a);
     });
     function secao(nome, alunos) {
       var grupos = [{ turma: null, alunos: alunos }];

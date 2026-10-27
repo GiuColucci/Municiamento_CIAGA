@@ -810,3 +810,20 @@ test("rancho: municiado automático — almoço, janta e ceia do dia do serviço
   const aluno = { codigo: "N3002" };
   assert.ok(M.noConjunto(seg.servico, aluno));
 });
+
+test("rela: quem é municiado automático (de serviço) sai em MUNICIADOS mesmo sem marca na planilha — igual à tela de marcar", () => {
+  const a = (nome, codigo, turma, municiado) => ({ nome, codigo, turma, marcas: { "Segunda|Janta": !!municiado } });
+  const alunos = [a("ALFA", "N3001", "N36.1"), a("BRAVO", "N3002", "N36.1", true), a("CHARLIE", "N3003", "N36.1")];
+  const cfg = { dia: "Segunda", refeicao: "Janta", ano: "3", alunos };
+  const marcados = new Set(alunos.map(M.chaveAluno));
+  const nomes = (folhas, i) => folhas[0].secoes[i].grupos[0].alunos.map((x) => x.nome);
+  const sem = M.relaEstruturada(cfg, marcados, SEXTA); // sem o conjunto automático: só a planilha
+  assert.deepEqual([nomes(sem, 0), nomes(sem, 1)], [["BRAVO"], ["ALFA", "CHARLIE"]]);
+  // ALFA está de serviço na segunda (janta): o mesmo conjunto que a tela de marcar usa (M.automaticosDoDia)
+  const servico = M.automaticosDoDia([{ por: "X", itens: [{ d: "2026-10-26", c: "N3001", n: "ALFA", m: "Serviço", r: ["Almoço"], p: "" }] }]).servico;
+  const com = M.relaEstruturada(cfg, marcados, SEXTA, { automatico: servico });
+  assert.deepEqual([nomes(com, 0), nomes(com, 1)], [["ALFA", "BRAVO"], ["CHARLIE"]]);
+  assert.equal(M.textoRela(cfg, marcados, SEXTA, { automatico: servico }).includes("MUNICIADOS (2)"), true); // Copiar e PDF usam a mesma montagem
+  const so = M.relaEstruturada(cfg, marcados, SEXTA, { automatico: servico, mostrar: "nao" });
+  assert.deepEqual(so[0].secoes[0].grupos[0].alunos.map((x) => x.nome), ["CHARLIE"]); // o filtro "NÃO municiados" também respeita
+});

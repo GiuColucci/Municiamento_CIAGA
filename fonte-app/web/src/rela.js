@@ -1183,9 +1183,10 @@
     var b = $("rancho-previa").querySelector("button");
     ocupado(b, true, "Publicando…");
     var ok = [], falhas = [];
+    var lote = Date.now().toString(36) + Math.random().toString(36).slice(2, 8); // identifica este envio: a tabela de serviço nova troca a da semana toda
     for (var i = 0; i < dias.length; i++) {
       var d = porDia[dias[i]], dia = d.dia;
-      var r = await M.api("POST", "/api/planilha?rancho=" + dia, { origem: d.origem, itens: d.itens });
+      var r = await M.api("POST", "/api/planilha?rancho=" + dia, { origem: d.origem, lote: lote, itens: d.itens });
       if (r.status === 200 && r.json && r.json.ok) ok.push(dataBr(dia) + " (" + plural(r.json.qtd, "aluno") + ")");
       else falhas.push(dataBr(dia) + ": " + ((r.json && r.json.erro) || (r.status === 0 ? "sem conexão" : "não consegui publicar")));
     }

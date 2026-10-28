@@ -110,13 +110,16 @@ module.exports = async (req, res) => {
     const bruto = JSON.stringify(dados || null);
     if (bruto.length > MAX_BYTES) return json(res, 413, { erro: "Planilha grande demais." });
     if (!planilhaValida(dados)) return json(res, 400, { erro: "Planilha inválida. Leia o arquivo do municiamento de novo." });
+    // "atualizar": troca os dados mas MANTÉM o id da planilha publicada; com ele valem as listas abertas e a conferência geral
+    // (rascunho e conferência só servem quando o id é o mesmo; marcações de alunos que saíram são descartadas na leitura)
+    const atual = req.body && req.body.atualizar === true ? await cofre.lerPlanilha() : null;
     const meta = {
-      id: crypto.createHash("sha256").update(bruto).digest("hex").slice(0, 16),
+      id: atual && atual.id ? atual.id : crypto.createHash("sha256").update(bruto).digest("hex").slice(0, 16),
       por: await pessoas.nomeExibido(sess.u),
       em: Date.now(),
     };
     await cofre.gravarPlanilha({ ...meta, dados });
-    await reg.registrar(req, sess.u, "admin_publicou_planilha"); // só o evento: nada da planilha vai para o registro
+    await reg.registrar(req, sess.u, atual ? "admin_atualizou_planilha" : "admin_publicou_planilha"); // só o evento: nada da planilha vai para o registro
     return json(res, 200, { ok: true, ...meta });
   } catch (e) {
     console.error("falha na planilha:", e.message);

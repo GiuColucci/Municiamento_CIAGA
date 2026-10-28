@@ -408,6 +408,19 @@
       l.marcacaoPorTurma = !l.marcacaoPorTurma;
       desenharPainel();
     }));
+    // marca só quem está visível (respeita a pesquisa, o filtro e a turma escolhida)
+    extras.appendChild(botao("link", "Marcar todos", function () {
+      var visiveis = itens.filter(function (it) { return !it.li.classList.contains("oculto"); });
+      var faltam = visiveis.filter(function (it) { return !it.caixa.checked; });
+      if (!faltam.length) return;
+      if (faltam.length > 1 && !window.confirm("Marcar " + plural(faltam.length, "aluno") + " desta lista?")) return;
+      faltam.forEach(function (it) {
+        it.caixa.checked = true;
+        l.marcados.add(M.chaveAluno(it.aluno));
+        it.li.classList.toggle("nao-municiado", !it.municiado);
+      });
+      atualizarContagens(l);
+    }));
     extras.appendChild(botao("link", "Desmarcar todos", function () {
       if (!l.marcados.size || !window.confirm("Desmarcar todos os alunos desta lista?")) return;
       l.marcados.clear();
@@ -840,13 +853,15 @@
   }
 
   /** Administrador: guarda a planilha lida no servidor (cifrada) para os alunos abrirem sozinha. */
-  async function publicar() {
-    var b = $("botao-publicar"), st = $("publicar-status");
+  async function publicar(atualizar) {
+    var b = $(atualizar ? "botao-atualizar" : "botao-publicar"), st = $("publicar-status");
     st.textContent = "";
-    ocupado(b, true, "Publicando…");
+    ocupado(b, true, atualizar ? "Atualizando…" : "Publicando…");
     try {
-      var r = await M.api("POST", "/api/planilha", { dados: M.empacotarPlanilha(estado.res, estado.sexta, estado.leitura.formato) });
-      if (r.status === 200 && r.json && r.json.ok) {
+      var r = await M.api("POST", "/api/planilha", { atualizar: atualizar === true, dados: M.empacotarPlanilha(estado.res, estado.sexta, estado.leitura.formato) });
+      if (r.status === 200 && r.json && r.json.ok && atualizar === true) {
+        await carregarSemana(); // abre a planilha nova com o rascunho de volta (o id não mudou); não grava rascunho vazio por cima
+      } else if (r.status === 200 && r.json && r.json.ok) {
         estado.origem = "publicada";
         estado.planilhaId = r.json.id;
         estado.meta = { por: r.json.por, em: r.json.em };
@@ -1366,7 +1381,8 @@
     document.addEventListener("click", fecharMenus);
     document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") fecharMenus(null); });
     $("botao-limpar").addEventListener("click", limparTudo);
-    $("botao-publicar").addEventListener("click", publicar);
+    $("botao-publicar").addEventListener("click", function () { publicar(false); });
+    $("botao-atualizar").addEventListener("click", function () { publicar(true); });
     $("botao-tentar").addEventListener("click", carregarSemana);
     $("rela-fechar").addEventListener("click", fecharRelaTodas);
     // fechar a aba sem querer apagaria as marcações: o navegador pergunta antes

@@ -408,6 +408,19 @@
       l.marcacaoPorTurma = !l.marcacaoPorTurma;
       desenharPainel();
     }));
+    // marca só quem está visível (respeita a pesquisa, o filtro e a turma escolhida)
+    extras.appendChild(botao("link", "Marcar todos", function () {
+      var visiveis = itens.filter(function (it) { return !it.li.classList.contains("oculto"); });
+      var faltam = visiveis.filter(function (it) { return !it.caixa.checked; });
+      if (!faltam.length) return;
+      if (faltam.length > 1 && !window.confirm("Marcar " + plural(faltam.length, "aluno") + " desta lista?")) return;
+      faltam.forEach(function (it) {
+        it.caixa.checked = true;
+        l.marcados.add(M.chaveAluno(it.aluno));
+        it.li.classList.toggle("nao-municiado", !it.municiado);
+      });
+      atualizarContagens(l);
+    }));
     extras.appendChild(botao("link", "Desmarcar todos", function () {
       if (!l.marcados.size || !window.confirm("Desmarcar todos os alunos desta lista?")) return;
       l.marcados.clear();

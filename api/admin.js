@@ -21,6 +21,7 @@ const ROTULO = {
   admin_exportou: "Baixou o backup da lista",
   admin_baixou_lista: "Baixou a lista de liberados",
   admin_publicou_planilha: "Publicou a planilha da semana",
+  admin_atualizou_planilha: "Atualizou a planilha da semana (manteve as listas)",
   admin_removeu_planilha: "Removeu a planilha publicada",
   admin_viu_planilha: "Abriu a planilha publicada",
   publicou_rancho: "Publicou o rancho corrido",
